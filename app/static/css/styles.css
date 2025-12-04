@@ -1,0 +1,21 @@
+/* Tailwind CSS directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for tennis club reservation system */
+.court-grid-cell {
+    @apply border border-gray-300 p-2 text-center cursor-pointer transition-colors;
+}
+
+.court-grid-cell.available {
+    @apply bg-court-available text-white hover:bg-green-600;
+}
+
+.court-grid-cell.reserved {
+    @apply bg-court-reserved text-white;
+}
+
+.court-grid-cell.blocked {
+    @apply bg-court-blocked text-white cursor-not-allowed;
+}
