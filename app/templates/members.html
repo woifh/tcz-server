@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Mitglieder - Tennisclub{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Mitglieder</h2>
+        {% if current_user.is_admin() %}
+        <button onclick="showNewMemberForm()" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+            Neues Mitglied
+        </button>
+        {% endif %}
+    </div>
+    
+    <!-- New Member Form (Hidden by default) -->
+    {% if current_user.is_admin() %}
+    <div id="new-member-form" class="hidden bg-gray-50 p-6 rounded-lg mb-6">
+        <h3 class="text-lg font-semibold mb-4">Neues Mitglied erstellen</h3>
+        <form id="create-member-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Name</label>
+                <input type="text" id="new-member-name" class="w-full border border-gray-300 rounded px-3 py-2" required>
+            </div>
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">E-Mail</label>
+                <input type="email" id="new-member-email" class="w-full border border-gray-300 rounded px-3 py-2" required>
+            </div>
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Passwort</label>
+                <input type="password" id="new-member-password" class="w-full border border-gray-300 rounded px-3 py-2" required>
+            </div>
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Rolle</label>
+                <select id="new-member-role" class="w-full border border-gray-300 rounded px-3 py-2">
+                    <option value="member">Mitglied</option>
+                    <option value="administrator">Administrator</option>
+                </select>
+            </div>
+            <div class="md:col-span-2 flex gap-4">
+                <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded hover:bg-green-700">
+                    Erstellen
+                </button>
+                <button type="button" onclick="hideNewMemberForm()" class="bg-gray-300 text-gray-700 py-2 px-6 rounded hover:bg-gray-400">
+                    Abbrechen
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-Mail</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rolle</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Erstellt am</th>
+                    {% if current_user.is_admin() %}
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktionen</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for member in members %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ member.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ member.email }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="{% if member.role == 'administrator' %}text-yellow-600{% else %}text-gray-600{% endif %} font-semibold">
+                            {{ 'Administrator' if member.role == 'administrator' else 'Mitglied' }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-600">
+                        {{ member.created_at.strftime('%d.%m.%Y') }}
+                    </td>
+                    {% if current_user.is_admin() %}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <button onclick="editMember({{ member.id }})" class="text-blue-600 hover:text-blue-900 mr-3">Bearbeiten</button>
+                        {% if member.id != current_user.id %}
+                        <button onclick="deleteMember({{ member.id }})" class="text-red-600 hover:text-red-900">Löschen</button>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="mt-8">
+        <a href="{{ url_for('dashboard.index') }}" class="text-green-600 hover:underline">← Zurück zur Übersicht</a>
+    </div>
+</div>
+
+<script>
+function showNewMemberForm() {
+    document.getElementById('new-member-form').classList.remove('hidden');
+}
+
+function hideNewMemberForm() {
+    document.getElementById('new-member-form').classList.add('hidden');
+    document.getElementById('create-member-form').reset();
+}
+
+document.getElementById('create-member-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const memberData = {
+        name: document.getElementById('new-member-name').value,
+        email: document.getElementById('new-member-email').value,
+        password: document.getElementById('new-member-password').value,
+        role: document.getElementById('new-member-role').value
+    };
+    
+    try {
+        const response = await fetch('/members/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(memberData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Mitglied erfolgreich erstellt!');
+            window.location.reload();
+        } else {
+            alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+        }
+    } catch (error) {
+        alert('Fehler beim Erstellen des Mitglieds');
+    }
+});
+
+async function deleteMember(memberId) {
+    if (!confirm('Möchten Sie dieses Mitglied wirklich löschen?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/members/${memberId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Mitglied erfolgreich gelöscht');
+            window.location.reload();
+        } else {
+            alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+        }
+    } catch (error) {
+        alert('Fehler beim Löschen des Mitglieds');
+    }
+}
+
+function editMember(memberId) {
+    // In a full implementation, this would open an edit form
+    alert('Bearbeitungsfunktion wird in Kürze verfügbar sein');
+}
+</script>
+{% endblock %}

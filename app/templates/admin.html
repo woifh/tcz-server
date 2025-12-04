@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Admin-Panel - Tennisclub{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-2xl font-bold mb-6">Administrator-Panel</h2>
+    
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="-mb-px flex space-x-8">
+            <button onclick="showTab('overview')" id="tab-overview" class="tab-button border-b-2 border-green-600 py-4 px-1 text-sm font-medium text-green-600">
+                Übersicht
+            </button>
+            <button onclick="showTab('blocks')" id="tab-blocks" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Platz-Sperrungen
+            </button>
+            <button onclick="showTab('members')" id="tab-members" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Mitglieder
+            </button>
+        </nav>
+    </div>
+    
+    <!-- Overview Tab -->
+    <div id="content-overview" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="border border-gray-200 rounded-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Mitgliederverwaltung</h3>
+                <p class="text-gray-600 mb-4">Mitglieder anzeigen und verwalten.</p>
+                <a href="{{ url_for('members.list_members') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                    Mitglieder anzeigen
+                </a>
+            </div>
+            
+            <div class="border border-gray-200 rounded-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Platz-Sperrungen</h3>
+                <p class="text-gray-600 mb-4">Plätze für Wartung oder Events sperren.</p>
+                <button onclick="showTab('blocks')" class="inline-block bg-yellow-600 text-white py-2 px-4 rounded hover:bg-yellow-700">
+                    Sperrungen verwalten
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Blocks Tab -->
+    <div id="content-blocks" class="tab-content hidden">
+        <h3 class="text-xl font-semibold mb-4">Platz-Sperrungen erstellen</h3>
+        
+        <form id="block-form" class="bg-gray-50 p-6 rounded-lg mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Platz</label>
+                    <select id="block-court" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="1">Platz 1</option>
+                        <option value="2">Platz 2</option>
+                        <option value="3">Platz 3</option>
+                        <option value="4">Platz 4</option>
+                        <option value="5">Platz 5</option>
+                        <option value="6">Platz 6</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Datum</label>
+                    <input type="date" id="block-date" class="w-full border border-gray-300 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Von (Uhrzeit)</label>
+                    <input type="time" id="block-start" class="w-full border border-gray-300 rounded px-3 py-2" value="06:00">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Bis (Uhrzeit)</label>
+                    <input type="time" id="block-end" class="w-full border border-gray-300 rounded px-3 py-2" value="21:00">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-gray-700 font-semibold mb-2">Grund</label>
+                    <select id="block-reason" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="rain">Regen</option>
+                        <option value="maintenance">Wartung</option>
+                        <option value="tournament">Turnier</option>
+                        <option value="championship">Meisterschaft</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="bg-yellow-600 text-white py-2 px-6 rounded hover:bg-yellow-700">
+                    Sperrung erstellen
+                </button>
+            </div>
+        </form>
+        
+        <h3 class="text-xl font-semibold mb-4">Aktive Sperrungen</h3>
+        <div id="blocks-list" class="text-gray-600">
+            Wählen Sie ein Datum, um Sperrungen anzuzeigen.
+        </div>
+    </div>
+    
+    <!-- Members Tab -->
+    <div id="content-members" class="tab-content hidden">
+        <h3 class="text-xl font-semibold mb-4">Mitgliederverwaltung</h3>
+        <p class="text-gray-600 mb-4">Vollständige Mitgliederverwaltung verfügbar unter:</p>
+        <a href="{{ url_for('members.list_members') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+            Zur Mitgliederverwaltung
+        </a>
+    </div>
+    
+    <div class="mt-8">
+        <a href="{{ url_for('dashboard.index') }}" class="text-green-600 hover:underline">← Zurück zur Übersicht</a>
+    </div>
+</div>
+
+<script>
+function showTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remove active styling from all tabs
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('border-green-600', 'text-green-600');
+        button.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    document.getElementById('content-' + tabName).classList.remove('hidden');
+    
+    // Add active styling to selected tab
+    const activeTab = document.getElementById('tab-' + tabName);
+    activeTab.classList.remove('border-transparent', 'text-gray-500');
+    activeTab.classList.add('border-green-600', 'text-green-600');
+}
+
+// Handle block form submission
+document.getElementById('block-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const blockData = {
+        court_id: parseInt(document.getElementById('block-court').value),
+        date: document.getElementById('block-date').value,
+        start_time: document.getElementById('block-start').value,
+        end_time: document.getElementById('block-end').value,
+        reason: document.getElementById('block-reason').value
+    };
+    
+    try {
+        const response = await fetch('/admin/blocks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(blockData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Sperrung erfolgreich erstellt!');
+            this.reset();
+        } else {
+            alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+        }
+    } catch (error) {
+        alert('Fehler beim Erstellen der Sperrung');
+    }
+});
+</script>
+{% endblock %}

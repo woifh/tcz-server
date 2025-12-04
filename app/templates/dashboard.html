@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Übersicht - Tennisclub{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Platzübersicht</h2>
+        <div class="flex items-center gap-4">
+            <label for="date-selector" class="font-semibold">Datum:</label>
+            <input type="date" id="date-selector" class="border border-gray-300 rounded px-3 py-2" value="{{ today }}">
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="flex gap-6 mb-4 text-sm">
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-green-500 rounded"></div>
+            <span>Verfügbar</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-red-500 rounded"></div>
+            <span>Gebucht</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-gray-400 rounded"></div>
+            <span>Gesperrt</span>
+        </div>
+    </div>
+
+    <!-- Court Availability Grid -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse" id="availability-grid">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="border border-gray-300 px-4 py-2 text-left font-semibold">Uhrzeit</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 1</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 2</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 3</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 4</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 5</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 6</th>
+                </tr>
+            </thead>
+            <tbody id="grid-body">
+                <!-- Grid will be populated by JavaScript -->
+                <tr><td colspan="7" class="text-center py-8 text-gray-500">Lade Verfügbarkeit...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile View (Vertical List) -->
+    <div id="mobile-grid" class="lg:hidden mt-6 space-y-4">
+        <!-- Mobile grid will be populated by JavaScript -->
+    </div>
+
+    {% if current_user.is_admin() %}
+    <div class="mt-6 border border-gray-200 rounded-lg p-6 bg-yellow-50">
+        <h3 class="text-xl font-semibold mb-4">Administrator-Funktionen</h3>
+        <div class="flex gap-4">
+            <a href="{{ url_for('admin.admin_panel') }}" class="inline-block bg-yellow-600 text-white py-2 px-4 rounded hover:bg-yellow-700">
+                Admin-Panel
+            </a>
+            <a href="{{ url_for('members.list_members') }}" class="inline-block bg-yellow-600 text-white py-2 px-4 rounded hover:bg-yellow-700">
+                Mitglieder verwalten
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Booking Modal -->
+<div id="booking-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold mb-4">Buchung erstellen</h3>
+        <form id="booking-form">
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Datum</label>
+                <input type="date" id="booking-date" class="w-full border border-gray-300 rounded px-3 py-2" readonly>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Platz</label>
+                <input type="text" id="booking-court" class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-100" readonly>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Uhrzeit</label>
+                <input type="text" id="booking-time" class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-100" readonly>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Gebucht für</label>
+                <select id="booking-for" class="w-full border border-gray-300 rounded px-3 py-2">
+                    <option value="{{ current_user.id }}">{{ current_user.name }} (Ich)</option>
+                </select>
+            </div>
+            <div class="flex gap-4">
+                <button type="submit" class="flex-1 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                    Buchung bestätigen
+                </button>
+                <button type="button" onclick="closeBookingModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400">
+                    Abbrechen
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

@@ -1,6 +1,8 @@
 """Flask CLI commands for Tennis Club Reservation System."""
 import click
 from flask.cli import with_appcontext
+from app import db
+from app.models import Member, Court
 
 
 @click.command('create-admin')
@@ -10,26 +12,60 @@ from flask.cli import with_appcontext
               confirmation_prompt=True, help='Administrator password')
 @with_appcontext
 def create_admin_command(name, email, password):
-    """Create an administrator account - to be implemented."""
-    click.echo(f'Creating admin user: {name} ({email})')
-    click.echo('This command will be implemented in task 6.')
+    """Create an administrator account."""
+    # Check if admin already exists
+    existing = Member.query.filter_by(email=email).first()
+    if existing:
+        click.echo(f'Error: User with email {email} already exists.')
+        return
+    
+    # Create admin user
+    admin = Member(name=name, email=email, role='administrator')
+    admin.set_password(password)
+    
+    db.session.add(admin)
+    db.session.commit()
+    
+    click.echo(f'✓ Admin user created: {name} ({email})')
 
 
 @click.command('init-courts')
 @with_appcontext
 def init_courts_command():
-    """Initialize 6 tennis courts - to be implemented."""
-    click.echo('Initializing 6 tennis courts...')
-    click.echo('This command will be implemented in task 2.')
+    """Initialize 6 tennis courts."""
+    # Check if courts already exist
+    existing_count = Court.query.count()
+    if existing_count > 0:
+        click.echo(f'Courts already initialized ({existing_count} courts exist).')
+        return
+    
+    # Create 6 courts
+    for i in range(1, 7):
+        court = Court(number=i, status='available')
+        db.session.add(court)
+    
+    db.session.commit()
+    click.echo('✓ Initialized 6 tennis courts (1-6)')
 
 
 @click.command('test-email')
 @click.option('--to', prompt='Recipient email', help='Test email recipient')
 @with_appcontext
 def test_email_command(to):
-    """Test email configuration - to be implemented."""
-    click.echo(f'Sending test email to: {to}')
-    click.echo('This command will be implemented in task 4.')
+    """Test email configuration."""
+    from flask_mail import Message
+    from app import mail
+    
+    try:
+        msg = Message(
+            subject='Test Email - Tennis Club',
+            recipients=[to],
+            body='Dies ist eine Test-E-Mail vom Tennisclub-Reservierungssystem.\n\nWenn Sie diese E-Mail erhalten, funktioniert die E-Mail-Konfiguration korrekt.'
+        )
+        mail.send(msg)
+        click.echo(f'✓ Test email sent to: {to}')
+    except Exception as e:
+        click.echo(f'✗ Failed to send email: {str(e)}')
 
 
 def init_app(app):
