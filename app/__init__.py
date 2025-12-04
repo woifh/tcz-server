@@ -41,7 +41,12 @@ def create_app(config_name='default'):
     login_manager.init_app(app)
     mail.init_app(app)
     migrate.init_app(app, db)
-    limiter.init_app(app)
+    
+    # Only enable rate limiting if not explicitly disabled
+    if app.config.get('RATELIMIT_ENABLED', True):
+        limiter.init_app(app)
+    else:
+        limiter.enabled = False
     
     # Import models for Flask-Migrate
     from app import models

@@ -374,8 +374,9 @@ async function loadUserReservations() {
                         </div>
                         <button 
                             onclick="cancelReservationFromDashboard(${res.id}, '${res.booked_for}', '${formatDateGerman(res.date)}', '${res.start_time}')"
-                            class="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-2 px-4 rounded transition-colors"
+                            class="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-2 px-4 rounded transition-colors flex items-center gap-2"
                             title="Buchung stornieren">
+                            <span class="material-icons text-sm">cancel</span>
                             Stornieren
                         </button>
                     </div>
