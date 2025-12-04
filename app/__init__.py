@@ -35,6 +35,9 @@ def create_app(config_name='default'):
     mail.init_app(app)
     migrate.init_app(app, db)
     
+    # Import models for Flask-Migrate
+    from app import models
+    
     # Configure Flask-Login
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Bitte melden Sie sich an, um auf diese Seite zuzugreifen.'

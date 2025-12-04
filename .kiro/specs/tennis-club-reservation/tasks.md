@@ -8,56 +8,56 @@
   - Initialize Tailwind CSS configuration
   - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [ ] 2. Implement database models
-  - [ ] 2.1 Create Member model with authentication fields
+- [x] 2. Implement database models
+  - [x] 2.1 Create Member model with authentication fields
     - Implement Member model with id, name, email, password_hash, role, created_at
     - Add password hashing and verification methods
     - Implement Flask-Login UserMixin integration
     - Add many-to-many self-referential favourites relationship
     - _Requirements: 6.1, 13.3_
   
-  - [ ] 2.2 Write property test for password hashing
+  - [x] 2.2 Write property test for password hashing
     - **Property 17: Member creation stores all fields**
     - **Validates: Requirements 6.1, 13.3**
   
-  - [ ] 2.3 Create Court model
+  - [x] 2.3 Create Court model
     - Implement Court model with id, number (1-6), status
     - Add validation for court number range
     - _Requirements: 4.1_
   
-  - [ ] 2.4 Create Reservation model with relationships
+  - [x] 2.4 Create Reservation model with relationships
     - Implement Reservation model with all fields (court_id, date, start_time, end_time, booked_for_id, booked_by_id, status, reason)
     - Add foreign key relationships to Member and Court
     - Add unique constraint on (court_id, date, start_time)
     - Add indexes for date and member queries
     - _Requirements: 1.1, 1.2, 11.5_
   
-  - [ ] 2.5 Write property test for reservation field storage
+  - [x] 2.5 Write property test for reservation field storage
     - **Property 1: Reservation creation stores all required fields**
     - **Validates: Requirements 1.1, 1.2**
   
-  - [ ] 2.6 Create Block model
+  - [x] 2.6 Create Block model
     - Implement Block model with court_id, date, start_time, end_time, reason, created_by_id
     - Add foreign key relationships
     - Add validation for reason enum values
     - _Requirements: 5.4, 5.5_
   
-  - [ ] 2.7 Write property test for block field storage
+  - [x] 2.7 Write property test for block field storage
     - **Property 16: Block creation stores all fields**
     - **Validates: Requirements 5.4**
   
-  - [ ] 2.8 Create Notification model
+  - [x] 2.8 Create Notification model
     - Implement Notification model with recipient_id, type, message, timestamp, read
     - Add foreign key to Member
     - _Requirements: 8.1_
   
-  - [ ] 2.9 Create database migration scripts
+  - [x] 2.9 Create database migration scripts
     - Set up Flask-Migrate
     - Generate initial migration for all models
     - _Requirements: 12.2_
 
-- [ ] 3. Implement validation service
-  - [ ] 3.1 Create ValidationService class
+- [x] 3. Implement validation service
+  - [x] 3.1 Create ValidationService class
     - Implement validate_booking_time() to check 06:00-21:00 range
     - Implement validate_member_reservation_limit() to check 2-reservation limit
     - Implement validate_no_conflict() to check for existing reservations
@@ -65,24 +65,24 @@
     - Implement validate_all_booking_constraints() as comprehensive validator
     - _Requirements: 1.3, 11.1, 11.2, 14.1_
   
-  - [ ] 3.2 Write property test for time slot validation
+  - [x] 3.2 Write property test for time slot validation
     - **Property 32: Time slot validation**
     - **Validates: Requirements 14.1, 14.3**
   
-  - [ ] 3.3 Write property test for two-reservation limit
+  - [x] 3.3 Write property test for two-reservation limit
     - **Property 2: Two-reservation limit enforcement**
     - **Validates: Requirements 1.3, 11.3**
   
-  - [ ] 3.4 Write property test for reservation conflicts
+  - [x] 3.4 Write property test for reservation conflicts
     - **Property 27: Reservation conflicts are rejected**
     - **Validates: Requirements 11.1, 11.5**
   
-  - [ ] 3.5 Write property test for block enforcement
+  - [x] 3.5 Write property test for block enforcement
     - **Property 13: Blocks prevent new reservations**
     - **Validates: Requirements 5.1, 11.2**
 
-- [ ] 4. Implement email service
-  - [ ] 4.1 Create EmailService class with Flask-Mail integration
+- [x] 4. Implement email service
+  - [x] 4.1 Create EmailService class with Flask-Mail integration
     - Set up Flask-Mail configuration
     - Create German email templates for all notification types
     - Implement send_booking_created() method
@@ -92,19 +92,19 @@
     - Add error handling for email failures (log but don't fail operations)
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
   
-  - [ ] 4.2 Write property test for German email language
+  - [x] 4.2 Write property test for German email language
     - **Property 24: All email notifications use German language**
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.5**
   
-  - [ ] 4.3 Write property test for booking notifications
+  - [x] 4.3 Write property test for booking notifications
     - **Property 3: Booking notifications sent to both parties**
     - **Validates: Requirements 1.4**
   
-  - [ ] 4.4 Write property test for modification notifications
+  - [x] 4.4 Write property test for modification notifications
     - **Property 5: Modification notifications sent to both parties**
     - **Validates: Requirements 2.4**
   
-  - [ ] 4.5 Write property test for cancellation notifications
+  - [x] 4.5 Write property test for cancellation notifications
     - **Property 6: Cancellation notifications sent to both parties**
     - **Validates: Requirements 2.5**
 
