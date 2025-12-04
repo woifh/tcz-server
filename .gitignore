@@ -50,6 +50,7 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+.hypothesis/
 
 # Node modules (for Tailwind)
 node_modules/
