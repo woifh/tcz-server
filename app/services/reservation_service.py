@@ -56,6 +56,9 @@ class ReservationService:
             return reservation, None
         except Exception as e:
             db.session.rollback()
+            # Check if it's a duplicate booking error
+            if 'Duplicate entry' in str(e) and 'unique_booking' in str(e):
+                return None, "Dieser Platz ist bereits für diese Zeit gebucht"
             return None, f"Fehler beim Erstellen der Buchung: {str(e)}"
     
     @staticmethod
