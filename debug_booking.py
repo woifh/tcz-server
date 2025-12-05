@@ -4,10 +4,13 @@ from app import create_app, db
 from app.models import Reservation, Court
 from datetime import datetime, date, time
 import os
+from dotenv import load_dotenv
 
-# Use development config for local SQLite
-config = 'production' if os.environ.get('DATABASE_URL') else 'development'
-app = create_app(config)
+# Load environment variables from .env file
+load_dotenv()
+
+# Always use production config on PythonAnywhere
+app = create_app('production')
 
 with app.app_context():
     # Check for reservations on Court 3, December 5, 2025 at 07:00
