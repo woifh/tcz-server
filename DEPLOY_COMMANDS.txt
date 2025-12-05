@@ -1,0 +1,130 @@
+# PythonAnywhere Deployment Commands
+# Copy and paste these commands one by one into your PythonAnywhere Bash console
+
+# ============================================
+# STEP 1: Clone Repository
+# ============================================
+cd ~
+git clone https://github.com/woifh/tcz.git
+cd tcz
+
+# ============================================
+# STEP 2: Create Virtual Environment
+# ============================================
+mkvirtualenv --python=/usr/bin/python3.10 tennisclub
+pip install -r requirements.txt
+
+# ============================================
+# STEP 3: Generate SECRET_KEY
+# ============================================
+python3 -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))"
+# Copy the output and save it for the .env file
+
+# ============================================
+# STEP 4: Create .env File
+# ============================================
+nano .env
+# Paste the configuration below (replace with your values):
+
+# DATABASE_URL=mysql+pymysql://yourusername:yourpassword@yourusername.mysql.pythonanywhere-services.com/yourusername$tennisclub
+# SECRET_KEY=paste-the-generated-key-here
+# FLASK_ENV=production
+# MAIL_SERVER=smtp.gmail.com
+# MAIL_PORT=587
+# MAIL_USE_TLS=True
+# MAIL_USERNAME=your-email@gmail.com
+# MAIL_PASSWORD=your-gmail-app-password
+# MAIL_DEFAULT_SENDER=noreply@tennisclub.de
+# COURTS_COUNT=6
+# BOOKING_START_HOUR=6
+# BOOKING_END_HOUR=22
+# MAX_ACTIVE_RESERVATIONS=2
+
+# Save: Ctrl+O, Enter, Ctrl+X
+
+# ============================================
+# STEP 5: Initialize Database
+# ============================================
+export FLASK_APP=wsgi.py
+flask db upgrade
+python3 init_db.py
+
+# ============================================
+# STEP 6: Create Admin User
+# ============================================
+flask create-admin --name "Admin" --email "admin@tennisclub.de" --password "YourStrongPassword"
+
+# ============================================
+# STEP 7: Test Email (Optional)
+# ============================================
+flask test-email --to your-email@example.com
+
+# ============================================
+# STEP 8: View WSGI Configuration
+# ============================================
+# Copy this for your WSGI file (replace yourusername):
+
+cat << 'EOF'
+import sys
+import os
+
+# Add your project directory to the sys.path
+project_home = '/home/yourusername/tcz'
+if project_home not in sys.path:
+    sys.path.insert(0, project_home)
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv(os.path.join(project_home, '.env'))
+
+# Import Flask app
+from wsgi import application
+EOF
+
+# ============================================
+# UPDATING YOUR APP (After Initial Deployment)
+# ============================================
+cd ~/tcz
+git pull origin main
+workon tennisclub
+pip install -r requirements.txt
+flask db upgrade
+# Then reload web app from Web tab
+
+# ============================================
+# TROUBLESHOOTING COMMANDS
+# ============================================
+
+# View error log
+tail -f /var/log/yourusername.pythonanywhere.com.error.log
+
+# Check if virtualenv is active
+which python
+
+# List installed packages
+pip list
+
+# Test database connection
+python3 -c "from app import create_app; app = create_app('production'); print('Database connection OK')"
+
+# Check Flask app
+export FLASK_APP=wsgi.py
+flask routes
+
+# Reinstall dependencies
+workon tennisclub
+pip install --upgrade -r requirements.txt
+
+# ============================================
+# DATABASE BACKUP
+# ============================================
+mysqldump -u yourusername -h yourusername.mysql.pythonanywhere-services.com -p yourusername$tennisclub > backup_$(date +%Y%m%d).sql
+
+# ============================================
+# USEFUL PATHS
+# ============================================
+# Project: /home/yourusername/tcz
+# Virtualenv: /home/yourusername/.virtualenvs/tennisclub
+# Static files: /home/yourusername/tcz/app/static/
+# Error log: /var/log/yourusername.pythonanywhere.com.error.log
+# Server log: /var/log/yourusername.pythonanywhere.com.server.log
