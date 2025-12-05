@@ -26,22 +26,25 @@ def test_property_14_blocks_cascade_cancel_existing_reservations(app, court_num,
     those reservations should be automatically cancelled.
     """
     with app.app_context():
-        # Create test court
-        court = Court(number=court_num)
-        db.session.add(court)
-        db.session.commit()
+        # Get existing court (created by app fixture)
+
+        court = Court.query.filter_by(number=court_num).first()
+
+        assert court is not None, f"Court {court_num} should exist"
         
-        # Create test members
+        # Create test members with unique emails
+        import random
+        unique_id = random.randint(100000, 999999)
         member1 = Member(
             name="Test Member 1", 
-            email=f"test1_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
+            email=f"test1_{unique_id}_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
             role="member"
         )
         member1.set_password("password123")
         
         admin = Member(
             name="Admin", 
-            email=f"admin_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
+            email=f"admin_{unique_id}_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
             role="administrator"
         )
         admin.set_password("password123")
@@ -99,7 +102,6 @@ def test_property_14_blocks_cascade_cancel_existing_reservations(app, court_num,
         db.session.delete(block)
         db.session.delete(member1)
         db.session.delete(admin)
-        db.session.delete(court)
         db.session.commit()
 
 
@@ -115,29 +117,32 @@ def test_property_15_block_cancellations_include_reason_in_notification(app, cou
     and booked_for members should include the block reason.
     """
     with app.app_context():
-        # Create test court
-        court = Court(number=court_num)
-        db.session.add(court)
-        db.session.commit()
+        # Get existing court (created by app fixture)
+
+        court = Court.query.filter_by(number=court_num).first()
+
+        assert court is not None, f"Court {court_num} should exist"
         
-        # Create test members
+        # Create test members with unique emails
+        import random
+        unique_id = random.randint(100000, 999999)
         member1 = Member(
             name="Test Member 1", 
-            email=f"test1_notif_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
+            email=f"test1_notif_{unique_id}_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
             role="member"
         )
         member1.set_password("password123")
         
         member2 = Member(
             name="Test Member 2", 
-            email=f"test2_notif_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
+            email=f"test2_notif_{unique_id}_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
             role="member"
         )
         member2.set_password("password123")
         
         admin = Member(
             name="Admin", 
-            email=f"admin_notif_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
+            email=f"admin_notif_{unique_id}_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
             role="administrator"
         )
         admin.set_password("password123")
@@ -210,5 +215,4 @@ def test_property_15_block_cancellations_include_reason_in_notification(app, cou
         db.session.delete(member1)
         db.session.delete(member2)
         db.session.delete(admin)
-        db.session.delete(court)
         db.session.commit()

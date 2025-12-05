@@ -4,7 +4,9 @@ from hypothesis import given, strategies as st, settings, HealthCheck
 from datetime import date, time, timedelta
 from app.models import Member, Court, Reservation
 from app.services.email_service import EmailService
-from app import db, mail
+from app import db
+import random
+import time
 
 
 # German keywords that should appear in emails
@@ -18,7 +20,7 @@ booking_times = st.times(min_value=time(6, 0), max_value=time(20, 0))
 
 @given(court_num=court_numbers, booking_date=future_dates, start=booking_times)
 @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
-def test_property_24_german_email_language(app, court_num, booking_date, start):
+def test_property_24_german_email_language(app, mail, court_num, booking_date, start):
     """Feature: tennis-club-reservation, Property 24: All email notifications use German language
     Validates: Requirements 8.1, 8.2, 8.3, 8.5
     
@@ -28,12 +30,13 @@ def test_property_24_german_email_language(app, court_num, booking_date, start):
     with app.app_context():
         with mail.record_messages() as outbox:
             # Create test data
-            court = Court(number=court_num)
-            db.session.add(court)
-            
-            member1 = Member(name="Test Member 1", email=f"test1_{court_num}_{booking_date}@example.com", role="member")
+            # Get existing court (created by app fixture)
+            court = Court.query.filter_by(number=court_num).first()
+            assert court is not None, f"Court {court_num} should exist"
+            unique_id = int(time.time() * 1000000) % 1000000000
+            member1 = Member(name="Test Member 1", email=f"test1_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Test Member 2", email=f"test2_{court_num}_{booking_date}@example.com", role="member")
+            member2 = Member(name="Test Member 2", email=f"test2_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member2.set_password("password123")
             db.session.add(member1)
             db.session.add(member2)
@@ -89,14 +92,13 @@ def test_property_24_german_email_language(app, court_num, booking_date, start):
             db.session.delete(reservation)
             db.session.delete(member1)
             db.session.delete(member2)
-            db.session.delete(court)
             db.session.commit()
 
 
 
 @given(court_num=court_numbers, booking_date=future_dates, start=booking_times)
 @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
-def test_property_3_booking_notifications_both_parties(app, court_num, booking_date, start):
+def test_property_3_booking_notifications_both_parties(app, mail, court_num, booking_date, start):
     """Feature: tennis-club-reservation, Property 3: Booking notifications sent to both parties
     Validates: Requirements 1.4
     
@@ -106,12 +108,13 @@ def test_property_3_booking_notifications_both_parties(app, court_num, booking_d
     with app.app_context():
         with mail.record_messages() as outbox:
             # Create test data
-            court = Court(number=court_num)
-            db.session.add(court)
-            
-            member1 = Member(name="Member For", email=f"for_{court_num}_{booking_date}@example.com", role="member")
+            # Get existing court (created by app fixture)
+            court = Court.query.filter_by(number=court_num).first()
+            assert court is not None, f"Court {court_num} should exist"
+            unique_id = int(time.time() * 1000000) % 1000000000
+            member1 = Member(name="Member For", email=f"for_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Member By", email=f"by_{court_num}_{booking_date}@example.com", role="member")
+            member2 = Member(name="Member By", email=f"by_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member2.set_password("password123")
             db.session.add(member1)
             db.session.add(member2)
@@ -145,13 +148,12 @@ def test_property_3_booking_notifications_both_parties(app, court_num, booking_d
             db.session.delete(reservation)
             db.session.delete(member1)
             db.session.delete(member2)
-            db.session.delete(court)
             db.session.commit()
 
 
 @given(court_num=court_numbers, booking_date=future_dates, start=booking_times)
 @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
-def test_property_3_booking_notifications_same_member(app, court_num, booking_date, start):
+def test_property_3_booking_notifications_same_member(app, mail, court_num, booking_date, start):
     """Feature: tennis-club-reservation, Property 3: Booking notifications sent to both parties
     Validates: Requirements 1.4
     
@@ -160,10 +162,11 @@ def test_property_3_booking_notifications_same_member(app, court_num, booking_da
     with app.app_context():
         with mail.record_messages() as outbox:
             # Create test data
-            court = Court(number=court_num)
-            db.session.add(court)
-            
-            member = Member(name="Member", email=f"same_{court_num}_{booking_date}@example.com", role="member")
+            # Get existing court (created by app fixture)
+            court = Court.query.filter_by(number=court_num).first()
+            assert court is not None, f"Court {court_num} should exist"
+            unique_id = int(time.time() * 1000000) % 1000000000
+            member = Member(name="Member", email=f"same_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member.set_password("password123")
             db.session.add(member)
             db.session.commit()
@@ -192,5 +195,4 @@ def test_property_3_booking_notifications_same_member(app, court_num, booking_da
             # Cleanup
             db.session.delete(reservation)
             db.session.delete(member)
-            db.session.delete(court)
             db.session.commit()

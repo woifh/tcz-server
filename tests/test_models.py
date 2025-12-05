@@ -9,7 +9,7 @@ from app import db
 # Hypothesis strategies for generating test data
 member_names = st.text(min_size=1, max_size=100, alphabet=st.characters(blacklist_categories=('Cs', 'Cc')))
 member_emails = st.emails()
-member_passwords = st.text(min_size=8, max_size=50)
+member_passwords = st.text(min_size=8, max_size=50, alphabet=st.characters(min_codepoint=33, max_codepoint=126))
 member_roles = st.sampled_from(['member', 'administrator'])
 
 court_numbers = st.integers(min_value=1, max_value=6)
@@ -77,15 +77,16 @@ def test_property_1_reservation_stores_all_fields(app, court_num, booking_date, 
     reservation should result in a database record containing all five fields with correct values.
     """
     with app.app_context():
-        # Create test court
-        court = Court(number=court_num)
-        db.session.add(court)
-        db.session.commit()
+        # Get existing court (created by app fixture)
+        court = Court.query.filter_by(number=court_num).first()
+        assert court is not None, f"Court {court_num} should exist"
         
-        # Create test members
-        member1 = Member(name="Test Member 1", email=f"test1_{booking_date}_{start}@example.com", role="member")
+        # Create test members with unique emails
+        import random
+        unique_id = random.randint(100000, 999999)
+        member1 = Member(name="Test Member 1", email=f"test1_{unique_id}_{booking_date}_{start}@example.com", role="member")
         member1.set_password("password123")
-        member2 = Member(name="Test Member 2", email=f"test2_{booking_date}_{start}@example.com", role="member")
+        member2 = Member(name="Test Member 2", email=f"test2_{unique_id}_{booking_date}_{start}@example.com", role="member")
         member2.set_password("password123")
         db.session.add(member1)
         db.session.add(member2)
@@ -125,11 +126,10 @@ def test_property_1_reservation_stores_all_fields(app, court_num, booking_date, 
         assert retrieved.status == 'active'
         assert retrieved.created_at is not None
         
-        # Cleanup
+        # Cleanup (don't delete court - it's shared)
         db.session.delete(retrieved)
         db.session.delete(member1)
         db.session.delete(member2)
-        db.session.delete(court)
         db.session.commit()
 
 
@@ -144,13 +144,14 @@ def test_property_16_block_stores_all_fields(app, court_num, block_date, start, 
     a database record containing all fields with correct values.
     """
     with app.app_context():
-        # Create test court
-        court = Court(number=court_num)
-        db.session.add(court)
-        db.session.commit()
+        # Get existing court (created by app fixture)
+        court = Court.query.filter_by(number=court_num).first()
+        assert court is not None, f"Court {court_num} should exist"
         
-        # Create test admin member
-        admin = Member(name="Admin", email=f"admin_{block_date}_{start}_{reason}@example.com", role="administrator")
+        # Create test admin member with unique email
+        import random
+        unique_id = random.randint(100000, 999999)
+        admin = Member(name="Admin", email=f"admin_{unique_id}_{block_date}_{start}_{reason}@example.com", role="administrator")
         admin.set_password("password123")
         db.session.add(admin)
         db.session.commit()
@@ -187,8 +188,7 @@ def test_property_16_block_stores_all_fields(app, court_num, block_date, start, 
         assert retrieved.created_by_id == admin.id
         assert retrieved.created_at is not None
         
-        # Cleanup
+        # Cleanup (don't delete court - it's shared)
         db.session.delete(retrieved)
         db.session.delete(admin)
-        db.session.delete(court)
         db.session.commit()

@@ -2,6 +2,7 @@
 import pytest
 from app import create_app, db
 from app.models import Member, Court
+from flask_mail import Mail
 
 
 @pytest.fixture
@@ -78,3 +79,11 @@ def test_admin(app):
     # Return a fresh instance
     with app.app_context():
         return Member.query.filter_by(email=admin_email).first()
+
+
+@pytest.fixture
+def mail(app):
+    """Create mail instance for testing."""
+    from flask_mail import Mail
+    mail = Mail(app)
+    return mail
