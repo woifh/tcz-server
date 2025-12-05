@@ -22,12 +22,10 @@ def upgrade():
     MySQL doesn't support partial indexes, so we remove the constraint entirely.
     The application logic will handle preventing duplicate active reservations.
     """
-    # Drop the unique constraint
-    with op.batch_alter_table('reservation', schema=None) as batch_op:
-        batch_op.drop_constraint('unique_booking', type_='unique')
+    # Drop the unique constraint using raw SQL for MySQL compatibility
+    op.execute('ALTER TABLE reservation DROP INDEX unique_booking')
 
 
 def downgrade():
     """Restore the unique_booking constraint."""
-    with op.batch_alter_table('reservation', schema=None) as batch_op:
-        batch_op.create_unique_constraint('unique_booking', ['court_id', 'date', 'start_time'])
+    op.execute('ALTER TABLE reservation ADD CONSTRAINT unique_booking UNIQUE (court_id, date, start_time)')
