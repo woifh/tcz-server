@@ -60,3 +60,4 @@ cypress/videos/
 cypress/screenshots/
 cypress/downloads/
 node_modules/
+coverage.json
