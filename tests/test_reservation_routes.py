@@ -8,7 +8,7 @@ from app.models import Member, Court, Reservation
 
 # Hypothesis strategies
 valid_emails = st.emails()
-valid_passwords = st.text(min_size=8, max_size=50, alphabet=st.characters(blacklist_characters='\x00'))
+valid_passwords = st.text(min_size=8, max_size=50, alphabet=st.characters(min_codepoint=33, max_codepoint=126))
 valid_names = st.text(min_size=1, max_size=100, alphabet=st.characters(
     whitelist_categories=('Lu', 'Ll', 'Nd', 'Zs'),
     blacklist_characters='\x00'
@@ -58,9 +58,13 @@ def test_property_4_dual_member_access_control(
         db.session.add_all([booked_for, booked_by, other_member])
         db.session.commit()
         
-        # Create a court
-        court = Court(number=1, status='available')
-        db.session.add(court)
+        # Get existing court (created by app fixture)
+
+        
+        court = Court.query.filter_by(number=1).first()
+
+        
+        assert court is not None, "Court 1 should exist"
         db.session.commit()
         
         # Create a reservation

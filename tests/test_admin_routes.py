@@ -62,9 +62,13 @@ def test_property_21_admin_deletion_removes_reservation(
         db.session.add_all([admin, member])
         db.session.commit()
         
-        # Create a court
-        court = Court(number=1, status='available')
-        db.session.add(court)
+        # Get existing court (created by app fixture)
+
+        
+        court = Court.query.filter_by(number=1).first()
+
+        
+        assert court is not None, "Court 1 should exist"
         db.session.commit()
         
         # Create a reservation
@@ -155,9 +159,13 @@ def test_property_22_admin_deletion_sends_notifications(
         db.session.add_all([admin, member])
         db.session.commit()
         
-        # Create a court
-        court = Court(number=1, status='available')
-        db.session.add(court)
+        # Get existing court (created by app fixture)
+
+        
+        court = Court.query.filter_by(number=1).first()
+
+        
+        assert court is not None, "Court 1 should exist"
         db.session.commit()
         
         # Create a reservation
@@ -242,9 +250,13 @@ def test_property_23_admin_override_includes_reason(
         db.session.add_all([admin, member])
         db.session.commit()
         
-        # Create a court
-        court = Court(number=1, status='available')
-        db.session.add(court)
+        # Get existing court (created by app fixture)
+
+        
+        court = Court.query.filter_by(number=1).first()
+
+        
+        assert court is not None, "Court 1 should exist"
         db.session.commit()
         
         # Create a reservation

@@ -6,7 +6,7 @@ from app.models import Member, Court, Reservation
 from app.services.email_service import EmailService
 from app import db
 import random
-import time
+import time as time_module
 
 
 # German keywords that should appear in emails
@@ -33,7 +33,7 @@ def test_property_24_german_email_language(app, mail, court_num, booking_date, s
             # Get existing court (created by app fixture)
             court = Court.query.filter_by(number=court_num).first()
             assert court is not None, f"Court {court_num} should exist"
-            unique_id = int(time.time() * 1000000) % 1000000000
+            unique_id = int(time_module.time() * 1000000) % 1000000000
             member1 = Member(name="Test Member 1", email=f"test1_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member1.set_password("password123")
             member2 = Member(name="Test Member 2", email=f"test2_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
@@ -111,7 +111,7 @@ def test_property_3_booking_notifications_both_parties(app, mail, court_num, boo
             # Get existing court (created by app fixture)
             court = Court.query.filter_by(number=court_num).first()
             assert court is not None, f"Court {court_num} should exist"
-            unique_id = int(time.time() * 1000000) % 1000000000
+            unique_id = int(time_module.time() * 1000000) % 1000000000
             member1 = Member(name="Member For", email=f"for_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member1.set_password("password123")
             member2 = Member(name="Member By", email=f"by_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
@@ -165,7 +165,7 @@ def test_property_3_booking_notifications_same_member(app, mail, court_num, book
             # Get existing court (created by app fixture)
             court = Court.query.filter_by(number=court_num).first()
             assert court is not None, f"Court {court_num} should exist"
-            unique_id = int(time.time() * 1000000) % 1000000000
+            unique_id = int(time_module.time() * 1000000) % 1000000000
             member = Member(name="Member", email=f"same_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member.set_password("password123")
             db.session.add(member)

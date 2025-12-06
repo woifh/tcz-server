@@ -27,9 +27,14 @@ def test_property_26_dates_formatted_german_convention(test_date):
         # Create test data
         member = Member(name="Test User", email="test@example.com", role="member")
         member.set_password("password123")
-        court = Court(number=1, status='available')
         
-        db.session.add_all([member, court])
+        # Get existing court (created by app fixture)
+        court = Court.query.filter_by(number=1).first()
+        if not court:
+            court = Court(number=1, status='available')
+            db.session.add(court)
+        
+        db.session.add(member)
         db.session.commit()
         
         # Create a reservation with the test date
