@@ -94,21 +94,22 @@ def create_member():
     try:
         data = request.get_json() if request.is_json else request.form
         
-        name = data.get('name')
+        firstname = data.get('firstname')
+        lastname = data.get('lastname')
         email = data.get('email')
         password = data.get('password')
         role = data.get('role', 'member')
         
         # Validate required fields
-        if not name or not email or not password:
-            return jsonify({'error': 'Name, E-Mail und Passwort sind erforderlich'}), 400
+        if not firstname or not lastname or not email or not password:
+            return jsonify({'error': 'Vorname, Nachname, E-Mail und Passwort sind erforderlich'}), 400
         
         # Check if email already exists
         if Member.query.filter_by(email=email).first():
             return jsonify({'error': 'E-Mail-Adresse wird bereits verwendet'}), 400
         
         # Create new member
-        member = Member(name=name, email=email, role=role)
+        member = Member(firstname=firstname, lastname=lastname, email=email, role=role)
         member.set_password(password)
         
         db.session.add(member)
@@ -141,8 +142,10 @@ def update_member(id):
         data = request.get_json() if request.is_json else request.form
         
         # Update allowed fields
-        if 'name' in data:
-            member.name = data['name']
+        if 'firstname' in data:
+            member.firstname = data['firstname']
+        if 'lastname' in data:
+            member.lastname = data['lastname']
         if 'email' in data:
             # Check if new email is already taken by another user
             existing = Member.query.filter_by(email=data['email']).first()

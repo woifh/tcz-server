@@ -93,7 +93,7 @@ def test_property_29_invalid_login_rejected(email, password, wrong_password):
         db.create_all()
         
         # Create a member with known credentials
-        member = Member(name="Test User", email=email, role="member")
+        member = Member(firstname="Test", lastname="User", email=email, role="member")
         member.set_password(password)
         db.session.add(member)
         db.session.commit()

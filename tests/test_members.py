@@ -15,14 +15,16 @@ valid_names = st.text(min_size=1, max_size=100, alphabet=st.characters(
 
 
 @given(
-    original_name=valid_names,
+    original_firstname=valid_names,
+    original_lastname=valid_names,
     original_email=valid_emails,
-    new_name=valid_names,
+    new_firstname=valid_names,
+    new_lastname=valid_names,
     new_email=valid_emails,
     password=valid_passwords
 )
 @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
-def test_property_18_member_updates_modify_stored_data(original_name, original_email, new_name, new_email, password):
+def test_property_18_member_updates_modify_stored_data(original_firstname, original_lastname, original_email, new_firstname, new_lastname, new_email, password):
     """Feature: tennis-club-reservation, Property 18: Member updates modify stored data
     Validates: Requirements 6.2
     
@@ -35,7 +37,7 @@ def test_property_18_member_updates_modify_stored_data(original_name, original_e
         db.create_all()
         
         # Create a member with original data
-        member = Member(name=original_name, email=original_email, role="member")
+        member = Member(firstname=original_firstname, lastname=original_lastname, email=original_email, role="member")
         member.set_password(password)
         db.session.add(member)
         db.session.commit()
@@ -47,7 +49,8 @@ def test_property_18_member_updates_modify_stored_data(original_name, original_e
             member = Member.query.get(member_id)
             
             # Update the member
-            member.name = new_name
+            member.firstname = new_firstname
+            member.lastname = new_lastname
             # Only update email if it's different to avoid unique constraint issues
             if new_email != original_email:
                 member.email = new_email
@@ -56,8 +59,10 @@ def test_property_18_member_updates_modify_stored_data(original_name, original_e
             # Retrieve again to verify changes persisted
             updated_member = Member.query.get(member_id)
             
-            assert updated_member.name == new_name, \
-                f"Name should be updated to {new_name}, got {updated_member.name}"
+            assert updated_member.firstname == new_firstname, \
+                f"Firstname should be updated to {new_firstname}, got {updated_member.firstname}"
+            assert updated_member.lastname == new_lastname, \
+                f"Lastname should be updated to {new_lastname}, got {updated_member.lastname}"
             
             if new_email != original_email:
                 assert updated_member.email == new_email, \
@@ -70,12 +75,13 @@ def test_property_18_member_updates_modify_stored_data(original_name, original_e
 
 
 @given(
-    name=valid_names,
+    firstname=valid_names,
+    lastname=valid_names,
     email=valid_emails,
     password=valid_passwords
 )
 @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
-def test_property_19_member_deletion_removes_from_database(name, email, password):
+def test_property_19_member_deletion_removes_from_database(firstname, lastname, email, password):
     """Feature: tennis-club-reservation, Property 19: Member deletion removes from database
     Validates: Requirements 6.3
     
@@ -88,7 +94,7 @@ def test_property_19_member_deletion_removes_from_database(name, email, password
         db.create_all()
         
         # Create a member
-        member = Member(name=name, email=email, role="member")
+        member = Member(firstname=firstname, lastname=lastname, email=email, role="member")
         member.set_password(password)
         db.session.add(member)
         db.session.commit()
@@ -121,15 +127,17 @@ def test_property_19_member_deletion_removes_from_database(name, email, password
 
 
 @given(
-    member1_name=valid_names,
+    member1_firstname=valid_names,
+    member1_lastname=valid_names,
     member1_email=valid_emails,
-    member2_name=valid_names,
+    member2_firstname=valid_names,
+    member2_lastname=valid_names,
     member2_email=valid_emails,
     password=valid_passwords
 )
 @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_property_7_favourites_add_and_remove_operations(
-    member1_name, member1_email, member2_name, member2_email, password
+    member1_firstname, member1_lastname, member1_email, member2_firstname, member2_lastname, member2_email, password
 ):
     """Feature: tennis-club-reservation, Property 7: Favourites add and remove operations
     Validates: Requirements 3.1, 3.2
@@ -148,9 +156,9 @@ def test_property_7_favourites_add_and_remove_operations(
         db.create_all()
         
         # Create two members
-        member1 = Member(name=member1_name, email=member1_email, role="member")
+        member1 = Member(firstname=member1_firstname, lastname=member1_lastname, email=member1_email, role="member")
         member1.set_password(password)
-        member2 = Member(name=member2_name, email=member2_email, role="member")
+        member2 = Member(firstname=member2_firstname, lastname=member2_lastname, email=member2_email, role="member")
         member2.set_password(password)
         
         db.session.add(member1)

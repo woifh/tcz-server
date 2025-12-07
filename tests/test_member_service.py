@@ -29,11 +29,11 @@ class TestMemberServiceSearch:
         """Test searching members by name."""
         with app.app_context():
             # Create test members
-            member1 = Member(name="Alice Smith", email="alice@example.com", role="member")
+            member1 = Member(firstname="Alice", lastname="Smith", email="alice@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Bob Johnson", email="bob@example.com", role="member")
+            member2 = Member(firstname="Bob", lastname="Johnson", email="bob@example.com", role="member")
             member2.set_password("password123")
-            member3 = Member(name="Alice Brown", email="alice.brown@example.com", role="member")
+            member3 = Member(firstname="Alice", lastname="Brown", email="alice.brown@example.com", role="member")
             member3.set_password("password123")
             
             db.session.add_all([member1, member2, member3])
@@ -50,11 +50,11 @@ class TestMemberServiceSearch:
         """Test searching members by email."""
         with app.app_context():
             # Create test members
-            member1 = Member(name="Alice Smith", email="alice@example.com", role="member")
+            member1 = Member(firstname="Alice", lastname="Smith", email="alice@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Bob Johnson", email="bob@test.com", role="member")
+            member2 = Member(firstname="Bob", lastname="Johnson", email="bob@test.com", role="member")
             member2.set_password("password123")
-            member3 = Member(name="Charlie Davis", email="charlie@example.com", role="member")
+            member3 = Member(firstname="Charlie", lastname="Davis", email="charlie@example.com", role="member")
             member3.set_password("password123")
             
             db.session.add_all([member1, member2, member3])
@@ -71,9 +71,9 @@ class TestMemberServiceSearch:
         """Test that search excludes the current member."""
         with app.app_context():
             # Create test members
-            member1 = Member(name="Alice Smith", email="alice@example.com", role="member")
+            member1 = Member(firstname="Alice", lastname="Smith", email="alice@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Bob Johnson", email="bob@example.com", role="member")
+            member2 = Member(firstname="Bob", lastname="Johnson", email="bob@example.com", role="member")
             member2.set_password("password123")
             
             db.session.add_all([member1, member2])
@@ -89,11 +89,11 @@ class TestMemberServiceSearch:
         """Test that search excludes existing favourites."""
         with app.app_context():
             # Create test members
-            member1 = Member(name="Alice Smith", email="alice@example.com", role="member")
+            member1 = Member(firstname="Alice", lastname="Smith", email="alice@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Bob Johnson", email="bob@example.com", role="member")
+            member2 = Member(firstname="Bob", lastname="Johnson", email="bob@example.com", role="member")
             member2.set_password("password123")
-            member3 = Member(name="Charlie Davis", email="charlie@example.com", role="member")
+            member3 = Member(firstname="Charlie", lastname="Davis", email="charlie@example.com", role="member")
             member3.set_password("password123")
             
             db.session.add_all([member1, member2, member3])
@@ -114,9 +114,9 @@ class TestMemberServiceSearch:
         """Test that search is case-insensitive."""
         with app.app_context():
             # Create test members
-            member1 = Member(name="Alice Smith", email="alice@example.com", role="member")
+            member1 = Member(firstname="Alice", lastname="Smith", email="alice@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Bob Johnson", email="bob@example.com", role="member")
+            member2 = Member(firstname="Bob", lastname="Johnson", email="bob@example.com", role="member")
             member2.set_password("password123")
             
             db.session.add_all([member1, member2])
@@ -139,13 +139,13 @@ class TestMemberServiceSearch:
         """Test that results are ordered alphabetically by name."""
         with app.app_context():
             # Create test members
-            member1 = Member(name="Current User", email="current@example.com", role="member")
+            member1 = Member(firstname="Current", lastname="User", email="current@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Zoe Wilson", email="zoe@example.com", role="member")
+            member2 = Member(firstname="Zoe", lastname="Wilson", email="zoe@example.com", role="member")
             member2.set_password("password123")
-            member3 = Member(name="Alice Brown", email="alice@example.com", role="member")
+            member3 = Member(firstname="Alice", lastname="Brown", email="alice@example.com", role="member")
             member3.set_password("password123")
-            member4 = Member(name="Bob Smith", email="bob@example.com", role="member")
+            member4 = Member(firstname="Bob", lastname="Smith", email="bob@example.com", role="member")
             member4.set_password("password123")
             
             db.session.add_all([member1, member2, member3, member4])
@@ -164,7 +164,7 @@ class TestMemberServiceSearch:
         """Test that empty query returns empty results."""
         with app.app_context():
             # Create test member
-            member1 = Member(name="Alice Smith", email="alice@example.com", role="member")
+            member1 = Member(firstname="Alice", lastname="Smith", email="alice@example.com", role="member")
             member1.set_password("password123")
             
             db.session.add(member1)
@@ -180,7 +180,7 @@ class TestMemberServiceSearch:
         """Test that whitespace-only query returns empty results."""
         with app.app_context():
             # Create test member
-            member1 = Member(name="Alice Smith", email="alice@example.com", role="member")
+            member1 = Member(firstname="Alice", lastname="Smith", email="alice@example.com", role="member")
             member1.set_password("password123")
             
             db.session.add(member1)
@@ -196,7 +196,7 @@ class TestMemberServiceSearch:
         """Test that search limits results to 50 members."""
         with app.app_context():
             # Create current member
-            current = Member(name="Current User", email="current@example.com", role="member")
+            current = Member(firstname="Current", lastname="User", email="current@example.com", role="member")
             current.set_password("password123")
             db.session.add(current)
             db.session.commit()
@@ -205,7 +205,8 @@ class TestMemberServiceSearch:
             members = []
             for i in range(60):
                 member = Member(
-                    name=f"Test User {i:03d}",
+                    firstname="Test",
+                    lastname=f"User{i:03d}",
                     email=f"test{i}@example.com",
                     role="member"
                 )

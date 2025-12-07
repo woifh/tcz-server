@@ -16,18 +16,22 @@ valid_names = st.text(min_size=1, max_size=100, alphabet=st.characters(
 
 
 @given(
-    booked_for_name=valid_names,
+    booked_for_firstname=valid_names,
+    booked_for_lastname=valid_names,
     booked_for_email=valid_emails,
-    booked_by_name=valid_names,
+    booked_by_firstname=valid_names,
+    booked_by_lastname=valid_names,
     booked_by_email=valid_emails,
-    other_name=valid_names,
+    other_firstname=valid_names,
+    other_lastname=valid_names,
     other_email=valid_emails,
     password=valid_passwords
 )
 @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_property_4_dual_member_access_control(
-    booked_for_name, booked_for_email, booked_by_name, booked_by_email,
-    other_name, other_email, password
+    booked_for_firstname, booked_for_lastname, booked_for_email, 
+    booked_by_firstname, booked_by_lastname, booked_by_email,
+    other_firstname, other_lastname, other_email, password
 ):
     """Feature: tennis-club-reservation, Property 4: Dual-member access control
     Validates: Requirements 2.1, 2.2, 2.3
@@ -54,11 +58,11 @@ def test_property_4_dual_member_access_control(
         db.session.commit()
         
         # Create three members
-        booked_for = Member(name=booked_for_name, email=booked_for_email, role="member")
+        booked_for = Member(firstname=booked_for_firstname, lastname=booked_for_lastname, email=booked_for_email, role="member")
         booked_for.set_password(password)
-        booked_by = Member(name=booked_by_name, email=booked_by_email, role="member")
+        booked_by = Member(firstname=booked_by_firstname, lastname=booked_by_lastname, email=booked_by_email, role="member")
         booked_by.set_password(password)
-        other_member = Member(name=other_name, email=other_email, role="member")
+        other_member = Member(firstname=other_firstname, lastname=other_lastname, email=other_email, role="member")
         other_member.set_password(password)
         
         db.session.add_all([booked_for, booked_by, other_member])

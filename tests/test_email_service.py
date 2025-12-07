@@ -34,9 +34,9 @@ def test_property_24_german_email_language(app, mail, court_num, booking_date, s
             court = Court.query.filter_by(number=court_num).first()
             assert court is not None, f"Court {court_num} should exist"
             unique_id = int(time_module.time() * 1000000) % 1000000000
-            member1 = Member(name="Test Member 1", email=f"test1_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
+            member1 = Member(firstname="Test", lastname="Member 1", email=f"test1_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Test Member 2", email=f"test2_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
+            member2 = Member(firstname="Test", lastname="Member 2", email=f"test2_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member2.set_password("password123")
             db.session.add(member1)
             db.session.add(member2)
@@ -112,9 +112,9 @@ def test_property_3_booking_notifications_both_parties(app, mail, court_num, boo
             court = Court.query.filter_by(number=court_num).first()
             assert court is not None, f"Court {court_num} should exist"
             unique_id = int(time_module.time() * 1000000) % 1000000000
-            member1 = Member(name="Member For", email=f"for_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
+            member1 = Member(firstname="Member", lastname="For", email=f"for_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member1.set_password("password123")
-            member2 = Member(name="Member By", email=f"by_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
+            member2 = Member(firstname="Member", lastname="By", email=f"by_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member2.set_password("password123")
             db.session.add(member1)
             db.session.add(member2)
@@ -166,7 +166,7 @@ def test_property_3_booking_notifications_same_member(app, mail, court_num, book
             court = Court.query.filter_by(number=court_num).first()
             assert court is not None, f"Court {court_num} should exist"
             unique_id = int(time_module.time() * 1000000) % 1000000000
-            member = Member(name="Member", email=f"same_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
+            member = Member(firstname="Member", lastname="Member", email=f"same_{unique_id}_{court_num}_{booking_date}@example.com", role="member")
             member.set_password("password123")
             db.session.add(member)
             db.session.commit()

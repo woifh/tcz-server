@@ -64,7 +64,8 @@ def init_database():
             
             # Get admin details
             print("\n   Enter admin user details:")
-            name = input("   Name: ").strip()
+            firstname = input("   First name: ").strip()
+            lastname = input("   Last name: ").strip()
             email = input("   Email: ").strip()
             
             # Check if email already exists
@@ -84,12 +85,12 @@ def init_database():
                 return False
             
             # Create admin user
-            admin = Member(name=name, email=email, role='administrator')
+            admin = Member(firstname=firstname, lastname=lastname, email=email, role='administrator')
             admin.set_password(password)
             db.session.add(admin)
             db.session.commit()
             
-            print(f"   ✓ Admin user created: {name} ({email})")
+            print(f"   ✓ Admin user created: {firstname} {lastname} ({email})")
             
         except Exception as e:
             print(f"   ✗ Error creating admin user: {e}")

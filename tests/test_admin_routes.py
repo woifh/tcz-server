@@ -28,15 +28,17 @@ valid_reasons = st.text(min_size=1, max_size=255, alphabet=st.characters(
 
 
 @given(
-    admin_name=valid_names,
+    admin_firstname=valid_names,
+    admin_lastname=valid_names,
     admin_email=valid_emails,
-    member_name=valid_names,
+    member_firstname=valid_names,
+    member_lastname=valid_names,
     member_email=valid_emails,
     password=valid_passwords
 )
 @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_property_21_admin_deletion_removes_reservation(
-    admin_name, admin_email, member_name, member_email, password
+    admin_firstname, admin_lastname, admin_email, member_firstname, member_lastname, member_email, password
 ):
     """Feature: tennis-club-reservation, Property 21: Admin deletion removes reservation
     Validates: Requirements 7.1
@@ -60,9 +62,9 @@ def test_property_21_admin_deletion_removes_reservation(
         db.session.commit()
         
         # Create admin and member
-        admin = Member(name=admin_name, email=admin_email, role="administrator")
+        admin = Member(firstname=admin_firstname, lastname=admin_lastname, email=admin_email, role="administrator")
         admin.set_password(password)
-        member = Member(name=member_name, email=member_email, role="member")
+        member = Member(firstname=member_firstname, lastname=member_lastname, email=member_email, role="member")
         member.set_password(password)
         
         db.session.add_all([admin, member])
@@ -126,15 +128,17 @@ def test_property_21_admin_deletion_removes_reservation(
 
 
 @given(
-    admin_name=valid_names,
+    admin_firstname=valid_names,
+    admin_lastname=valid_names,
     admin_email=valid_emails,
-    member_name=valid_names,
+    member_firstname=valid_names,
+    member_lastname=valid_names,
     member_email=valid_emails,
     password=valid_passwords
 )
 @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_property_22_admin_deletion_sends_notifications(
-    admin_name, admin_email, member_name, member_email, password
+    admin_firstname, admin_lastname, admin_email, member_firstname, member_lastname, member_email, password
 ):
     """Feature: tennis-club-reservation, Property 22: Admin deletion sends notifications
     Validates: Requirements 7.2
@@ -158,9 +162,9 @@ def test_property_22_admin_deletion_sends_notifications(
         db.session.commit()
         
         # Create admin and member
-        admin = Member(name=admin_name, email=admin_email, role="administrator")
+        admin = Member(firstname=admin_firstname, lastname=admin_lastname, email=admin_email, role="administrator")
         admin.set_password(password)
-        member = Member(name=member_name, email=member_email, role="member")
+        member = Member(firstname=member_firstname, lastname=member_lastname, email=member_email, role="member")
         member.set_password(password)
         
         db.session.add_all([admin, member])
@@ -217,16 +221,18 @@ def test_property_22_admin_deletion_sends_notifications(
 
 
 @given(
-    admin_name=valid_names,
+    admin_firstname=valid_names,
+    admin_lastname=valid_names,
     admin_email=valid_emails,
-    member_name=valid_names,
+    member_firstname=valid_names,
+    member_lastname=valid_names,
     member_email=valid_emails,
     password=valid_passwords,
     reason=valid_reasons
 )
 @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_property_23_admin_override_includes_reason(
-    admin_name, admin_email, member_name, member_email, password, reason
+    admin_firstname, admin_lastname, admin_email, member_firstname, member_lastname, member_email, password, reason
 ):
     """Feature: tennis-club-reservation, Property 23: Admin override includes reason in notification
     Validates: Requirements 7.3, 8.4
@@ -250,9 +256,9 @@ def test_property_23_admin_override_includes_reason(
         db.session.commit()
         
         # Create admin and member
-        admin = Member(name=admin_name, email=admin_email, role="administrator")
+        admin = Member(firstname=admin_firstname, lastname=admin_lastname, email=admin_email, role="administrator")
         admin.set_password(password)
-        member = Member(name=member_name, email=member_email, role="member")
+        member = Member(firstname=member_firstname, lastname=member_lastname, email=member_email, role="member")
         member.set_password(password)
         
         db.session.add_all([admin, member])

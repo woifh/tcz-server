@@ -6,12 +6,13 @@ from app.models import Member, Court, Reservation
 
 
 @click.command('create-admin')
-@click.option('--name', prompt='Admin name', help='Administrator name')
+@click.option('--firstname', prompt='Admin first name', help='Administrator first name')
+@click.option('--lastname', prompt='Admin last name', help='Administrator last name')
 @click.option('--email', prompt='Admin email', help='Administrator email')
 @click.option('--password', prompt=True, hide_input=True, 
               confirmation_prompt=True, help='Administrator password')
 @with_appcontext
-def create_admin_command(name, email, password):
+def create_admin_command(firstname, lastname, email, password):
     """Create an administrator account."""
     # Check if admin already exists
     existing = Member.query.filter_by(email=email).first()
@@ -20,13 +21,13 @@ def create_admin_command(name, email, password):
         return
     
     # Create admin user
-    admin = Member(name=name, email=email, role='administrator')
+    admin = Member(firstname=firstname, lastname=lastname, email=email, role='administrator')
     admin.set_password(password)
     
     db.session.add(admin)
     db.session.commit()
     
-    click.echo(f'✓ Admin user created: {name} ({email})')
+    click.echo(f'✓ Admin user created: {firstname} {lastname} ({email})')
 
 
 @click.command('init-courts')

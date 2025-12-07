@@ -41,7 +41,8 @@ def test_member(app):
     """Create a test member."""
     with app.app_context():
         member = Member(
-            name='Test Member',
+            firstname='Test',
+            lastname='Member',
             email='test@example.com',
             role='member'
         )
@@ -64,7 +65,8 @@ def test_admin(app):
     """Create a test admin."""
     with app.app_context():
         admin = Member(
-            name='Test Admin',
+            firstname='Test',
+            lastname='Admin',
             email='admin@example.com',
             role='administrator'
         )

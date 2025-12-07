@@ -73,7 +73,7 @@ def test_property_2_two_reservation_limit_allows_under_limit(app, existing_reser
         
         # Create test member with unique email
         unique_id = random.randint(100000, 999999)
-        member = Member(name="Test Member", email=f"test_{unique_id}_{existing_reservations}@example.com", role="member")
+        member = Member(firstname="Test", lastname="Member", email=f"test_{unique_id}_{existing_reservations}@example.com", role="member")
         member.set_password("password123")
         db.session.add(member)
         db.session.commit()
@@ -117,7 +117,7 @@ def test_property_2_two_reservation_limit_blocks_at_limit(app, _):
         
         # Create test member with unique email
         unique_id = random.randint(100000, 999999)
-        member = Member(name="Test Member", email=f"test_limit_{unique_id}@example.com", role="member")
+        member = Member(firstname="Test", lastname="Member", email=f"test_limit_{unique_id}@example.com", role="member")
         member.set_password("password123")
         db.session.add(member)
         db.session.commit()
@@ -168,7 +168,7 @@ def test_property_27_reservation_conflicts_rejected(app, court_num, booking_date
         
         # Create test member with unique email
         unique_id = random.randint(100000, 999999)
-        member = Member(name="Test Member", email=f"test_{unique_id}_{court_num}_{booking_date}_{start}@example.com", role="member")
+        member = Member(firstname="Test", lastname="Member", email=f"test_{unique_id}_{court_num}_{booking_date}_{start}@example.com", role="member")
         member.set_password("password123")
         db.session.add(member)
         db.session.commit()
@@ -240,7 +240,7 @@ def test_property_13_blocks_prevent_reservations(app, court_num, block_date, sta
         
         # Create test admin with unique email
         unique_id = random.randint(100000, 999999)
-        admin = Member(name="Admin", email=f"admin_{unique_id}_{court_num}_{block_date}_{start}@example.com", role="administrator")
+        admin = Member(firstname="Admin", lastname="Admin", email=f"admin_{unique_id}_{court_num}_{block_date}_{start}@example.com", role="administrator")
         admin.set_password("password123")
         db.session.add(admin)
         db.session.commit()

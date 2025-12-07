@@ -84,9 +84,9 @@ def test_property_1_reservation_stores_all_fields(app, court_num, booking_date, 
         # Create test members with unique emails
         import random
         unique_id = random.randint(100000, 999999)
-        member1 = Member(name="Test Member 1", email=f"test1_{unique_id}_{booking_date}_{start}@example.com", role="member")
+        member1 = Member(firstname="Test", lastname="Member 1", email=f"test1_{unique_id}_{booking_date}_{start}@example.com", role="member")
         member1.set_password("password123")
-        member2 = Member(name="Test Member 2", email=f"test2_{unique_id}_{booking_date}_{start}@example.com", role="member")
+        member2 = Member(firstname="Test", lastname="Member 2", email=f"test2_{unique_id}_{booking_date}_{start}@example.com", role="member")
         member2.set_password("password123")
         db.session.add(member1)
         db.session.add(member2)
@@ -151,7 +151,7 @@ def test_property_16_block_stores_all_fields(app, court_num, block_date, start, 
         # Create test admin member with unique email
         import random
         unique_id = random.randint(100000, 999999)
-        admin = Member(name="Admin", email=f"admin_{unique_id}_{block_date}_{start}_{reason}@example.com", role="administrator")
+        admin = Member(firstname="Admin", lastname="Admin", email=f"admin_{unique_id}_{block_date}_{start}_{reason}@example.com", role="administrator")
         admin.set_password("password123")
         db.session.add(admin)
         db.session.commit()

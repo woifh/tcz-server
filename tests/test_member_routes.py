@@ -223,9 +223,9 @@ class TestSearchMembers:
         # Create test members
         with app.app_context():
             from app import db
-            member1 = Member(name='Alice Smith', email='alice@example.com', role='member')
+            member1 = Member(firstname="Alice", lastname="Smith", email='alice@example.com', role='member')
             member1.set_password('password123')
-            member2 = Member(name='Bob Johnson', email='bob@example.com', role='member')
+            member2 = Member(firstname="Bob", lastname="Johnson", email='bob@example.com', role='member')
             member2.set_password('password123')
             db.session.add_all([member1, member2])
             db.session.commit()
@@ -257,7 +257,7 @@ class TestSearchMembers:
         # Create member and add as favourite
         with app.app_context():
             from app import db
-            other_member = Member(name='Favourite Test', email='favtest@example.com', role='member')
+            other_member = Member(firstname="Favourite", lastname="Test", email='favtest@example.com', role='member')
             other_member.set_password('password123')
             db.session.add(other_member)
             db.session.commit()
@@ -281,7 +281,7 @@ class TestSearchMembers:
         """Test search is case-insensitive."""
         with app.app_context():
             from app import db
-            member = Member(name='TestCase Member', email='testcase@example.com', role='member')
+            member = Member(firstname="TestCase", lastname="Member", email='testcase@example.com', role='member')
             member.set_password('password123')
             db.session.add(member)
             db.session.commit()

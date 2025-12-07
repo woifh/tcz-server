@@ -25,7 +25,7 @@ def test_property_26_dates_formatted_german_convention(test_date):
         db.create_all()
         
         # Create test data
-        member = Member(name="Test User", email="test@example.com", role="member")
+        member = Member(firstname="Test", lastname="User", email="test@example.com", role="member")
         member.set_password("password123")
         
         # Get existing court (created by app fixture)

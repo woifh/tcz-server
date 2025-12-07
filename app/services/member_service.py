@@ -10,7 +10,7 @@ class MemberService:
     @staticmethod
     def search_members(query, current_member_id):
         """
-        Search for members by name or email, excluding current member and existing favourites.
+        Search for members by firstname, lastname, or email, excluding current member and existing favourites.
         
         Args:
             query: Search string (case-insensitive)
@@ -31,9 +31,10 @@ class MemberService:
         search_pattern = f"%{query.strip()}%"
         
         results = db.session.query(Member).filter(
-            # Search in name or email (case-insensitive)
+            # Search in firstname, lastname, or email (case-insensitive)
             or_(
-                func.lower(Member.name).like(func.lower(search_pattern)),
+                func.lower(Member.firstname).like(func.lower(search_pattern)),
+                func.lower(Member.lastname).like(func.lower(search_pattern)),
                 func.lower(Member.email).like(func.lower(search_pattern))
             ),
             # Exclude current member
@@ -41,8 +42,9 @@ class MemberService:
             # Exclude existing favourites
             ~Member.id.in_(favourite_ids_subquery)
         ).order_by(
-            # Order alphabetically by name
-            Member.name
+            # Order alphabetically by lastname, then firstname
+            Member.lastname,
+            Member.firstname
         ).limit(50).all()  # Limit to 50 members
         
         return results
