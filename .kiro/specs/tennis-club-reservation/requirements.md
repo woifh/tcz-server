@@ -183,3 +183,15 @@ This document specifies the requirements for a responsive web application that e
 2. THE System SHALL enforce one-hour duration for all reservations
 3. WHEN a member attempts to book outside operating hours, THE System SHALL reject the booking
 4. THE System SHALL define booking slots at hourly intervals: 06:00-07:00, 07:00-08:00, through 21:00-22:00
+
+### Requirement 15
+
+**User Story:** As a user, I want clear feedback on my actions without unnecessary interruptions, so that I can work efficiently while staying informed.
+
+#### Acceptance Criteria
+
+1. WHEN a user successfully completes a create action, THE System SHALL display a non-blocking success message that auto-dismisses after 3 seconds
+2. WHEN a user successfully completes an update action, THE System SHALL display a non-blocking success message that auto-dismisses after 3 seconds
+3. WHEN a user initiates a delete action, THE System SHALL display a confirmation dialog requiring explicit user approval before proceeding
+4. WHEN a user successfully completes a delete action after confirmation, THE System SHALL display a non-blocking success message that auto-dismisses after 3 seconds
+5. THE System SHALL use toast notifications for all non-blocking success messages

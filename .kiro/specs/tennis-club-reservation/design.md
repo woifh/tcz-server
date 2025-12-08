@@ -491,6 +491,71 @@ CREATE TABLE notification (
 *For any* reservation created, the duration (end_time - start_time) should equal exactly one hour.
 **Validates: Requirements 14.2**
 
+### Property 34: Delete actions require confirmation
+*For any* delete operation in the UI, the system should display a confirmation dialog and only proceed if the user explicitly confirms.
+**Validates: Requirements 15.3**
+
+### Property 35: Success messages auto-dismiss
+*For any* successful create or update operation, the system should display a toast notification that automatically disappears after 3 seconds without requiring user interaction.
+**Validates: Requirements 15.1, 15.2, 15.5**
+
+## User Feedback and Notifications
+
+### Success Messages
+
+All successful operations (create, update, delete) display non-blocking toast notifications that:
+- Appear in the top-right corner of the screen
+- Auto-dismiss after 3 seconds
+- Use green background for success
+- Display German text
+- Do not require user interaction to dismiss
+
+**Implementation:**
+```javascript
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg ${
+        type === 'success' ? 'bg-green-600' : 'bg-red-600'
+    } text-white z-50`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+```
+
+### Confirmation Dialogs
+
+Delete operations require explicit confirmation before proceeding:
+- Display a modal dialog with clear warning
+- Require user to click "Bestätigen" (Confirm) or "Abbrechen" (Cancel)
+- Only proceed with deletion after confirmation
+- Show success toast after successful deletion
+
+**Example:**
+```javascript
+if (confirm('Möchten Sie diese Buchung wirklich löschen?')) {
+    // Proceed with deletion
+    deleteReservation(id);
+}
+```
+
+### Success Message Examples
+
+| Action | German Message |
+|--------|----------------|
+| Reservation Created | Buchung erfolgreich erstellt |
+| Reservation Updated | Buchung erfolgreich aktualisiert |
+| Reservation Deleted | Buchung erfolgreich gelöscht |
+| Member Created | Mitglied erfolgreich erstellt |
+| Member Updated | Mitglied erfolgreich aktualisiert |
+| Member Deleted | Mitglied erfolgreich gelöscht |
+| Favourite Added | Favorit erfolgreich hinzugefügt |
+| Favourite Removed | Favorit erfolgreich entfernt |
+| Block Created | Sperrung erfolgreich erstellt |
+
 ## Error Handling
 
 ### Error Categories
