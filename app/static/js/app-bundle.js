@@ -195,18 +195,36 @@ function openBookingModal(courtNumber, time) {
     const currentDate = dateSelector ? dateSelector.value : new Date().toISOString().split('T')[0];
     
     selectedSlot = { courtNumber, time };
-    document.getElementById('booking-date').value = currentDate;
-    document.getElementById('booking-court').value = `Platz ${courtNumber}`;
-    document.getElementById('booking-time').value = `${time} - ${getEndTime(time)}`;
-    document.getElementById('booking-error').classList.add('hidden');
-    document.getElementById('booking-modal').classList.remove('hidden');
+    
+    // Get modal elements with null checks
+    const bookingDate = document.getElementById('booking-date');
+    const bookingCourt = document.getElementById('booking-court');
+    const bookingTime = document.getElementById('booking-time');
+    const bookingError = document.getElementById('booking-error');
+    const bookingModal = document.getElementById('booking-modal');
+    
+    // Check if all elements exist
+    if (!bookingDate || !bookingCourt || !bookingTime || !bookingError || !bookingModal) {
+        console.error('Booking modal elements not found');
+        return;
+    }
+    
+    // Set values
+    bookingDate.value = currentDate;
+    bookingCourt.value = `Platz ${courtNumber}`;
+    bookingTime.value = `${time} - ${getEndTime(time)}`;
+    bookingError.classList.add('hidden');
+    bookingModal.classList.remove('hidden');
 }
 
 /**
  * Close booking modal
  */
 function closeBookingModal() {
-    document.getElementById('booking-modal').classList.add('hidden');
+    const bookingModal = document.getElementById('booking-modal');
+    if (bookingModal) {
+        bookingModal.classList.add('hidden');
+    }
     selectedSlot = null;
 }
 
