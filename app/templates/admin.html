@@ -152,13 +152,13 @@ document.getElementById('block-form')?.addEventListener('submit', async function
         const data = await response.json();
         
         if (response.ok) {
-            alert('Sperrung erfolgreich erstellt!');
+            showToast('Sperrung erfolgreich erstellt!');
             this.reset();
         } else {
-            alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+            showToast(data.error || 'Unbekannter Fehler', 'error');
         }
     } catch (error) {
-        alert('Fehler beim Erstellen der Sperrung');
+        showToast('Fehler beim Erstellen der Sperrung', 'error');
     }
 });
 </script>

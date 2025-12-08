@@ -62,6 +62,33 @@
         {% block content %}{% endblock %}
     </div>
     
+    <script>
+    // Global toast notification function
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        } text-white z-50 flex items-center gap-2`;
+        
+        const icon = document.createElement('span');
+        icon.className = 'material-icons text-sm';
+        icon.textContent = type === 'success' ? 'check_circle' : 'error';
+        
+        const text = document.createElement('span');
+        text.textContent = message;
+        
+        toast.appendChild(icon);
+        toast.appendChild(text);
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -129,13 +129,13 @@ document.getElementById('create-member-form')?.addEventListener('submit', async 
         const data = await response.json();
         
         if (response.ok) {
-            alert('Mitglied erfolgreich erstellt!');
-            window.location.reload();
+            showToast('Mitglied erfolgreich erstellt!');
+            setTimeout(() => window.location.reload(), 500);
         } else {
-            alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+            showToast(data.error || 'Unbekannter Fehler', 'error');
         }
     } catch (error) {
-        alert('Fehler beim Erstellen des Mitglieds');
+        showToast('Fehler beim Erstellen des Mitglieds', 'error');
     }
 });
 
@@ -152,19 +152,19 @@ async function deleteMember(memberId) {
         const data = await response.json();
         
         if (response.ok) {
-            alert('Mitglied erfolgreich gelöscht');
-            window.location.reload();
+            showToast('Mitglied erfolgreich gelöscht!');
+            setTimeout(() => window.location.reload(), 500);
         } else {
-            alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+            showToast(data.error || 'Unbekannter Fehler', 'error');
         }
     } catch (error) {
-        alert('Fehler beim Löschen des Mitglieds');
+        showToast('Fehler beim Löschen des Mitglieds', 'error');
     }
 }
 
 function editMember(memberId) {
     // In a full implementation, this would open an edit form
-    alert('Bearbeitungsfunktion wird in Kürze verfügbar sein');
+    showToast('Bearbeitungsfunktion wird in Kürze verfügbar sein', 'error');
 }
 </script>
 {% endblock %}
