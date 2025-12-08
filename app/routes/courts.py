@@ -2,6 +2,7 @@
 from flask import Blueprint, render_template, jsonify, request
 from flask_login import login_required
 from datetime import date, time
+from app import limiter
 from app.models import Court, Block
 from app.services.reservation_service import ReservationService
 from app.services.block_service import BlockService
@@ -28,6 +29,7 @@ def list_courts():
 
 @bp.route('/availability', methods=['GET'])
 @login_required
+@limiter.limit("500 per hour")  # Higher limit for frequently accessed availability data
 def get_availability():
     """Get court availability grid for a specific date.
     
