@@ -3,47 +3,151 @@
 {% block title %}Meine Buchungen - Tennisclub{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-lg shadow-md p-6">
+<div class="bg-white rounded-lg shadow-md p-6" x-data="reservationsList()">
     <h2 class="text-2xl font-bold mb-6">Meine Buchungen</h2>
     
-    {% if reservations %}
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platz</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uhrzeit</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gebucht für</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gebucht von</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktionen</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {% for reservation in reservations %}
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap">Platz {{ reservation.court.number }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">{{ reservation.date.strftime('%d.%m.%Y') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">{{ reservation.start_time.strftime('%H:%M') }} - {{ reservation.end_time.strftime('%H:%M') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">{{ reservation.booked_for.name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">{{ reservation.booked_by.name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <form method="POST" action="{{ url_for('reservations.cancel_reservation_form', id=reservation.id) }}" class="inline">
-                            <button type="submit" onclick="return confirm('Buchung wirklich stornieren?')" 
-                                    class="text-red-600 hover:text-red-900">Stornieren</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <p class="text-gray-600">Sie haben derzeit keine aktiven Buchungen.</p>
-    {% endif %}
+    <!-- Loading State -->
+    <template x-if="loading">
+        <div class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            <p class="text-gray-600 mt-2">Lade Buchungen...</p>
+        </div>
+    </template>
+    
+    <!-- Error State -->
+    <template x-if="!loading && error">
+        <div class="bg-red-100 text-red-800 p-4 rounded mb-4" x-text="error"></div>
+    </template>
+    
+    <!-- Reservations Table -->
+    <template x-if="!loading && !error && reservations.length > 0">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platz</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uhrzeit</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gebucht für</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gebucht von</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="reservation in reservations" :key="reservation.id">
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="`Platz ${reservation.court_number}`"></td>
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="formatDate(reservation.date)"></td>
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="`${reservation.start_time} - ${reservation.end_time}`"></td>
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="reservation.booked_for"></td>
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="reservation.booked_by"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button 
+                                    @click="cancelReservation(reservation.id)"
+                                    :disabled="cancelling === reservation.id"
+                                    class="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    x-text="cancelling === reservation.id ? 'Storniere...' : 'Stornieren'"
+                                ></button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </template>
+    
+    <!-- Empty State -->
+    <template x-if="!loading && !error && reservations.length === 0">
+        <p class="text-gray-600">Sie haben derzeit keine aktiven Buchungen.</p>
+    </template>
     
     <div class="mt-8">
         <a href="{{ url_for('dashboard.index') }}" class="text-green-600 hover:underline">← Zurück zur Übersicht</a>
     </div>
 </div>
+
+<script>
+// Alpine.js Reservations List Component
+function reservationsList() {
+    return {
+        reservations: [],
+        loading: true,
+        error: '',
+        cancelling: null,
+        
+        init() {
+            this.loadReservations();
+        },
+        
+        async loadReservations() {
+            this.loading = true;
+            this.error = '';
+            
+            try {
+                const response = await fetch('/reservations/?format=json');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.reservations = data.reservations || [];
+                } else {
+                    this.error = 'Fehler beim Laden der Buchungen';
+                }
+            } catch (error) {
+                console.error('Error loading reservations:', error);
+                this.error = 'Fehler beim Laden der Buchungen';
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        async cancelReservation(reservationId) {
+            this.cancelling = reservationId;
+            
+            try {
+                const response = await fetch(`/reservations/${reservationId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('Buchung erfolgreich storniert', 'success');
+                    // Remove from list
+                    this.reservations = this.reservations.filter(r => r.id !== reservationId);
+                } else {
+                    showToast(data.error || 'Fehler beim Stornieren der Buchung', 'error');
+                }
+            } catch (error) {
+                console.error('Error cancelling reservation:', error);
+                showToast('Fehler beim Stornieren der Buchung', 'error');
+            } finally {
+                this.cancelling = null;
+            }
+        },
+        
+        formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}.${month}.${year}`;
+        }
+    };
+}
+
+// Toast notification helper
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+    }`;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
 {% endblock %}

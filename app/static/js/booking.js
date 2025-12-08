@@ -33,23 +33,69 @@ export function setCurrentDate(date) {
 
 /**
  * Open booking modal with pre-filled data
+ * Bridge function to Alpine.js component
  */
 export function openBookingModal(courtNumber, time) {
-    selectedSlot = { courtNumber, time };
+    const dateSelector = document.getElementById('date-selector');
+    const currentDate = dateSelector ? dateSelector.value : new Date().toISOString().split('T')[0];
     
-    document.getElementById('booking-date').value = currentDate;
-    document.getElementById('booking-court').value = `Platz ${courtNumber}`;
-    document.getElementById('booking-time').value = `${time} - ${getEndTime(time)}`;
+    // Try Alpine store first
+    if (window.Alpine && window.Alpine.store) {
+        const bookingStore = window.Alpine.store('booking');
+        if (bookingStore && bookingStore.modalComponent && typeof bookingStore.modalComponent.open === 'function') {
+            bookingStore.modalComponent.open(courtNumber, time, currentDate);
+            return;
+        }
+    }
     
-    document.getElementById('booking-modal').classList.remove('hidden');
+    // Fallback: try to find Alpine component directly
+    if (window.Alpine) {
+        const modalEl = document.querySelector('[x-data*="bookingModal"]');
+        if (modalEl) {
+            try {
+                const component = window.Alpine.$data(modalEl);
+                if (component && typeof component.open === 'function') {
+                    component.open(courtNumber, time, currentDate);
+                    return;
+                }
+            } catch (e) {
+                console.error('Error accessing Alpine component:', e);
+            }
+        }
+    }
+    
+    console.error('Booking modal component not available. Alpine may not be initialized yet.');
 }
 
 /**
  * Close booking modal
+ * Bridge function to Alpine.js component
  */
 export function closeBookingModal() {
-    document.getElementById('booking-modal').classList.add('hidden');
-    selectedSlot = null;
+    // Try Alpine store first
+    if (window.Alpine && window.Alpine.store) {
+        const bookingStore = window.Alpine.store('booking');
+        if (bookingStore && bookingStore.modalComponent && typeof bookingStore.modalComponent.close === 'function') {
+            bookingStore.modalComponent.close();
+            return;
+        }
+    }
+    
+    // Fallback: try to find Alpine component directly
+    if (window.Alpine) {
+        const modalEl = document.querySelector('[x-data*="bookingModal"]');
+        if (modalEl) {
+            try {
+                const component = window.Alpine.$data(modalEl);
+                if (component && typeof component.close === 'function') {
+                    component.close();
+                    return;
+                }
+            } catch (e) {
+                console.error('Error accessing Alpine component:', e);
+            }
+        }
+    }
 }
 
 /**
@@ -137,12 +183,6 @@ async function loadFavourites() {
  * Handle click on a reserved slot
  */
 export async function handleReservationClick(reservationId, bookedFor, time) {
-    const confirmed = confirm(`Möchten Sie die Buchung für ${bookedFor} um ${time} Uhr stornieren?`);
-    
-    if (!confirmed) {
-        return;
-    }
-    
     try {
         const response = await fetch(`/reservations/${reservationId}`, {
             method: 'DELETE'

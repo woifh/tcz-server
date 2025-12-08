@@ -102,10 +102,10 @@ The search functionality will be implemented using:
 **Returns**: List of Member objects matching the search criteria
 
 **Logic**:
-1. Query members where name OR email contains the search query (case-insensitive)
+1. Query members where firstname OR lastname OR email contains the search query (case-insensitive)
 2. Exclude the current member
 3. Exclude members already in current member's favourites
-4. Order results alphabetically by name
+4. Order results alphabetically by lastname, then firstname
 5. Limit results to 50 members to prevent performance issues
 
 ### 3. Frontend JavaScript Component
@@ -164,7 +164,8 @@ function clearSearchResults()
 
 **Recommended Indexes** (for performance):
 ```sql
-CREATE INDEX idx_member_name ON member(name);
+CREATE INDEX idx_member_firstname ON member(firstname);
+CREATE INDEX idx_member_lastname ON member(lastname);
 CREATE INDEX idx_member_email ON member(email);
 ```
 
@@ -177,7 +178,7 @@ These indexes will significantly improve search query performance, especially as
 ### Acceptence Criteria Testing Prework:
 
 1.1 WHEN a member enters a search query containing at least one character, THE System SHALL return all members whose names contain the query text (case-insensitive)
-Thoughts: This is a rule that should apply to all search queries. We can generate random member names and search queries, perform the search, and verify that all returned results contain the query text in their name (case-insensitive). This is testable across many inputs.
+Thoughts: This is a rule that should apply to all search queries. We can generate random member names (firstname/lastname) and search queries, perform the search, and verify that all returned results contain the query text in either their firstname or lastname (case-insensitive). This is testable across many inputs.
 Testable: yes - property
 
 1.2 WHEN a member submits an empty search query, THE System SHALL return an empty result set
@@ -185,7 +186,7 @@ Thoughts: This is testing a specific edge case - what happens with empty input. 
 Testable: yes - edge case
 
 1.3 WHEN a search query matches multiple members, THE System SHALL return all matching members ordered alphabetically by name
-Thoughts: This is about the ordering of results. We can generate random members, search for a query that matches multiple, and verify the results are sorted alphabetically. This should hold for all searches.
+Thoughts: This is about the ordering of results. We can generate random members, search for a query that matches multiple, and verify the results are sorted alphabetically by lastname then firstname. This should hold for all searches.
 Testable: yes - property
 
 1.4 WHEN a search query matches no members, THE System SHALL return an empty result set with a message indicating no results found
@@ -193,7 +194,7 @@ Thoughts: This is testing what happens when there are no matches. We can generat
 Testable: yes - edge case
 
 1.5 WHEN displaying search results, THE System SHALL show each member's name and email address
-Thoughts: This is about what information is included in results. For any search result, we can verify it contains both name and email fields.
+Thoughts: This is about what information is included in results. For any search result, we can verify it contains firstname, lastname, and email fields (name is displayed as "firstname lastname").
 Testable: yes - property
 
 2.1 WHEN a member enters a search query containing an email pattern, THE System SHALL return all members whose email addresses contain the query text (case-insensitive)
@@ -201,12 +202,12 @@ Thoughts: Similar to 1.1 but for email. We can generate random emails and querie
 Testable: yes - property
 
 2.2 WHEN a search query matches both names and email addresses, THE System SHALL return all matching members without duplicates
-Thoughts: This is testing that when a query matches both name and email of the same member, that member appears only once. We can create members where name and email both match a query and verify no duplicates.
+Thoughts: This is testing that when a query matches both name (firstname or lastname) and email of the same member, that member appears only once. We can create members where firstname/lastname and email both match a query and verify no duplicates.
 Testable: yes - property
 
 2.3 WHEN a member searches using a partial email address, THE System SHALL return members whose email contains that partial text
-Thoughts: This is essentially the same as 2.1 - partial matching is already covered by "contains". This might be redundant.
-Testable: yes - property (but redundant with 2.1)
+Thoughts: This is essentially the same as 2.1 - partial matching is already covered by "contains". This is redundant with 2.1 and will be consolidated into Property 1.
+Testable: yes - property (redundant with 2.1, consolidated into Property 1)
 
 3.1 WHEN displaying search results, THE System SHALL exclude members who are already in the searching member's favourites list
 Thoughts: For any member with favourites, when they search, none of their existing favourites should appear in results. We can create random favourites lists and verify exclusion.
@@ -280,25 +281,25 @@ After reviewing all properties, I've identified the following redundancies:
 - **Properties 1.1 and 2.1 can be combined**: Both test the same "contains" logic, just on different fields. We can create one comprehensive property that tests searching across both name and email fields.
 
 **Consolidated Properties**:
-- Combine 1.1 and 2.1 into: "Search returns all members where name OR email contains query (case-insensitive)"
-- Remove 2.3 as redundant
+- Combine 1.1, 2.1, and 2.3 into Property 1: "Search returns all members where firstname OR lastname OR email contains query (case-insensitive)"
+- Property 2.3 is redundant because "contains" already covers partial matching
 
 ### Correctness Properties
 
 Property 1: Search returns matching members
-*For any* search query and member database, all returned results should have either their name or email containing the query text (case-insensitive)
+*For any* search query and member database, all returned results should have either their firstname, lastname, or email containing the query text (case-insensitive)
 **Validates: Requirements 1.1, 2.1, 2.3**
 
 Property 2: Search results are alphabetically ordered
-*For any* search query that returns multiple results, the results should be ordered alphabetically by member name
+*For any* search query that returns multiple results, the results should be ordered alphabetically by lastname, then firstname
 **Validates: Requirements 1.3**
 
 Property 3: Search results include required fields
-*For any* search result, the result should contain both the member's name and email address
+*For any* search result, the result should contain the member's firstname, lastname, and email address
 **Validates: Requirements 1.5**
 
 Property 4: Search excludes duplicates
-*For any* search query that matches both a member's name and email, that member should appear exactly once in the results
+*For any* search query that matches both a member's name (firstname or lastname) and email, that member should appear exactly once in the results
 **Validates: Requirements 2.2**
 
 Property 5: Search excludes existing favourites
@@ -444,7 +445,7 @@ Using **Hypothesis** for Python property-based testing:
 
 ### Performance Optimizations
 
-1. **Database Indexes**: Create indexes on member.name and member.email
+1. **Database Indexes**: Create indexes on member.firstname, member.lastname, and member.email
 2. **Result Limiting**: Limit search results to 50 members
 3. **Query Optimization**: Use single query with OR condition instead of multiple queries
 4. **Frontend Debouncing**: Wait 300ms after last keystroke before searching

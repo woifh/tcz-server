@@ -16,7 +16,7 @@ mail = Mail()
 migrate = Migrate()
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=["2000 per day", "500 per hour"],
     storage_uri="memory://"
 )
 
@@ -89,6 +89,14 @@ def create_app(config_name='default'):
     def internal_error(error):
         db.session.rollback()
         return render_template('errors/500.html'), 500
+    
+    # Disable caching in development
+    @app.after_request
+    def add_header(response):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '-1'
+        return response
     
     # Register CLI commands
     from app import cli

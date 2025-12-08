@@ -3,24 +3,163 @@
 {% block title %}Meine Favoriten - Tennisclub{% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/member-search.js') }}"></script>
+<script>
+// Alpine.js Member Search Component
+function memberSearch(userId) {
+    return {
+        isOpen: false,
+        query: '',
+        results: [],
+        loading: false,
+        error: '',
+        successMessage: '',
+        highlightIndex: -1,
+        currentUserId: userId,
+        
+        init() {
+            // Watch for when component opens to focus input
+            this.$watch('isOpen', value => {
+                if (value) {
+                    this.$nextTick(() => {
+                        this.$refs.searchInput.focus();
+                    });
+                }
+            });
+        },
+        
+        async search() {
+            const searchQuery = this.query.trim();
+            
+            if (!searchQuery) {
+                this.results = [];
+                this.error = '';
+                this.highlightIndex = -1;
+                return;
+            }
+            
+            this.loading = true;
+            this.error = '';
+            this.highlightIndex = -1;
+            
+            try {
+                const response = await fetch(`/members/search?q=${encodeURIComponent(searchQuery)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.results = data.results;
+                } else {
+                    this.error = data.error || 'Fehler bei der Suche';
+                    this.results = [];
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                this.error = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.';
+                this.results = [];
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        clearSearch() {
+            this.query = '';
+            this.results = [];
+            this.error = '';
+            this.highlightIndex = -1;
+            this.$refs.searchInput.focus();
+        },
+        
+        async addToFavourites(memberId) {
+            try {
+                const response = await fetch(`/members/${this.currentUserId}/favourites`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ favourite_id: memberId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.successMessage = 'Favorit erfolgreich hinzugefügt!';
+                    setTimeout(() => { this.successMessage = ''; }, 3000);
+                    
+                    // Refresh search results
+                    await this.search();
+                    
+                    // Reload favourites list
+                    if (window.Alpine && window.Alpine.store('favourites')) {
+                        window.Alpine.store('favourites').load();
+                    } else if (typeof loadFavourites === 'function') {
+                        loadFavourites();
+                    }
+                    
+                    this.$refs.searchInput.focus();
+                } else {
+                    this.error = data.error || 'Fehler beim Hinzufügen';
+                }
+            } catch (error) {
+                console.error('Add to favourites error:', error);
+                this.error = 'Netzwerkfehler. Bitte versuchen Sie es erneut.';
+            }
+        },
+        
+        highlightNext() {
+            if (this.results.length === 0) return;
+            this.highlightIndex = Math.min(this.highlightIndex + 1, this.results.length - 1);
+        },
+        
+        highlightPrevious() {
+            if (this.results.length === 0) return;
+            this.highlightIndex = Math.max(this.highlightIndex - 1, 0);
+        },
+        
+        selectHighlighted() {
+            if (this.highlightIndex >= 0 && this.highlightIndex < this.results.length) {
+                const member = this.results[this.highlightIndex];
+                this.addToFavourites(member.id);
+            }
+        },
+        
+        close() {
+            this.isOpen = false;
+            this.clearSearch();
+        },
+        
+        open() {
+            this.isOpen = true;
+        },
+        
+        get resultsCountText() {
+            if (this.results.length === 0) {
+                return 'Keine Mitglieder gefunden';
+            }
+            return `${this.results.length} ${this.results.length === 1 ? 'Mitglied gefunden' : 'Mitglieder gefunden'}`;
+        }
+    };
+}
+</script>
 {% endblock %}
 
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6">
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Meine Favoriten</h2>
-        <button onclick="showSearchForm()" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-            Favorit hinzufügen
-        </button>
-    </div>
-    
-    <p class="text-gray-600 mb-6">
-        Fügen Sie Mitglieder zu Ihren Favoriten hinzu, um schnell Buchungen für sie zu erstellen.
-    </p>
-    
-    <!-- Member Search Component -->
-    <div id="member-search-container" class="hidden bg-gray-50 p-6 rounded-lg mb-6">
+    <!-- Member Search Component Wrapper (Alpine.js) -->
+    <div x-data="memberSearch({{ current_user.id }})">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Meine Favoriten</h2>
+            <button @click="open()" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                Favorit hinzufügen
+            </button>
+        </div>
+        
+        <p class="text-gray-600 mb-6">
+            Fügen Sie Mitglieder zu Ihren Favoriten hinzu, um schnell Buchungen für sie zu erstellen.
+        </p>
+        
+        <!-- Member Search Component -->
+        <div 
+            x-show="isOpen"
+            x-cloak
+            class="bg-gray-50 p-6 rounded-lg mb-6"
+        >
         <h3 class="text-lg font-semibold mb-4">Mitglied suchen</h3>
         
         <!-- Search Input -->
@@ -29,6 +168,12 @@
             <input 
                 type="text" 
                 id="member-search-input" 
+                x-model="query"
+                @input.debounce.300ms="search()"
+                @keydown.arrow-down.prevent="highlightNext()"
+                @keydown.arrow-up.prevent="highlightPrevious()"
+                @keydown.enter.prevent="selectHighlighted()"
+                x-ref="searchInput"
                 class="w-full border border-gray-300 rounded px-4 py-2 pr-20" 
                 placeholder="Mitglied suchen..."
                 aria-label="Mitglied suchen"
@@ -37,8 +182,9 @@
             />
             <!-- Clear Button -->
             <button 
-                id="search-clear-btn" 
-                class="hidden absolute right-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                x-show="query.length > 0"
+                @click="clearSearch()"
+                class="absolute right-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 aria-label="Suche löschen"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +192,10 @@
                 </svg>
             </button>
             <!-- Loading Spinner -->
-            <div id="search-loading" class="hidden absolute right-3 top-1/2 transform -translate-y-1/2">
+            <div 
+                x-show="loading"
+                class="absolute right-3 top-1/2 transform -translate-y-1/2"
+            >
                 <svg class="animate-spin h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -55,22 +204,87 @@
         </div>
         
         <!-- Search Results Count (for screen readers) -->
-        <div id="search-results-count" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+        <div id="search-results-count" class="sr-only" aria-live="polite" aria-atomic="true" x-text="resultsCountText"></div>
+        
+        <!-- Error Message -->
+        <div x-show="error" class="text-red-600 p-4 text-center mb-4" x-text="error"></div>
+        
+        <!-- Success Message -->
+        <div x-show="successMessage" class="bg-green-100 text-green-800 p-3 rounded mb-2" x-text="successMessage"></div>
         
         <!-- Search Results Container -->
-        <div id="search-results" class="space-y-2 max-h-96 overflow-y-auto" role="listbox" aria-label="Suchergebnisse"></div>
+        <div class="space-y-2 max-h-96 overflow-y-auto" role="listbox" aria-label="Suchergebnisse">
+            <!-- Empty State -->
+            <template x-if="!loading && query.length > 0 && results.length === 0 && !error">
+                <div class="text-gray-500 p-4 text-center">
+                    Keine Mitglieder gefunden
+                </div>
+            </template>
+            
+            <!-- Results -->
+            <template x-for="(member, index) in results" :key="member.id">
+                <div 
+                    class="flex justify-between items-center p-3 border border-gray-200 rounded hover:bg-gray-100"
+                    :class="{ 'bg-blue-100 border-blue-500': highlightIndex === index }"
+                    role="option" 
+                    :aria-label="`${member.name}, ${member.email}`"
+                >
+                    <div>
+                        <div class="font-semibold" x-text="member.name"></div>
+                        <div class="text-sm text-gray-600" x-text="member.email"></div>
+                    </div>
+                    <button 
+                        @click="addToFavourites(member.id)"
+                        class="bg-green-600 text-white py-1 px-4 rounded hover:bg-green-700 text-sm"
+                        :aria-label="`${member.name} zu Favoriten hinzufügen`"
+                    >
+                        Hinzufügen
+                    </button>
+                </div>
+            </template>
+        </div>
         
-        <!-- Close Button -->
-        <div class="mt-4">
-            <button type="button" onclick="hideSearchForm()" class="bg-gray-300 text-gray-700 py-2 px-6 rounded hover:bg-gray-400">
-                Schließen
-            </button>
+            <!-- Close Button -->
+            <div class="mt-4">
+                <button type="button" @click="close()" class="bg-gray-300 text-gray-700 py-2 px-6 rounded hover:bg-gray-400">
+                    Schließen
+                </button>
+            </div>
         </div>
     </div>
     
-    <!-- Favourites List -->
-    <div id="favourites-list" class="space-y-4">
-        <p class="text-center text-gray-500 py-8">Lade Favoriten...</p>
+    <!-- Favourites List (Alpine.js) -->
+    <div x-data class="space-y-4">
+        <!-- Loading State -->
+        <template x-if="$store.favourites.loading">
+            <p class="text-center text-gray-500 py-8">Lade Favoriten...</p>
+        </template>
+        
+        <!-- Error State -->
+        <template x-if="!$store.favourites.loading && $store.favourites.error">
+            <p class="text-center text-red-500 py-8" x-text="$store.favourites.error"></p>
+        </template>
+        
+        <!-- Empty State -->
+        <template x-if="!$store.favourites.loading && !$store.favourites.error && $store.favourites.items.length === 0">
+            <p class="text-center text-gray-500 py-8">Keine Favoriten vorhanden. Fügen Sie Mitglieder hinzu, um schnell für sie zu buchen.</p>
+        </template>
+        
+        <!-- Favourites List -->
+        <template x-for="fav in $store.favourites.items" :key="fav.id">
+            <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <div>
+                    <h3 class="font-semibold text-lg" x-text="fav.name"></h3>
+                    <p class="text-gray-600 text-sm" x-text="fav.email"></p>
+                </div>
+                <button 
+                    @click="$store.favourites.remove(fav.id)" 
+                    class="text-red-600 hover:text-red-900 font-semibold"
+                >
+                    Entfernen
+                </button>
+            </div>
+        </template>
     </div>
     
     <div class="mt-8">
@@ -79,105 +293,72 @@
 </div>
 
 <script>
-const currentUserId = {{ current_user.id }};
-window.currentUserId = currentUserId; // Make available to member-search.js
+// Alpine.js Favourites Store
+document.addEventListener('alpine:init', () => {
+    Alpine.store('favourites', {
+        items: [],
+        loading: false,
+        error: '',
+        currentUserId: {{ current_user.id }},
+        
+        async load() {
+            this.loading = true;
+            this.error = '';
+            
+            try {
+                const response = await fetch(`/members/${this.currentUserId}/favourites`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.items = data.favourites || [];
+                } else {
+                    this.error = 'Fehler beim Laden der Favoriten';
+                }
+            } catch (error) {
+                console.error('Error loading favourites:', error);
+                this.error = 'Fehler beim Laden der Favoriten';
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        async remove(favouriteId) {
+            try {
+                const response = await fetch(`/members/${this.currentUserId}/favourites/${favouriteId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('Favorit erfolgreich entfernt', 'success');
+                    await this.load();
+                } else {
+                    showToast('Fehler: ' + (data.error || 'Unbekannter Fehler'), 'error');
+                }
+            } catch (error) {
+                showToast('Fehler beim Entfernen des Favoriten', 'error');
+            }
+        }
+    });
+});
 
 // Load favourites on page load
 document.addEventListener('DOMContentLoaded', function() {
-    loadFavourites();
+    if (window.Alpine && window.Alpine.store('favourites')) {
+        window.Alpine.store('favourites').load();
+    }
 });
 
-async function loadFavourites() {
-    try {
-        const response = await fetch(`/members/${currentUserId}/favourites`);
-        const data = await response.json();
-        
-        const listContainer = document.getElementById('favourites-list');
-        
-        if (response.ok && data.favourites && data.favourites.length > 0) {
-            listContainer.innerHTML = data.favourites.map(fav => `
-                <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <div>
-                        <h3 class="font-semibold text-lg">${fav.name}</h3>
-                        <p class="text-gray-600 text-sm">${fav.email}</p>
-                    </div>
-                    <button onclick="removeFavourite(${fav.id})" class="text-red-600 hover:text-red-900 font-semibold">
-                        Entfernen
-                    </button>
-                </div>
-            `).join('');
-        } else {
-            listContainer.innerHTML = '<p class="text-center text-gray-500 py-8">Keine Favoriten vorhanden. Fügen Sie Mitglieder hinzu, um schnell für sie zu buchen.</p>';
-        }
-    } catch (error) {
-        console.error('Error loading favourites:', error);
-        document.getElementById('favourites-list').innerHTML = '<p class="text-center text-red-500 py-8">Fehler beim Laden der Favoriten</p>';
-    }
-}
-
-function showSearchForm() {
-    const searchContainer = document.getElementById('member-search-container');
-    searchContainer.classList.remove('hidden');
-    
-    // Initialize search functionality
-    if (typeof window.initMemberSearch === 'function') {
-        window.initMemberSearch();
-    } else {
-        console.error('initMemberSearch is not defined');
-    }
-}
-
-function hideSearchForm() {
-    const searchContainer = document.getElementById('member-search-container');
-    searchContainer.classList.add('hidden');
-    
-    // Clear search input and results
-    const searchInput = document.getElementById('member-search-input');
-    searchInput.value = '';
-    if (typeof window.clearSearchResults === 'function') {
-        window.clearSearchResults();
-    }
-    
-    // Hide clear button
-    document.getElementById('search-clear-btn').classList.add('hidden');
-}
-
-async function removeFavourite(favouriteId) {
-    if (!confirm('Möchten Sie diesen Favoriten wirklich entfernen?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/members/${currentUserId}/favourites/${favouriteId}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Show success message as a toast notification
-            showToast('Favorit erfolgreich entfernt', 'success');
-            loadFavourites();
-        } else {
-            showToast('Fehler: ' + (data.error || 'Unbekannter Fehler'), 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Entfernen des Favoriten', 'error');
-    }
-}
-
 function showToast(message, type = 'success') {
-    // Create toast element
     const toast = document.createElement('div');
     toast.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
         type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
     }`;
     toast.textContent = message;
     
-    // Add to page
     document.body.appendChild(toast);
     
-    // Remove after 3 seconds
     setTimeout(() => {
         toast.remove();
     }, 3000);

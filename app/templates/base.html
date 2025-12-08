@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         .material-icons { vertical-align: middle; }
+        /* Hide elements until Alpine.js loads */
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -90,5 +92,8 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+    
+    <!-- Alpine.js for reactive components -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 </body>
 </html>

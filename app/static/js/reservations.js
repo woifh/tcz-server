@@ -66,12 +66,6 @@ export async function loadUserReservations() {
  * Cancel reservation from dashboard
  */
 export async function cancelReservationFromDashboard(reservationId, bookedFor, date, time) {
-    const confirmed = confirm(`Möchten Sie die Buchung für ${bookedFor} am ${date} um ${time} Uhr wirklich stornieren?`);
-    
-    if (!confirmed) {
-        return;
-    }
-    
     try {
         const response = await fetch(`/reservations/${reservationId}`, {
             method: 'DELETE'
@@ -101,10 +95,6 @@ export async function cancelReservationFromDashboard(reservationId, bookedFor, d
  * Cancel a reservation (generic)
  */
 export async function cancelReservation(reservationId) {
-    if (!confirm('Möchten Sie diese Buchung wirklich stornieren?')) {
-        return;
-    }
-    
     try {
         const response = await fetch(`/reservations/${reservationId}`, {
             method: 'DELETE'

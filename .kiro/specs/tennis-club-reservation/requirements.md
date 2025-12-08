@@ -53,7 +53,9 @@ This document specifies the requirements for a responsive web application that e
 1. WHEN a member adds another member to favourites, THE System SHALL store the relationship in the member's favourites list
 2. WHEN a member removes a member from favourites, THE System SHALL delete the relationship from the favourites list
 3. WHEN a member creates a reservation, THE System SHALL display the member's favourites list in the booked_for dropdown
-4. THE System SHALL allow many-to-many relationships in favourites lists
+4. WHEN a member attempts to add themselves to favourites, THE System SHALL reject the operation and display an error message
+5. THE System SHALL allow many-to-many relationships in favourites lists where Member A can favourite Member B independently of Member B favouriting Member A
+6. WHEN a member creates a reservation, THE System SHALL allow booking for any registered member regardless of favourites list membership
 
 ### Requirement 4
 
@@ -172,6 +174,7 @@ This document specifies the requirements for a responsive web application that e
 3. THE System SHALL store passwords as hashed values using a secure hashing algorithm
 4. WHEN a member logs out, THE System SHALL terminate the authenticated session
 5. THE System SHALL restrict access to reservation and member management features to authenticated users
+6. WHEN a member creates a password, THE System SHALL require a minimum length of 8 characters
 
 ### Requirement 14
 
@@ -190,8 +193,30 @@ This document specifies the requirements for a responsive web application that e
 
 #### Acceptance Criteria
 
-1. WHEN a user successfully completes a create action, THE System SHALL display a non-blocking success message that auto-dismisses after 3 seconds
-2. WHEN a user successfully completes an update action, THE System SHALL display a non-blocking success message that auto-dismisses after 3 seconds
+1. WHEN a user successfully completes a create action, THE System SHALL display a non-blocking toast notification that auto-dismisses after 3 seconds
+2. WHEN a user successfully completes an update action, THE System SHALL display a non-blocking toast notification that auto-dismisses after 3 seconds
 3. WHEN a user initiates a delete action, THE System SHALL display a confirmation dialog requiring explicit user approval before proceeding
-4. WHEN a user successfully completes a delete action after confirmation, THE System SHALL display a non-blocking success message that auto-dismisses after 3 seconds
-5. THE System SHALL use toast notifications for all non-blocking success messages
+4. WHEN a user successfully completes a delete action after confirmation, THE System SHALL display a non-blocking toast notification that auto-dismisses after 3 seconds
+5. WHEN a user cancels a delete action, THE System SHALL close the confirmation dialog without performing the deletion
+
+### Requirement 16
+
+**User Story:** As a system operator, I want the application to handle email delivery failures gracefully, so that booking operations are not disrupted by email server issues.
+
+#### Acceptance Criteria
+
+1. WHEN an email notification fails to send, THE System SHALL log the error with details of the failed notification
+2. WHEN an email notification fails to send, THE System SHALL complete the reservation operation successfully
+3. WHEN an email notification fails to send, THE System SHALL not display an error to the user
+4. THE System SHALL attempt to send email notifications asynchronously to avoid blocking user operations
+
+### Requirement 17
+
+**User Story:** As a club member, I want all times displayed in the local timezone, so that I can accurately schedule my court reservations.
+
+#### Acceptance Criteria
+
+1. THE System SHALL store all reservation times in UTC in the database
+2. THE System SHALL display all times to users in the Europe/Berlin timezone
+3. WHEN a user creates a reservation, THE System SHALL convert the selected time from Europe/Berlin to UTC before storing
+4. WHEN displaying reservation times, THE System SHALL convert from UTC to Europe/Berlin timezone

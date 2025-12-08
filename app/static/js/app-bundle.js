@@ -191,12 +191,14 @@ function setCurrentDate(date) {
  * Open booking modal with pre-filled data
  */
 function openBookingModal(courtNumber, time) {
-    selectedSlot = { courtNumber, time };
+    const dateSelector = document.getElementById('date-selector');
+    const currentDate = dateSelector ? dateSelector.value : new Date().toISOString().split('T')[0];
     
+    selectedSlot = { courtNumber, time };
     document.getElementById('booking-date').value = currentDate;
     document.getElementById('booking-court').value = `Platz ${courtNumber}`;
     document.getElementById('booking-time').value = `${time} - ${getEndTime(time)}`;
-    
+    document.getElementById('booking-error').classList.add('hidden');
     document.getElementById('booking-modal').classList.remove('hidden');
 }
 
@@ -207,6 +209,8 @@ function closeBookingModal() {
     document.getElementById('booking-modal').classList.add('hidden');
     selectedSlot = null;
 }
+
+// Old Alpine.js bridge code removed - now using vanilla JS modal
 
 /**
  * Handle booking form submission
@@ -297,12 +301,6 @@ async function loadFavourites() {
  * Handle click on a reserved slot
  */
 async function handleReservationClick(reservationId, bookedFor, time) {
-    const confirmed = confirm(`Möchten Sie die Buchung für ${bookedFor} um ${time} Uhr stornieren?`);
-    
-    if (!confirmed) {
-        return;
-    }
-    
     try {
         const response = await fetch(`/reservations/${reservationId}`, {
             method: 'DELETE'
@@ -395,12 +393,6 @@ async function loadUserReservations() {
  * Cancel reservation from dashboard
  */
 async function cancelReservationFromDashboard(reservationId, bookedFor, date, time) {
-    const confirmed = confirm(`Möchten Sie die Buchung für ${bookedFor} am ${date} um ${time} Uhr wirklich stornieren?`);
-    
-    if (!confirmed) {
-        return;
-    }
-    
     try {
         const response = await fetch(`/reservations/${reservationId}`, {
             method: 'DELETE'
@@ -430,10 +422,6 @@ async function cancelReservationFromDashboard(reservationId, bookedFor, date, ti
  * Cancel a reservation (generic)
  */
 async function cancelReservation(reservationId) {
-    if (!confirm('Möchten Sie diese Buchung wirklich stornieren?')) {
-        return;
-    }
-    
     try {
         const response = await fetch(`/reservations/${reservationId}`, {
             method: 'DELETE'

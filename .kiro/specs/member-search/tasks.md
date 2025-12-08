@@ -1,16 +1,17 @@
 # Implementation Plan: Member Search for Favourites
 
 - [x] 1. Add database indexes for search performance
-  - Create migration to add index on member.name
+  - Create migration to add index on member.firstname
+  - Create migration to add index on member.lastname
   - Create migration to add index on member.email
   - _Requirements: 5.3_
 
 - [x] 2. Implement backend search functionality
   - [x] 2.1 Add search_members() method to MemberService
-    - Implement case-insensitive search on name and email
+    - Implement case-insensitive search on firstname, lastname, and email
     - Exclude current member from results
     - Exclude existing favourites from results
-    - Order results alphabetically by name
+    - Order results alphabetically by lastname, then firstname
     - Limit results to 50 members
     - _Requirements: 1.1, 1.3, 2.1, 2.2, 3.1, 3.2_
   

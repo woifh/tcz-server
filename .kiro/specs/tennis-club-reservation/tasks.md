@@ -80,6 +80,10 @@
   - [x] 3.5 Write property test for block enforcement
     - **Property 13: Blocks prevent new reservations**
     - **Validates: Requirements 5.1, 11.2**
+  
+  - [ ]* 3.6 Write property test for password minimum length
+    - **Property 36: Password minimum length enforcement**
+    - **Validates: Requirements 13.6**
 
 - [x] 4. Implement email service
   - [x] 4.1 Create EmailService class with Flask-Mail integration
@@ -107,6 +111,10 @@
   - [x] 4.5 Write property test for cancellation notifications
     - **Property 6: Cancellation notifications sent to both parties**
     - **Validates: Requirements 2.5**
+  
+  - [ ]* 4.6 Write property test for email failure resilience
+    - **Property 37: Email failures do not block operations**
+    - **Validates: Requirements 16.1, 16.2, 16.3**
 
 - [x] 5. Implement reservation service
   - [x] 5.1 Create ReservationService class
@@ -117,11 +125,22 @@
     - Implement check_availability() query
     - Implement get_reservations_by_date() query
     - Add transaction management for all operations
-    - _Requirements: 1.1, 1.3, 1.4, 2.2, 2.3, 2.4, 2.5_
+    - Add timezone conversion utilities (Europe/Berlin <-> UTC)
+    - Convert user input times from Europe/Berlin to UTC before storing
+    - Convert database times from UTC to Europe/Berlin when displaying
+    - _Requirements: 1.1, 1.3, 1.4, 2.2, 2.3, 2.4, 2.5, 17.1, 17.2, 17.3, 17.4_
   
   - [x] 5.2 Write property test for one-hour duration
     - **Property 33: One-hour duration enforcement**
     - **Validates: Requirements 14.2**
+  
+  - [ ]* 5.3 Write property test for UTC storage
+    - **Property 38: Times stored in UTC**
+    - **Validates: Requirements 17.1**
+  
+  - [ ]* 5.4 Write property test for timezone display
+    - **Property 39: Times displayed in Europe/Berlin timezone**
+    - **Validates: Requirements 17.2, 17.4**
 
 - [x] 6. Implement block service
   - [x] 6.1 Create BlockService class
@@ -182,6 +201,18 @@
   - [x] 8.4 Write property test for favourites operations
     - **Property 7: Favourites add and remove operations**
     - **Validates: Requirements 3.1, 3.2**
+  
+  - [ ]* 8.5 Write property test for self-favouriting prevention
+    - **Property 8a: Self-favouriting is prevented**
+    - **Validates: Requirements 3.4**
+  
+  - [ ]* 8.6 Write property test for favourites independence
+    - **Property 8b: Favourites are independent many-to-many relationships**
+    - **Validates: Requirements 3.5**
+  
+  - [ ]* 8.7 Write property test for booking any member
+    - **Property 8c: Booking allowed for any member**
+    - **Validates: Requirements 3.6**
 
 - [x] 9. Implement court and availability routes
   - [x] 9.1 Create courts routes module
@@ -332,7 +363,29 @@
   - Implement date picker with German locale
   - Add loading indicators for async operations
   - Handle error responses and display German error messages
-  - _Requirements: 4.5, 10.1_
+  - Implement toast notifications for success messages (auto-dismiss after 3 seconds)
+  - Implement confirmation dialogs for delete actions
+  - _Requirements: 4.5, 10.1, 15.1, 15.2, 15.3, 15.4, 15.5_
+  
+  - [ ]* 20.1 Write property test for create action toast
+    - **Property 35: Create action toast notifications**
+    - **Validates: Requirements 15.1**
+  
+  - [ ]* 20.2 Write property test for update action toast
+    - **Property 35a: Update action toast notifications**
+    - **Validates: Requirements 15.2**
+  
+  - [ ]* 20.3 Write property test for delete confirmation dialog
+    - **Property 34: Delete actions require confirmation**
+    - **Validates: Requirements 15.3**
+  
+  - [ ]* 20.4 Write property test for delete action toast
+    - **Property 35b: Delete action toast notifications**
+    - **Validates: Requirements 15.4**
+  
+  - [ ]* 20.5 Write property test for delete cancellation
+    - **Property 35c: Delete cancellation closes dialog**
+    - **Validates: Requirements 15.5**
 
 - [x] 21. Add authorization middleware
   - Create login_required decorator

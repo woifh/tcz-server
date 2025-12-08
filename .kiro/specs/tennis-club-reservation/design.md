@@ -107,7 +107,7 @@ class Member(db.Model, UserMixin):
     
     # Properties
     @property
-    name: str (returns "firstname lastname" for backward compatibility)
+    name: str (computed property, returns "firstname lastname" for backward compatibility)
     
     # Relationships
     reservations_made: List[Reservation] (backref: booked_by)
@@ -266,12 +266,14 @@ class BlockService:
 -- Members table
 CREATE TABLE member (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    firstname VARCHAR(50) NOT NULL,
+    lastname VARCHAR(50) NOT NULL,
     email VARCHAR(120) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('member', 'administrator') DEFAULT 'member',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_email (email)
+    INDEX idx_email (email),
+    INDEX idx_lastname (lastname)
 );
 
 -- Courts table
@@ -391,6 +393,18 @@ CREATE TABLE notification (
 *For any* member with a non-empty favourites list, the booking form should display all favourites in the booked_for dropdown.
 **Validates: Requirements 3.3**
 
+### Property 8a: Self-favouriting is prevented
+*For any* member, attempting to add themselves to their own favourites list should be rejected with an error.
+**Validates: Requirements 3.4**
+
+### Property 8b: Favourites are independent many-to-many relationships
+*For any* two members A and B, Member A adding Member B to favourites should not automatically add Member A to Member B's favourites list.
+**Validates: Requirements 3.5**
+
+### Property 8c: Booking allowed for any member
+*For any* member creating a reservation, the system should allow booking for any registered member, not only those in the favourites list.
+**Validates: Requirements 3.6**
+
 ### Property 9: Available slots render green
 *For any* court and time slot that is not reserved or blocked, the grid cell should be displayed in green.
 **Validates: Requirements 4.2**
@@ -495,9 +509,37 @@ CREATE TABLE notification (
 *For any* delete operation in the UI, the system should display a confirmation dialog and only proceed if the user explicitly confirms.
 **Validates: Requirements 15.3**
 
-### Property 35: Success messages auto-dismiss
-*For any* successful create or update operation, the system should display a toast notification that automatically disappears after 3 seconds without requiring user interaction.
-**Validates: Requirements 15.1, 15.2, 15.5**
+### Property 35: Create action toast notifications
+*For any* successful create operation, the system should display a toast notification that automatically disappears after 3 seconds without requiring user interaction.
+**Validates: Requirements 15.1**
+
+### Property 35a: Update action toast notifications
+*For any* successful update operation, the system should display a toast notification that automatically disappears after 3 seconds without requiring user interaction.
+**Validates: Requirements 15.2**
+
+### Property 35b: Delete action toast notifications
+*For any* successful delete operation (after confirmation), the system should display a toast notification that automatically disappears after 3 seconds without requiring user interaction.
+**Validates: Requirements 15.4**
+
+### Property 35c: Delete cancellation closes dialog
+*For any* delete action that is cancelled by the user, the confirmation dialog should close without performing the deletion.
+**Validates: Requirements 15.5**
+
+### Property 36: Password minimum length enforcement
+*For any* password creation or update, the system should reject passwords with fewer than 8 characters.
+**Validates: Requirements 13.6**
+
+### Property 37: Email failures do not block operations
+*For any* reservation operation where email notification fails, the reservation should still be created/updated/cancelled successfully and the failure should be logged.
+**Validates: Requirements 16.1, 16.2, 16.3**
+
+### Property 38: Times stored in UTC
+*For any* reservation created, the start_time and end_time should be stored in UTC in the database.
+**Validates: Requirements 17.1**
+
+### Property 39: Times displayed in Europe/Berlin timezone
+*For any* reservation displayed to a user, the times should be converted from UTC to Europe/Berlin timezone.
+**Validates: Requirements 17.2, 17.4**
 
 ## User Feedback and Notifications
 
@@ -698,7 +740,8 @@ future_dates = st.dates(min_value=date.today(), max_value=date.today() + timedel
 
 # Generate member data
 member_data = st.fixed_dictionaries({
-    'name': st.text(min_size=1, max_size=100),
+    'firstname': st.text(min_size=1, max_size=50),
+    'lastname': st.text(min_size=1, max_size=50),
     'email': st.emails(),
     'password': st.text(min_size=8, max_size=50)
 })
@@ -818,7 +861,7 @@ Integration tests will verify end-to-end workflows:
 
 5. **Create Admin User**
    ```bash
-   flask create-admin --name "Admin" --email "admin@tennisclub.de"
+   flask create-admin --firstname "Admin" --lastname "User" --email "admin@tennisclub.de"
    ```
 
 6. **Configure WSGI**

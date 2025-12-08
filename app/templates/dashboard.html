@@ -105,7 +105,10 @@
     {% endif %}
 </div>
 
-<!-- Booking Modal -->
+{% endblock %}
+
+{% block extra_js %}
+<!-- Booking Modal (Vanilla JS) - v3 -->
 <div id="booking-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <h3 class="text-xl font-bold mb-4">Buchung erstellen</h3>
@@ -128,6 +131,9 @@
                     <option value="{{ current_user.id }}">{{ current_user.name }} (Ich)</option>
                 </select>
             </div>
+            
+            <div id="booking-error" class="hidden mb-4 p-3 bg-red-100 text-red-800 rounded"></div>
+            
             <div class="flex gap-4">
                 <button type="submit" class="flex-1 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 flex items-center justify-center gap-2">
                     <span class="material-icons">check</span>
@@ -142,5 +148,27 @@
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/app-bundle.js') }}?v=1"></script>
+<script>
+// Booking modal event handlers - functions are in app-bundle.js
+document.addEventListener('DOMContentLoaded', () => {
+    // Close modal on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.getElementById('booking-modal') && !document.getElementById('booking-modal').classList.contains('hidden')) {
+            closeBookingModal();
+        }
+    });
+    
+    // Close modal on background click
+    const modal = document.getElementById('booking-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'booking-modal') {
+                closeBookingModal();
+            }
+        });
+    }
+});
+</script>
+
+<script src="{{ url_for('static', filename='js/app-bundle.js') }}?v=4"></script>
 {% endblock %}
