@@ -98,11 +98,16 @@ tennis-club-reservation/
 ```python
 class Member(db.Model, UserMixin):
     id: int (primary key)
-    name: str (not null)
+    firstname: str (not null, max 50 chars)
+    lastname: str (not null, max 50 chars)
     email: str (unique, not null)
     password_hash: str (not null)
     role: str (default='member', values: 'member'|'administrator')
     created_at: datetime
+    
+    # Properties
+    @property
+    name: str (returns "firstname lastname" for backward compatibility)
     
     # Relationships
     reservations_made: List[Reservation] (backref: booked_by)
@@ -419,7 +424,7 @@ CREATE TABLE notification (
 **Validates: Requirements 5.4**
 
 ### Property 17: Member creation stores all fields
-*For any* valid name, email, password, and role, creating a member should result in a database record containing all fields with the password properly hashed.
+*For any* valid firstname, lastname, email, password, and role, creating a member should result in a database record containing all fields with the password properly hashed.
 **Validates: Requirements 6.1, 13.3**
 
 ### Property 18: Member updates modify stored data
@@ -583,7 +588,7 @@ Unit tests will verify specific functionality of individual components:
 ```python
 def test_password_hashing():
     """Test that passwords are hashed, not stored in plain text"""
-    member = Member(name="Test", email="test@example.com")
+    member = Member(firstname="Test", lastname="User", email="test@example.com")
     member.set_password("password123")
     assert member.password_hash != "password123"
     assert member.check_password("password123")

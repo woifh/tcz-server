@@ -7,7 +7,7 @@ This document specifies the requirements for a responsive web application that e
 ## Glossary
 
 - **System**: The tennis club court reservation web application
-- **Member**: A registered club member with login credentials who can make court reservations
+- **Member**: A registered club member with login credentials who can make court reservations, identified by firstname, lastname, and email
 - **Administrator**: A club board member with elevated privileges to manage members, block courts, and override reservations
 - **Court**: One of six clay tennis courts numbered 1 through 6
 - **Reservation**: A booking record linking a court, time slot, and member(s)
@@ -85,11 +85,11 @@ This document specifies the requirements for a responsive web application that e
 
 #### Acceptance Criteria
 
-1. WHEN an administrator creates a member account, THE System SHALL store the member name, email, password_hash, and role
+1. WHEN an administrator creates a member account, THE System SHALL store the member firstname, lastname, email, password_hash, and role
 2. WHEN an administrator updates a member account, THE System SHALL modify the stored member information
 3. WHEN an administrator deletes a member account, THE System SHALL remove the member from the database
 4. THE System SHALL support two roles: member and administrator
-5. WHEN an administrator views the member list, THE System SHALL display all registered members with their details
+5. WHEN an administrator views the member list, THE System SHALL display all registered members with their firstname, lastname, email, and role
 
 ### Requirement 7
 
