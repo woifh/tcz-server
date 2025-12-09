@@ -1,0 +1,174 @@
+/**
+ * Alpine.js Booking Modal Component
+ * Handles booking creation workflow with form validation and API submission
+ */
+
+export function bookingModal() {
+    return {
+        // State
+        show: false,
+        date: '',
+        court: null,
+        courtName: '',
+        time: '',
+        bookedFor: null,
+        favourites: [],
+        submitting: false,
+        error: null,
+        
+        // Lifecycle
+        init() {
+            // Register this component with Alpine store for external access
+            if (window.Alpine && window.Alpine.store) {
+                const bookingStore = window.Alpine.store('booking');
+                if (bookingStore) {
+                    bookingStore.modalComponent = this;
+                }
+            }
+            
+            this.loadFavourites();
+        },
+        
+        // Methods
+        open(courtNumber, time, date) {
+            this.court = courtNumber;
+            this.courtName = `Platz ${courtNumber}`;
+            this.time = time;
+            this.date = date || new Date().toISOString().split('T')[0];
+            this.error = null;
+            this.show = true;
+            
+            // Set default booked for to current user
+            const bookingForSelect = document.getElementById('booking-for');
+            if (bookingForSelect && bookingForSelect.options.length > 0) {
+                this.bookedFor = parseInt(bookingForSelect.options[0].value);
+            }
+        },
+        
+        close() {
+            this.show = false;
+            this.reset();
+        },
+        
+        reset() {
+            this.error = null;
+            this.submitting = false;
+            this.court = null;
+            this.courtName = '';
+            this.time = '';
+            this.date = '';
+        },
+        
+        async submit() {
+            if (!this.validate()) {
+                return;
+            }
+            
+            this.submitting = true;
+            this.error = null;
+            
+            const bookingData = {
+                court_id: this.court,
+                date: this.date,
+                start_time: this.time,
+                booked_for_id: this.bookedFor
+            };
+            
+            try {
+                const response = await fetch('/reservations/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(bookingData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.close();
+                    this.showSuccess('Buchung erfolgreich erstellt!');
+                    
+                    // Trigger dashboard reload
+                    this.reloadDashboard();
+                } else {
+                    this.error = data.error || 'Fehler beim Erstellen der Buchung';
+                }
+            } catch (err) {
+                console.error('Error creating booking:', err);
+                this.error = 'Fehler beim Erstellen der Buchung';
+            } finally {
+                this.submitting = false;
+            }
+        },
+        
+        validate() {
+            if (!this.court || !this.date || !this.time || !this.bookedFor) {
+                this.error = 'Bitte füllen Sie alle Felder aus';
+                return false;
+            }
+            return true;
+        },
+        
+        async loadFavourites() {
+            try {
+                const bookingForSelect = document.getElementById('booking-for');
+                if (!bookingForSelect) return;
+                
+                const firstOption = bookingForSelect.querySelector('option');
+                const currentUserId = firstOption ? firstOption.value : null;
+                
+                if (!currentUserId) return;
+                
+                const response = await fetch(`/members/${currentUserId}/favourites`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    this.favourites = data.favourites || [];
+                }
+            } catch (err) {
+                console.error('Error loading favourites:', err);
+            }
+        },
+        
+        reloadDashboard() {
+            // Trigger dashboard component reload
+            const dashboardEl = document.querySelector('[x-data*="dashboard"]');
+            if (dashboardEl && window.Alpine) {
+                try {
+                    const dashboard = window.Alpine.$data(dashboardEl);
+                    if (dashboard && typeof dashboard.loadAvailability === 'function') {
+                        dashboard.loadAvailability();
+                        dashboard.loadUserReservations();
+                    }
+                } catch (e) {
+                    console.error('Error reloading dashboard:', e);
+                }
+            }
+        },
+        
+        showSuccess(message) {
+            if (typeof window.showSuccess === 'function') {
+                window.showSuccess(message);
+            }
+        },
+        
+        getTimeRange() {
+            if (!this.time) return '';
+            const [hour] = this.time.split(':');
+            const endHour = parseInt(hour) + 1;
+            return `${this.time} - ${endHour.toString().padStart(2, '0')}:00`;
+        }
+    };
+}
+
+// Initialize Alpine store for booking
+if (typeof window !== 'undefined') {
+    document.addEventListener('alpine:init', () => {
+        if (window.Alpine) {
+            window.Alpine.store('booking', {
+                modalComponent: null
+            });
+        }
+    });
+}
