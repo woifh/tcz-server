@@ -1,8 +1,9 @@
 {
   "mcpServers": {
     "pythonanywhere": {
-      "command": "/Users/woifh/.local/bin/uvx",
+      "command": "uvx",
       "args": [
+        "--native-tls",
         "pythonanywhere-mcp-server"
       ],
       "env": {
@@ -13,7 +14,8 @@
         "tree",
         "read_file_or_directory",
         "upload_text_file",
-        "reload_webapp"
+        "reload_webapp",
+        "list_webapps"
       ]
     }
   }

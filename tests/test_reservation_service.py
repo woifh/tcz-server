@@ -29,16 +29,20 @@ def test_property_33_one_hour_duration_enforcement(app, court_num, booking_date,
         
         # Create test members with unique emails
         import random
+        import time as time_module
         unique_id = random.randint(100000, 999999)
+        timestamp = int(time_module.time() * 1000000)  # microsecond precision
         member1 = Member(
-            name="Test Member 1", 
-            email=f"test1_{unique_id}_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
+            firstname="Test", 
+            lastname="Member1",
+            email=f"test1_{unique_id}_{timestamp}_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
             role="member"
         )
         member1.set_password("password123")
         member2 = Member(
-            name="Test Member 2", 
-            email=f"test2_{unique_id}_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
+            firstname="Test", 
+            lastname="Member2",
+            email=f"test2_{unique_id}_{timestamp}_{court_num}_{booking_date}_{start.hour}_{start.minute}@example.com", 
             role="member"
         )
         member2.set_password("password123")
@@ -104,7 +108,8 @@ def test_book_cancel_rebook_same_slot(app):
         import random
         unique_id = random.randint(10000, 99999)
         member = Member(
-            name=f"Test Member {unique_id}",
+            firstname="Test",
+            lastname=f"Member{unique_id}",
             email=f"test_rebook_{unique_id}@example.com",
             role="member"
         )

@@ -111,6 +111,10 @@ class Reservation(db.Model):
     as a partial unique index (unique_active_booking) that only applies to 
     active reservations. This allows cancelled reservations to exist without
     blocking new bookings for the same slot.
+    
+    The is_short_notice field indicates if the booking was made within 15 minutes
+    of the slot start time. Short notice bookings don't count toward the member's
+    2-reservation limit and cannot be cancelled.
     """
     
     __tablename__ = 'reservation'
@@ -120,6 +124,7 @@ class Reservation(db.Model):
         db.Index('idx_reservation_date', 'date'),
         db.Index('idx_reservation_booked_for', 'booked_for_id'),
         db.Index('idx_reservation_booked_by', 'booked_by_id'),
+        db.Index('idx_reservation_short_notice', 'is_short_notice'),
     )
     
     id = db.Column(db.Integer, primary_key=True)
@@ -130,6 +135,7 @@ class Reservation(db.Model):
     booked_for_id = db.Column(db.Integer, db.ForeignKey('member.id', ondelete='CASCADE'), nullable=False)
     booked_by_id = db.Column(db.Integer, db.ForeignKey('member.id', ondelete='CASCADE'), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='active')
+    is_short_notice = db.Column(db.Boolean, nullable=False, default=False)
     reason = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     

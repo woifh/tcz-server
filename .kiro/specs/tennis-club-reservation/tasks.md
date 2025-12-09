@@ -450,3 +450,182 @@
 
 - [x] 29. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 30. Implement short notice booking feature
+  - [x] 30.1 Add database migration for short notice booking field
+    - Create migration to add `is_short_notice` boolean field to reservation table
+    - Add index on `is_short_notice` field for performance
+    - Set default value to FALSE for existing reservations
+    - _Requirements: 18.1_
+  
+  - [x] 30.2 Update Reservation model for short notice bookings
+    - Add `is_short_notice` field to Reservation model
+    - Update model relationships and constraints
+    - _Requirements: 18.1_
+  
+  - [x] 30.3 Enhance ReservationService for short notice logic
+    - Implement `is_short_notice_booking()` method to classify bookings based on timing
+    - Implement `classify_booking_type()` method to determine regular vs short notice
+    - Update `get_member_regular_reservations()` to exclude short notice bookings
+    - Modify `create_reservation()` to automatically set `is_short_notice` flag
+    - _Requirements: 18.1, 18.2_
+  
+  - [x] 30.4 Write property test for short notice classification
+    - **Property 40: Short notice booking classification**
+    - **Validates: Requirements 18.1**
+  
+  - [x] 30.5 Update ValidationService for short notice booking limits
+    - Modify `validate_member_reservation_limit()` to accept `is_short_notice` parameter
+    - Update limit validation to only count regular reservations (exclude short notice)
+    - Update `validate_all_booking_constraints()` to handle short notice bookings
+    - Allow booking slots that have started but not ended for short notice bookings
+    - _Requirements: 18.2, 18.3, 18.4, 18.5, 18.6, 18.7_
+  
+  - [x] 30.6 Write property test for short notice reservation limit exclusion
+    - **Property 41: Short notice bookings excluded from reservation limit**
+    - **Validates: Requirements 18.2, 18.3**
+  
+  - [x] 30.7 Write property test for regular limit with short notice allowed
+    - **Property 42: Regular reservation limit with short notice bookings allowed**
+    - **Validates: Requirements 18.4**
+  
+  - [x] 30.8 Implement enhanced cancellation validation
+    - Update `validate_cancellation_allowed()` to check both 15-minute window and slot start time
+    - Add logic to prevent cancellation within 15 minutes of start time
+    - Add logic to prevent cancellation once slot has started
+    - Update error messages to explain combined restriction
+    - _Requirements: 2.3, 2.4_
+  
+  - [x] 30.9 Write property test for short notice booking time window
+    - **Property 43: Short notice booking time window**
+    - **Validates: Requirements 18.5, 18.6, 18.7**
+  
+  - [x] 30.10 Write property test for enhanced cancellation restrictions
+    - **Property 46: Cancellation prevented within 15 minutes and during slot time**
+    - **Validates: Requirements 2.3, 2.4**
+  
+  - [x] 30.11 Write property test for short notice booking non-cancellable nature
+    - **Property 47: Short notice bookings cannot be cancelled**
+    - **Validates: Requirements 18.10**
+
+- [x] 31. Update frontend for short notice booking display
+  - [x] 31.1 Update court grid CSS for orange short notice booking cells
+    - Add inline CSS styling for orange background color for short notice bookings
+    - Update grid rendering logic to apply orange styling when `is_short_notice` is true
+    - Ensure orange color (#f97316) is distinct from green (available), red (regular), and grey (blocked)
+    - Update dashboard legend to include orange color indicator for "Kurzfristig gebucht"
+    - _Requirements: 18.9, 4.4_
+  
+  - [x] 31.2 Write property test for short notice booking visual display
+    - **Property 45: Short notice bookings display with orange background**
+    - **Validates: Requirements 18.9, 4.4**
+  
+  - [x] 31.3 Update booking form to handle short notice classification
+    - Backend automatically detects and classifies short notice bookings based on timing
+    - Update success messages to differentiate between regular and short notice bookings
+    - Add "Kurzfristige Buchung erfolgreich erstellt!" message for short notice bookings
+    - _Requirements: 18.1_
+  
+  - [x] 31.4 Update reservation list to show short notice booking indicators
+    - Short notice bookings display with orange background in court grid
+    - Add `showShortNoticeInfo()` function to explain non-cancellable nature when clicked
+    - Disable effective cancellation for short notice bookings (show info message instead)
+    - _Requirements: 18.9, 18.10_
+  
+  - [x] 31.5 Update cancellation UI to respect new time restrictions
+    - Enhanced validation prevents cancellation within 15 minutes of start time
+    - Enhanced validation prevents cancellation once slot has started
+    - Update cancellation error messages to explain both time restrictions
+    - Short notice bookings show info message explaining non-cancellable policy
+    - _Requirements: 2.3, 2.4_
+
+- [x] 32. Update API endpoints for short notice booking support
+  - [x] 32.1 Update reservation creation endpoint
+    - Modify POST /reservations to automatically classify and set `is_short_notice` flag
+    - Update response to include short notice status
+    - Update success messages to differentiate booking types
+    - _Requirements: 18.1_
+  
+  - [x] 32.2 Update reservation listing endpoints
+    - Modify GET /reservations to include `is_short_notice` field in response
+    - Update GET /courts/availability to include short notice status in grid data
+    - Return 'short_notice' status for short notice bookings in availability grid
+    - _Requirements: 18.9_
+  
+  - [x] 32.3 Update cancellation endpoint with enhanced validation
+    - Modify DELETE /reservations/<id> to use enhanced cancellation validation
+    - Return appropriate error messages for both time restrictions
+    - Ensure short notice bookings always return cancellation error
+    - _Requirements: 2.3, 2.4, 18.10_
+
+- [x] 33. Update email notifications for short notice bookings
+  - [x] 33.1 Enhance email templates for short notice bookings
+    - Email notifications work with existing templates for short notice bookings
+    - Short notice bookings use same email templates as regular bookings
+    - Email service handles short notice bookings transparently
+    - _Requirements: 8.1, 18.1_
+  
+  - [x] 33.2 Write property test for short notice booking constraints
+    - **Property 44: Short notice bookings follow all other constraints**
+    - **Validates: Requirements 18.8**
+
+- [x] 34. Update German language text for short notice features
+  - [x] 34.1 Add German text constants for short notice bookings
+    - Add "Kurzfristig gebucht für [Name] von [Name]" text for short notice booking display
+    - Add "Kurzfristige Buchungen können nicht storniert werden" for cancellation restrictions
+    - Add "Diese Buchung wurde innerhalb von 15 Minuten vor Spielbeginn erstellt" for explanations
+    - Update all error messages to use proper German grammar
+    - _Requirements: 10.1, 10.3_
+  
+  - [x] 34.2 Update success message examples
+    - Add "Kurzfristige Buchung erfolgreich erstellt!" for short notice booking creation
+    - Maintain "Buchung erfolgreich erstellt!" for regular bookings
+    - Update existing success messages to maintain consistency
+    - _Requirements: 15.1_
+
+- [x] 35. Update documentation and help text
+  - [x] 35.1 Update user interface help text
+    - Dashboard legend includes "Kurzfristig gebucht" with orange color indicator
+    - Short notice bookings show info message when clicked explaining non-cancellable policy
+    - Visual distinction through orange background color provides clear user feedback
+    - _Requirements: 18.1, 18.10_
+  
+  - [x] 35.2 Update admin documentation
+    - Short notice bookings appear with orange background in admin views
+    - Short notice bookings follow all other constraints (court availability, authentication, time slots)
+    - Admin can see short notice status in reservation details
+    - _Requirements: 18.8_
+
+- [x] 36. Integration testing for short notice booking feature
+  - [x] 36.1 Test short notice booking creation workflow
+    - Test booking creation within 15 minutes of start time
+    - Verify automatic classification as short notice booking
+    - Verify orange display in court grid
+    - Verify appropriate email notifications
+    - _Requirements: 18.1, 18.9_
+  
+  - [x] 36.2 Test reservation limit behavior with short notice bookings
+    - Test that members with 2 regular reservations can still make short notice bookings
+    - Test that short notice bookings don't count toward the 2-reservation limit
+    - Verify error messages for regular reservation limit exceeded
+    - _Requirements: 18.2, 18.3, 18.4_
+  
+  - [x] 36.3 Test enhanced cancellation restrictions
+    - Test cancellation prevention within 15 minutes of start time
+    - Test cancellation prevention once slot has started
+    - Test that short notice bookings can never be cancelled
+    - Verify appropriate error messages for all scenarios
+    - _Requirements: 2.3, 2.4, 18.10_
+  
+  - [x] 36.4 Test visual display of short notice bookings
+    - Verify orange background color in court grid
+    - Verify short notice indicators in reservation lists
+    - Verify disabled cancellation buttons for short notice bookings
+    - Test responsive design with new visual elements
+    - _Requirements: 18.9, 9.1, 9.2, 9.3_
+
+- [x] 37. Final checkpoint for short notice booking feature
+  - Ensure all new tests pass, ask the user if questions arise.
+  - Verify all existing functionality still works correctly
+  - Test complete short notice booking workflow end-to-end
+  - Verify German language text is correct and consistent

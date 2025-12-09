@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Past Booking Validation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Past Booking Validation Test</h1>
+    
+    <div class="test-section info">
+        <h2>Instructions</h2>
+        <p>This page tests the past booking validation without needing to log in.</p>
+        <p><strong>Note:</strong> You need to be logged in to the application for these tests to work.</p>
+        <p>Open this page while logged in to http://127.0.0.1:5000</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 1: Book Yesterday at 10:00</h2>
+        <p>This should be rejected with error: "Buchungen in der Vergangenheit sind nicht möglich"</p>
+        <button onclick="testYesterday()">Run Test</button>
+        <div id="result1" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Book 5 Minutes Ago</h2>
+        <p>This should be rejected with error: "Buchungen in der Vergangenheit sind nicht möglich"</p>
+        <button onclick="testFiveMinutesAgo()">Run Test</button>
+        <div id="result2" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Book Tomorrow at 10:00</h2>
+        <p>This should work (or fail with a different error like "already booked" or "limit reached")</p>
+        <button onclick="testTomorrow()">Run Test</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <script>
+        async function testBooking(date, time, resultId, testName) {
+            const resultDiv = document.getElementById(resultId);
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            resultDiv.className = 'result show info';
+
+            const bookingData = {
+                court_id: 1,
+                date: date,
+                start_time: time,
+                booked_for_id: 1
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/reservations/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(bookingData),
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                let html = `<h3>${testName}</h3>`;
+                html += `<p><strong>Request:</strong></p>`;
+                html += `<pre>${JSON.stringify(bookingData, null, 2)}</pre>`;
+                html += `<p><strong>Response Status:</strong> ${response.status}</p>`;
+                html += `<p><strong>Response Body:</strong></p>`;
+                html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+                if (response.status === 400 && data.error && data.error.includes('Vergangenheit')) {
+                    html += `<p><strong>✅ TEST PASSED:</strong> Past booking was correctly rejected!</p>`;
+                    resultDiv.className = 'result show success';
+                } else if (response.status === 400) {
+                    html += `<p><strong>⚠️ TEST PARTIAL:</strong> Booking was rejected, but with a different error.</p>`;
+                    resultDiv.className = 'result show info';
+                } else if (response.status === 201) {
+                    html += `<p><strong>❌ TEST FAILED:</strong> Booking was created! Validation is not working.</p>`;
+                    resultDiv.className = 'result show error';
+                } else if (response.status === 401 || response.status === 302) {
+                    html += `<p><strong>⚠️ NOT LOGGED IN:</strong> Please log in to the application first.</p>`;
+                    resultDiv.className = 'result show info';
+                } else {
+                    html += `<p><strong>❓ UNEXPECTED:</strong> Unexpected response status.</p>`;
+                    resultDiv.className = 'result show info';
+                }
+
+                resultDiv.innerHTML = html;
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>${testName}</h3>
+                    <p><strong>❌ ERROR:</strong> ${error.message}</p>
+                    <p>Make sure the Flask server is running on http://127.0.0.1:5000</p>
+                `;
+                resultDiv.className = 'result show error';
+            }
+        }
+
+        function testYesterday() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const dateStr = yesterday.toISOString().split('T')[0];
+            testBooking(dateStr, '10:00', 'result1', 'Test 1: Yesterday');
+        }
+
+        function testFiveMinutesAgo() {
+            const fiveMinAgo = new Date();
+            fiveMinAgo.setMinutes(fiveMinAgo.getMinutes() - 5);
+            const dateStr = fiveMinAgo.toISOString().split('T')[0];
+            const timeStr = fiveMinAgo.toTimeString().substring(0, 5);
+            testBooking(dateStr, timeStr, 'result2', 'Test 2: Five Minutes Ago');
+        }
+
+        function testTomorrow() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dateStr = tomorrow.toISOString().split('T')[0];
+            testBooking(dateStr, '10:00', 'result3', 'Test 3: Tomorrow');
+        }
+    </script>
+</body>
+</html>

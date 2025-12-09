@@ -89,6 +89,14 @@ async function loadAvailability(currentDate) {
         console.log('Received data:', data);
         
         if (data.grid) {
+            // Debug: Check for short notice bookings in the data
+            data.grid.forEach((court, courtIndex) => {
+                court.slots.forEach((slot, slotIndex) => {
+                    if (slot.status === 'short_notice') {
+                        console.log(`DEBUG: Found short notice booking - Court ${court.court_number}, Time ${slot.time}, Status: ${slot.status}`);
+                    }
+                });
+            });
             renderGrid(data.grid);
         } else {
             showError(data.error || 'Fehler beim Laden der Verfügbarkeit');
@@ -143,13 +151,29 @@ function renderGrid(grid) {
                 if (canCancel) {
                     clickHandler = `onclick="handleReservationClick(${slot.details.reservation_id}, '${slot.details.booked_for}', '${time}')"`;
                 }
+            } else if (slot.status === 'short_notice') {
+                cellClass += ' text-white text-xs';
+                cellContent = `Kurzfristig gebucht für ${slot.details.booked_for}<br>von ${slot.details.booked_by}`;
+                
+                // Check if current user can cancel this reservation (they can't for short notice)
+                const canCancel = currentUserId && (
+                    slot.details.booked_for_id === currentUserId || 
+                    slot.details.booked_by_id === currentUserId
+                );
+                
+                if (canCancel) {
+                    // Short notice bookings cannot be cancelled, but show a message
+                    clickHandler = `onclick="showShortNoticeInfo('${slot.details.booked_for}', '${time}')"`;
+                }
             } else if (slot.status === 'blocked') {
                 cellClass += ' bg-gray-400 text-white';
                 cellContent = 'Gesperrt';
                 clickHandler = '';
             }
             
-            html += `<td class="${cellClass}" ${clickHandler}>${cellContent}</td>`;
+            // Add inline style for short notice bookings to ensure orange color shows
+            const inlineStyle = slot.status === 'short_notice' ? 'style="background-color: #f97316 !important;"' : '';
+            html += `<td class="${cellClass}" ${inlineStyle} ${clickHandler}>${cellContent}</td>`;
         }
         
         html += '</tr>';
@@ -264,7 +288,9 @@ async function handleBookingSubmit(event) {
         
         if (response.ok) {
             console.log('Booking created successfully, reloading data...');
-            showSuccess('Buchung erfolgreich erstellt!');
+            // Use the success message from the server response if available
+            const successMessage = data.message || 'Buchung erfolgreich erstellt!';
+            showSuccess(successMessage);
             
             // Reload both the grid and reservations list
             console.log('Reloading availability...');
@@ -337,6 +363,13 @@ async function handleReservationClick(reservationId, bookedFor, time) {
         console.error('Error cancelling reservation:', error);
         showError('Fehler beim Stornieren der Buchung');
     }
+}
+
+/**
+ * Show information about short notice bookings
+ */
+function showShortNoticeInfo(bookedFor, time) {
+    showError('Kurzfristige Buchungen können nicht storniert werden.');
 }
 
 // ============================================================================

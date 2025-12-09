@@ -21,7 +21,13 @@ function memberSearch(userId) {
             this.$watch('isOpen', value => {
                 if (value) {
                     this.$nextTick(() => {
-                        this.$refs.searchInput.focus();
+                        try {
+                            if (this.$refs && this.$refs.searchInput) {
+                                this.$refs.searchInput.focus();
+                            }
+                        } catch (focusError) {
+                            console.error('Error focusing input on open:', focusError);
+                        }
                     });
                 }
             });
@@ -65,10 +71,21 @@ function memberSearch(userId) {
             this.results = [];
             this.error = '';
             this.highlightIndex = -1;
-            this.$refs.searchInput.focus();
+            
+            // Safely focus input
+            try {
+                if (this.$refs && this.$refs.searchInput) {
+                    this.$refs.searchInput.focus();
+                }
+            } catch (focusError) {
+                console.error('Error focusing input after clear:', focusError);
+            }
         },
         
         async addToFavourites(memberId) {
+            // Clear any previous errors
+            this.error = '';
+            
             try {
                 const response = await fetch(`/members/${this.currentUserId}/favourites`, {
                     method: 'POST',
@@ -79,29 +96,47 @@ function memberSearch(userId) {
                 const data = await response.json();
                 
                 if (response.ok) {
+                    // Show success message
                     this.successMessage = 'Favorit erfolgreich hinzugefügt!';
                     setTimeout(() => { this.successMessage = ''; }, 3000);
                     
-                    // Refresh search results
-                    await this.search();
-                    
-                    // Reload favourites list
-                    if (window.Alpine && window.Alpine.store('favourites')) {
-                        window.Alpine.store('favourites').load();
-                    } else if (typeof loadFavourites === 'function') {
-                        loadFavourites();
-                    }
-                    
-                    // Focus search input if available
-                    if (this.$refs && this.$refs.searchInput) {
-                        this.$refs.searchInput.focus();
-                    }
+                    // Perform post-success operations (don't let their errors affect the main success)
+                    this.performPostSuccessOperations();
                 } else {
                     this.error = data.error || 'Fehler beim Hinzufügen';
                 }
             } catch (error) {
-                console.error('Add to favourites error:', error);
+                console.error('Add to favourites network error:', error);
                 this.error = 'Netzwerkfehler. Bitte versuchen Sie es erneut.';
+            }
+        },
+        
+        async performPostSuccessOperations() {
+            // Refresh search results (non-blocking)
+            try {
+                await this.search();
+            } catch (searchError) {
+                console.error('Error refreshing search (non-critical):', searchError);
+            }
+            
+            // Reload favourites list (non-blocking)
+            try {
+                if (window.Alpine && window.Alpine.store('favourites')) {
+                    await window.Alpine.store('favourites').load();
+                } else if (typeof loadFavourites === 'function') {
+                    loadFavourites();
+                }
+            } catch (loadError) {
+                console.error('Error reloading favourites (non-critical):', loadError);
+            }
+            
+            // Focus search input (non-blocking)
+            try {
+                if (this.$refs && this.$refs.searchInput) {
+                    this.$refs.searchInput.focus();
+                }
+            } catch (focusError) {
+                console.error('Error focusing input (non-critical):', focusError);
             }
         },
         

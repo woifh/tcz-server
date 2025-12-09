@@ -42,7 +42,8 @@ def list_reservations():
                             'booked_for_id': r.booked_for_id,
                             'booked_by': r.booked_by.name,
                             'booked_by_id': r.booked_by_id,
-                            'status': r.status
+                            'status': r.status,
+                            'is_short_notice': r.is_short_notice
                         }
                         for r in reservations
                     ]
@@ -71,7 +72,8 @@ def list_reservations():
                         'booked_for_id': r.booked_for_id,
                         'booked_by': r.booked_by.name,
                         'booked_by_id': r.booked_by_id,
-                        'status': r.status
+                        'status': r.status,
+                        'is_short_notice': r.is_short_notice
                     }
                     for r in reservations
                 ]
@@ -119,19 +121,23 @@ def create_reservation():
             flash(error, 'error')
             return redirect(url_for('dashboard.index'))
         else:
+            # Determine success message based on booking type
+            success_message = 'Kurzfristige Buchung erfolgreich erstellt!' if reservation.is_short_notice else 'Buchung erfolgreich erstellt!'
+            
             if request.is_json:
                 return jsonify({
                     'id': reservation.id,
-                    'message': 'Buchung erfolgreich erstellt!',
+                    'message': success_message,
                     'reservation': {
                         'id': reservation.id,
                         'court_id': reservation.court_id,
                         'date': reservation.date.isoformat(),
                         'start_time': reservation.start_time.strftime('%H:%M'),
-                        'end_time': reservation.end_time.strftime('%H:%M')
+                        'end_time': reservation.end_time.strftime('%H:%M'),
+                        'is_short_notice': reservation.is_short_notice
                     }
                 }), 201
-            flash('Buchung erfolgreich erstellt!', 'success')
+            flash(success_message, 'success')
             return redirect(url_for('reservations.list_reservations'))
     
     except Exception as e:

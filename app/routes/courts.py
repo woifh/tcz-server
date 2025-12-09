@@ -87,14 +87,18 @@ def get_availability():
                     if (reservation.court_id == court.id and 
                         reservation.start_time == slot_time and
                         reservation.status == 'active'):
-                        slot['status'] = 'reserved'
+                        # Set status based on whether it's a short notice booking
+                        slot['status'] = 'short_notice' if reservation.is_short_notice else 'reserved'
                         slot['details'] = {
                             'booked_for': f"{reservation.booked_for.firstname} {reservation.booked_for.lastname}",
                             'booked_for_id': reservation.booked_for_id,
                             'booked_by': f"{reservation.booked_by.firstname} {reservation.booked_by.lastname}",
                             'booked_by_id': reservation.booked_by_id,
-                            'reservation_id': reservation.id
+                            'reservation_id': reservation.id,
+                            'is_short_notice': reservation.is_short_notice
                         }
+                        # Debug logging
+                        print(f"DEBUG: Reservation {reservation.id} at {slot_time} - is_short_notice: {reservation.is_short_notice}, status: {slot['status']}")
                         break
             
             court_data['slots'].append(slot)

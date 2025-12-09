@@ -1,88 +1,143 @@
-# 🚀 Deployment Complete!
+# Deploy Latest Changes to PythonAnywhere
 
-## Status: ✅ DEPLOYED
+## Changes Pushed to GitHub ✅
 
-Your Tennis Club Reservation System has been deployed to PythonAnywhere!
+The following changes have been committed and pushed to GitHub:
+- Past booking validation (prevents bookings in the past)
+- 15-minute cancellation window (prevents cancellations within 15 minutes of start)
+- Future-only active reservations (only counts future reservations toward 2-reservation limit)
 
-**Live URL**: https://woifh.pythonanywhere.com
+## Deploy to PythonAnywhere
 
-## What Was Done
+### Option 1: Quick Deploy (Recommended)
 
-1. ✅ Connected to PythonAnywhere via MCP
-2. ✅ Uploaded key application files:
-   - `app/__init__.py` (Flask app with cache-busting)
-   - `app/static/js/app-bundle.js` (Vanilla JS booking modal)
-3. ✅ Reloaded the webapp
+1. **Open PythonAnywhere Bash Console**
+   - Go to https://www.pythonanywhere.com/
+   - Click on **Consoles** tab
+   - Start a **Bash console** (or use an existing one)
 
-## Important: Pull Latest Code
+2. **Run Deployment Commands**
+   ```bash
+   cd ~/tcz
+   git pull origin main
+   ```
 
-The files I uploaded are just the critical ones. To get ALL your latest changes, you need to pull from GitHub:
+3. **Reload Web App**
+   - Go to the **Web** tab: https://www.pythonanywhere.com/user/S84AB/webapps/
+   - Click the green **Reload** button for your webapp
 
-### Quick Deploy Commands
+### Option 2: Use Deployment Script
+
+1. **Open PythonAnywhere Bash Console**
+
+2. **Run the deployment script**
+   ```bash
+   cd ~/tcz
+   bash deploy_update.sh
+   ```
+
+3. **Reload Web App**
+   - Go to: https://www.pythonanywhere.com/user/S84AB/webapps/
+   - Click the green **Reload** button
+
+### Option 3: Manual Steps
+
+If you prefer to do it manually:
 
 ```bash
-# 1. Open a Bash console on PythonAnywhere
-# 2. Run these commands:
-
+# 1. Navigate to project
 cd ~/tcz
+
+# 2. Pull latest changes
 git pull origin main
+
+# 3. Activate virtual environment
+source ~/.virtualenvs/tennisclub/bin/activate
+
+# 4. Install any new dependencies (if needed)
+pip install -r requirements.txt
+
+# 5. Run migrations (if any)
+export FLASK_APP=wsgi.py
+flask db upgrade
+```
+
+Then reload the webapp from the Web tab.
+
+## Verify Deployment
+
+After reloading, test the following:
+
+1. **Visit your site**: https://S84AB.pythonanywhere.com (or your custom domain)
+
+2. **Test Past Booking Validation**:
+   - Try to create a booking for yesterday
+   - Should see error: "Buchungen in der Vergangenheit sind nicht möglich"
+
+3. **Test 15-Minute Cancellation Window**:
+   - Create a booking for 10 minutes from now
+   - Try to cancel it
+   - Should see error: "Stornierung nicht möglich. Buchungen können nur bis 15 Minuten vor Beginn storniert werden"
+
+4. **Test Future-Only Active Reservations**:
+   - Create 2 future bookings
+   - Try to create a 3rd booking
+   - Should see error: "Sie haben bereits 2 aktive Buchungen"
+   - Past bookings should not count toward this limit
+
+## Troubleshooting
+
+### If Git Pull Fails
+
+```bash
+cd ~/tcz
+git status
+git stash  # If you have local changes
+git pull origin main
+```
+
+### If Reload Doesn't Work
+
+1. Check error logs:
+   - Web tab → Click on "Error log" link
+   - Look for Python errors
+
+2. Verify virtual environment:
+   - Web tab → Check "Virtualenv" section
+   - Should be: `/home/S84AB/.virtualenvs/tennisclub`
+
+3. Check WSGI configuration:
+   - Web tab → Click on WSGI configuration file
+   - Verify paths are correct
+
+### If You See Import Errors
+
+```bash
 workon tennisclub
 pip install -r requirements.txt
 ```
 
-Then reload the webapp again (I can do this for you - just say "reload webapp").
+Then reload the webapp.
 
-## Test Your Deployment
+## What Was Changed
 
-Visit: https://woifh.pythonanywhere.com
+### app/services/validation_service.py
+- Added check for past bookings in `validate_all_booking_constraints()`
+- Only counts future reservations in `validate_member_reservation_limit()`
 
-Test these features:
-1. **Dashboard** - Booking modal should work (vanilla JS)
-2. **Favourites** - Search should work (Alpine.js)
-3. **Reservations** - List should work (Alpine.js)
-4. **Create booking** - Should work without confirmation dialog
-5. **Cancel booking** - Should work without confirmation dialog
-
-## If Something Doesn't Work
-
-1. **Check Error Logs**:
-   - Go to https://www.pythonanywhere.com/user/woifh/webapps/
-   - Click "Error log" link
-   - Look for Python errors
-
-2. **Clear Browser Cache**:
-   - Press Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows/Linux)
-
-3. **Check Console**:
-   - Open browser DevTools (F12)
-   - Look for JavaScript errors
-
-## What's Next?
-
-### Option 1: Pull Latest Code (Recommended)
-This will ensure ALL your changes are deployed:
-```bash
-cd ~/tcz && git pull origin main
-```
-
-### Option 2: Test Current Deployment
-The critical files are already uploaded, so basic functionality should work.
-
-### Option 3: Configure Email
-Update your `.env` file on PythonAnywhere with a Gmail app password to enable email notifications.
+### app/services/reservation_service.py
+- Added past booking check in `cancel_reservation()`
+- Added 15-minute window check in `cancel_reservation()`
+- Only returns future reservations in `get_member_active_reservations()`
 
 ## Need Help?
 
-Just ask me to:
-- "pull the latest code from github"
-- "reload the webapp"
-- "check the error logs"
-- "test the deployment"
-
-I have full access to your PythonAnywhere account via MCP!
+If you encounter any issues:
+1. Check the error logs in PythonAnywhere
+2. Verify the changes are in GitHub: https://github.com/woifh/tcz/commits/main
+3. Make sure you reloaded the webapp after pulling changes
 
 ---
 
-**Deployment Time**: December 8, 2025, 22:37 CET
-**Deployed By**: Kiro AI with PythonAnywhere MCP
-**Status**: Live and Ready! 🎾
+**Status**: ✅ Changes pushed to GitHub
+**Next Step**: Deploy to PythonAnywhere using one of the options above

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Create test user for local development"""
 import os
-os.environ['DATABASE_URL'] = 'sqlite:////Users/woifh/tcz/tcz/instance/tennis_club.db'
+# Use the .env file configuration
+from dotenv import load_dotenv
+load_dotenv()
 
 from app import create_app, db
 from app.models import Member, Court
@@ -19,24 +21,24 @@ with app.app_context():
             db.session.add(court)
     
     # Create test admin user
-    admin = Member.query.filter_by(email='admin@test.com').first()
+    admin = Member.query.filter_by(email='admin@gmail.com').first()
     if not admin:
         admin = Member(
             firstname='Admin',
             lastname='User',
-            email='admin@test.com',
+            email='admin@gmail.com',
             role='administrator'
         )
         admin.set_password('admin123')
         db.session.add(admin)
     
     # Create test member user
-    member = Member.query.filter_by(email='member@test.com').first()
+    member = Member.query.filter_by(email='member@gmail.com').first()
     if not member:
         member = Member(
             firstname='Test',
             lastname='Member',
-            email='member@test.com',
+            email='member@gmail.com',
             role='member'
         )
         member.set_password('member123')
@@ -48,9 +50,9 @@ with app.app_context():
     print("\nTest Users Created:")
     print("=" * 50)
     print("Admin User:")
-    print("  Email: admin@test.com")
+    print("  Email: admin@gmail.com")
     print("  Password: admin123")
     print("\nMember User:")
-    print("  Email: member@test.com")
+    print("  Email: member@gmail.com")
     print("  Password: member123")
     print("=" * 50)

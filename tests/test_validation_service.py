@@ -286,3 +286,229 @@ def test_property_13_no_block_allows_reservations(app, court_num, booking_date, 
         # Validate that no block exists
         result = ValidationService.validate_not_blocked(court.id, booking_date, start)
         assert result is True, f"No block should exist for court {court_num} on {booking_date} at {start}"
+
+
+# ============================================================================
+# SHORT NOTICE BOOKING PROPERTY TESTS
+# ============================================================================
+
+from datetime import datetime, timedelta
+from app.services.reservation_service import ReservationService
+
+
+# Strategies for short notice testing
+minutes_before_start = st.integers(min_value=1, max_value=30)
+short_notice_minutes = st.integers(min_value=1, max_value=15)
+regular_notice_minutes = st.integers(min_value=16, max_value=120)
+
+
+@given(minutes_before=short_notice_minutes)
+@settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_40_short_notice_booking_classification(app, minutes_before):
+    """Feature: tennis-club-reservation, Property 40: Short notice booking classification
+    Validates: Requirements 18.1
+    
+    For any booking made within 15 minutes of start time, the system should classify it as short notice.
+    """
+    with app.app_context():
+        # Set up test scenario
+        current_time = datetime(2024, 1, 15, 10, 0)  # 10:00 AM
+        booking_date = date(2024, 1, 15)
+        start_time = time(10, minutes_before)  # Start time is minutes_before minutes after current time
+        
+        result = ReservationService.is_short_notice_booking(booking_date, start_time, current_time)
+        assert result is True, f"Booking {minutes_before} minutes before start should be classified as short notice"
+        
+        classification = ReservationService.classify_booking_type(booking_date, start_time, current_time)
+        assert classification == 'short_notice', f"Booking type should be 'short_notice', got '{classification}'"
+
+
+@given(minutes_before=regular_notice_minutes)
+@settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_40_regular_booking_classification(app, minutes_before):
+    """Feature: tennis-club-reservation, Property 40: Short notice booking classification
+    Validates: Requirements 18.1
+    
+    For any booking made more than 15 minutes before start time, the system should classify it as regular.
+    """
+    with app.app_context():
+        # Set up test scenario
+        current_time = datetime(2024, 1, 15, 10, 0)  # 10:00 AM
+        booking_date = date(2024, 1, 15)
+        # Calculate start time that's more than 15 minutes away
+        future_time = current_time + timedelta(minutes=minutes_before)
+        start_time = future_time.time()
+        
+        result = ReservationService.is_short_notice_booking(booking_date, start_time, current_time)
+        assert result is False, f"Booking {minutes_before} minutes before start should not be classified as short notice"
+        
+        classification = ReservationService.classify_booking_type(booking_date, start_time, current_time)
+        assert classification == 'regular', f"Booking type should be 'regular', got '{classification}'"
+
+
+@given(existing_regular=st.integers(min_value=0, max_value=2))
+@settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_41_short_notice_bookings_excluded_from_limit(app, existing_regular):
+    """Feature: tennis-club-reservation, Property 41: Short notice bookings excluded from reservation limit
+    Validates: Requirements 18.2, 18.3
+    
+    Short notice bookings should not count toward the 2-reservation limit.
+    """
+    with app.app_context():
+        # Get existing court
+        court = Court.query.filter_by(number=1).first()
+        assert court is not None, "Court 1 should exist"
+        
+        # Create test member
+        unique_id = random.randint(100000, 999999)
+        member = Member(firstname="Test", lastname="Member", email=f"test_short_notice_{unique_id}@example.com", role="member")
+        member.set_password("password123")
+        db.session.add(member)
+        db.session.commit()
+        
+        # Create existing regular reservations
+        for i in range(existing_regular):
+            reservation = Reservation(
+                court_id=court.id,
+                date=date.today() + timedelta(days=i+1),
+                start_time=time(10, 0),
+                end_time=time(11, 0),
+                booked_for_id=member.id,
+                booked_by_id=member.id,
+                status='active',
+                is_short_notice=False
+            )
+            db.session.add(reservation)
+        
+        # Create some short notice reservations (should not count toward limit)
+        for i in range(3):
+            reservation = Reservation(
+                court_id=court.id,
+                date=date.today() + timedelta(days=i+10),
+                start_time=time(11, 0),
+                end_time=time(12, 0),
+                booked_for_id=member.id,
+                booked_by_id=member.id,
+                status='active',
+                is_short_notice=True
+            )
+            db.session.add(reservation)
+        
+        db.session.commit()
+        
+        # Test that short notice bookings are always allowed regardless of regular limit
+        result_short_notice = ValidationService.validate_member_reservation_limit(member.id, is_short_notice=True)
+        assert result_short_notice is True, "Short notice bookings should always be allowed"
+        
+        # Test that regular booking limit only counts regular reservations
+        result_regular = ValidationService.validate_member_reservation_limit(member.id, is_short_notice=False)
+        expected = existing_regular < 2
+        assert result_regular == expected, f"Regular booking should be {'allowed' if expected else 'blocked'} with {existing_regular} existing regular reservations"
+        
+        # Cleanup
+        Reservation.query.filter_by(booked_for_id=member.id).delete()
+        db.session.delete(member)
+        db.session.commit()
+
+
+@given(minutes_until_start=st.integers(min_value=1, max_value=30))
+@settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_46_cancellation_prevented_within_15_minutes(app, minutes_until_start):
+    """Feature: tennis-club-reservation, Property 46: Cancellation prevented within 15 minutes and during slot time
+    Validates: Requirements 2.3, 2.4
+    
+    Reservations cannot be cancelled within 15 minutes of start time or once started.
+    """
+    with app.app_context():
+        # Get existing court
+        court = Court.query.filter_by(number=1).first()
+        assert court is not None, "Court 1 should exist"
+        
+        # Create test member
+        unique_id = random.randint(100000, 999999)
+        member = Member(firstname="Test", lastname="Member", email=f"test_cancel_{unique_id}@example.com", role="member")
+        member.set_password("password123")
+        db.session.add(member)
+        db.session.commit()
+        
+        # Create reservation
+        reservation_date = date.today()
+        start_time = time(10, 0)
+        reservation = Reservation(
+            court_id=court.id,
+            date=reservation_date,
+            start_time=start_time,
+            end_time=time(11, 0),
+            booked_for_id=member.id,
+            booked_by_id=member.id,
+            status='active',
+            is_short_notice=False
+        )
+        db.session.add(reservation)
+        db.session.commit()
+        
+        # Test cancellation at different times before start
+        current_time = datetime.combine(reservation_date, start_time) - timedelta(minutes=minutes_until_start)
+        
+        is_allowed, error_msg = ValidationService.validate_cancellation_allowed(reservation.id, current_time)
+        
+        if minutes_until_start < 15:
+            assert is_allowed is False, f"Cancellation should be blocked {minutes_until_start} minutes before start"
+            assert "weniger als 15 Minuten" in error_msg, "Error message should mention 15-minute restriction"
+        else:
+            assert is_allowed is True, f"Cancellation should be allowed {minutes_until_start} minutes before start"
+        
+        # Cleanup
+        db.session.delete(reservation)
+        db.session.delete(member)
+        db.session.commit()
+
+
+@given(st.just(True))
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_47_short_notice_bookings_cannot_be_cancelled(app, _):
+    """Feature: tennis-club-reservation, Property 47: Short notice bookings cannot be cancelled
+    Validates: Requirements 18.10
+    
+    Short notice bookings can never be cancelled, regardless of timing.
+    """
+    with app.app_context():
+        # Get existing court
+        court = Court.query.filter_by(number=1).first()
+        assert court is not None, "Court 1 should exist"
+        
+        # Create test member
+        unique_id = random.randint(100000, 999999)
+        member = Member(firstname="Test", lastname="Member", email=f"test_short_cancel_{unique_id}@example.com", role="member")
+        member.set_password("password123")
+        db.session.add(member)
+        db.session.commit()
+        
+        # Create short notice reservation
+        reservation_date = date.today() + timedelta(days=1)
+        start_time = time(10, 0)
+        reservation = Reservation(
+            court_id=court.id,
+            date=reservation_date,
+            start_time=start_time,
+            end_time=time(11, 0),
+            booked_for_id=member.id,
+            booked_by_id=member.id,
+            status='active',
+            is_short_notice=True
+        )
+        db.session.add(reservation)
+        db.session.commit()
+        
+        # Test cancellation well before start time (should still be blocked for short notice)
+        current_time = datetime.combine(reservation_date, start_time) - timedelta(hours=2)
+        
+        is_allowed, error_msg = ValidationService.validate_cancellation_allowed(reservation.id, current_time)
+        
+        assert is_allowed is False, "Short notice bookings should never be cancellable"
+        assert "Kurzfristige Buchungen können nicht storniert werden" in error_msg, "Error message should mention short notice restriction"
+        
+        # Cleanup
+        db.session.delete(reservation)
+        db.session.delete(member)
+        db.session.commit()

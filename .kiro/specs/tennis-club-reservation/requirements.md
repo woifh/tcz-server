@@ -14,6 +14,7 @@ This document specifies the requirements for a responsive web application that e
 - **Block**: An administrative restriction preventing court bookings for specified time periods
 - **Booking Slot**: A one-hour time period between 06:00 and 22:00
 - **Active Reservation**: A future reservation that has not been cancelled or completed
+- **Short Notice Booking**: A reservation created within 15 minutes of the slot start time that does not count toward the member's active reservation limit
 - **Favourites List**: A member's curated list of preferred playing partners
 - **Booked For**: The member who will use the court
 - **Booked By**: The member who created the reservation
@@ -28,9 +29,9 @@ This document specifies the requirements for a responsive web application that e
 
 1. WHEN a member selects an available court and time slot, THE System SHALL create a reservation linking the court, date, time, booked_for member, and booked_by member
 2. WHERE a member books for another member, THE System SHALL record both the booked_for member and the booked_by member identities
-3. WHEN a member attempts to create a reservation, THE System SHALL verify the member has fewer than 2 active reservations before allowing the booking
+3. WHEN a member attempts to create a regular reservation, THE System SHALL verify the member has fewer than 2 active regular reservations before allowing the booking
 4. WHEN a member creates a reservation, THE System SHALL send email notifications to both the booked_by member and the booked_for member
-5. WHEN a member has 2 active reservations, THE System SHALL prevent creation of additional reservations until one becomes inactive
+5. WHEN a member has 2 active regular reservations, THE System SHALL prevent creation of additional regular reservations until one becomes inactive
 
 ### Requirement 2
 
@@ -40,9 +41,10 @@ This document specifies the requirements for a responsive web application that e
 
 1. WHEN a member is the booked_for member or the booked_by member, THE System SHALL allow that member to view the reservation details
 2. WHEN a member is the booked_for member or the booked_by member, THE System SHALL allow that member to modify the reservation time or court
-3. WHEN a member is the booked_for member or the booked_by member, THE System SHALL allow that member to cancel the reservation
-4. WHEN a reservation is modified, THE System SHALL send email notifications to both the booked_by member and the booked_for member
-5. WHEN a reservation is cancelled, THE System SHALL send email notifications to both the booked_by member and the booked_for member
+3. WHEN a member is the booked_for member or the booked_by member AND the current time is more than 15 minutes before the reservation start time, THE System SHALL allow that member to cancel the reservation
+4. WHEN the current time is within 15 minutes of the reservation start time OR at or after the reservation start time, THE System SHALL prevent cancellation of the reservation regardless of reservation type
+5. WHEN a reservation is modified, THE System SHALL send email notifications to both the booked_by member and the booked_for member
+6. WHEN a reservation is cancelled, THE System SHALL send email notifications to both the booked_by member and the booked_for member
 
 ### Requirement 3
 
@@ -65,9 +67,10 @@ This document specifies the requirements for a responsive web application that e
 
 1. WHEN a member views the overview page, THE System SHALL display a grid with rows representing hours from 06:00 to 21:00 and columns representing courts 1 through 6
 2. WHEN a time slot is available, THE System SHALL display the cell in green
-3. WHEN a time slot is reserved, THE System SHALL display the cell in red with text showing booked_for and booked_by member names
-4. WHEN a time slot is blocked, THE System SHALL display the cell in grey
-5. WHEN a member clicks an available cell, THE System SHALL open the booking form pre-filled with the selected court, date, and time
+3. WHEN a time slot has a regular reservation, THE System SHALL display the cell in red with text showing booked_for and booked_by member names
+4. WHEN a time slot has a short notice booking, THE System SHALL display the cell in orange with text showing booked_for and booked_by member names
+5. WHEN a time slot is blocked, THE System SHALL display the cell in grey
+6. WHEN a member clicks an available cell, THE System SHALL open the booking form pre-filled with the selected court, date, and time
 
 ### Requirement 5
 
@@ -147,7 +150,7 @@ This document specifies the requirements for a responsive web application that e
 
 1. WHEN a member attempts to book a time slot that is already reserved, THE System SHALL reject the booking and display an error message
 2. WHEN a member attempts to book a blocked time slot, THE System SHALL reject the booking and display an error message
-3. WHEN a member attempts to book while having 2 active reservations, THE System SHALL reject the booking and display an error message
+3. WHEN a member attempts to book a regular reservation while having 2 active regular reservations, THE System SHALL reject the booking and display an error message
 4. THE System SHALL validate all reservation constraints before persisting to the database
 5. THE System SHALL ensure each court has at most one reservation per time slot
 
@@ -220,3 +223,20 @@ This document specifies the requirements for a responsive web application that e
 2. THE System SHALL display all times to users in the Europe/Berlin timezone
 3. WHEN a user creates a reservation, THE System SHALL convert the selected time from Europe/Berlin to UTC before storing
 4. WHEN displaying reservation times, THE System SHALL convert from UTC to Europe/Berlin timezone
+
+### Requirement 18
+
+**User Story:** As a club member, I want to make short notice bookings without affecting my regular reservation limit, so that I can take advantage of last-minute court availability while maintaining my planned reservations.
+
+#### Acceptance Criteria
+
+1. WHEN a member creates a reservation within 15 minutes of the slot start time, THE System SHALL classify it as a short notice booking
+2. WHEN a member creates a short notice booking, THE System SHALL not count it toward the member's active reservation limit of 2 reservations
+3. WHEN calculating active reservations for the 2-reservation limit, THE System SHALL exclude all short notice bookings from the count
+4. WHEN a member has 2 regular active reservations, THE System SHALL still allow creation of short notice bookings
+5. WHEN a time slot can be booked as short notice, THE System SHALL allow booking from 15 minutes before start time until the end of the slot
+6. WHEN a member attempts to book a slot for 10:00-11:00 at 9:45 or later, THE System SHALL classify this as a short notice booking
+7. WHEN a member attempts to book a slot for 10:00-11:00 at 10:59, THE System SHALL still allow the short notice booking
+8. THE System SHALL apply all other booking constraints to short notice bookings including court availability, member authentication, and time slot validity
+9. WHEN displaying reservations in the court grid, THE System SHALL highlight short notice bookings with a distinct background color to differentiate them from regular reservations
+10. WHEN a short notice booking is created, THE System SHALL prevent cancellation of that booking since it is created within the 15-minute cancellation prohibition window

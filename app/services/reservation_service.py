@@ -1,5 +1,5 @@
 """Reservation service for business logic."""
-from datetime import time, timedelta
+from datetime import time, timedelta, datetime
 from app import db
 from app.models import Reservation
 from app.services.validation_service import ValidationService
@@ -8,6 +8,67 @@ from app.services.email_service import EmailService
 
 class ReservationService:
     """Service for managing reservations."""
+    
+    @staticmethod
+    def is_short_notice_booking(date, start_time, current_time=None):
+        """
+        Check if a booking would be classified as short notice.
+        
+        Args:
+            date: Reservation date
+            start_time: Reservation start time
+            current_time: Current datetime (defaults to now)
+            
+        Returns:
+            bool: True if booking is within 15 minutes of start time
+        """
+        if current_time is None:
+            current_time = datetime.now()
+        
+        reservation_datetime = datetime.combine(date, start_time)
+        time_until_start = reservation_datetime - current_time
+        
+        # If reservation starts in 15 minutes or less, it's short notice
+        return time_until_start <= timedelta(minutes=15)
+    
+    @staticmethod
+    def classify_booking_type(date, start_time, current_time=None):
+        """
+        Classify a booking as regular or short notice.
+        
+        Args:
+            date: Reservation date
+            start_time: Reservation start time
+            current_time: Current datetime (defaults to now)
+            
+        Returns:
+            str: 'short_notice' or 'regular'
+        """
+        if ReservationService.is_short_notice_booking(date, start_time, current_time):
+            return 'short_notice'
+        return 'regular'
+    
+    @staticmethod
+    def get_member_regular_reservations(member_id):
+        """
+        Get active regular reservations for a member (excludes short notice bookings).
+        Only returns future reservations (today or later).
+        
+        Args:
+            member_id: ID of the member
+            
+        Returns:
+            list: List of active regular Reservation objects
+        """
+        from datetime import date as date_class
+        today = date_class.today()
+        
+        return Reservation.query.filter(
+            (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+            Reservation.status == 'active',
+            Reservation.date >= today,
+            Reservation.is_short_notice == False
+        ).order_by(Reservation.date, Reservation.start_time).all()
     
     @staticmethod
     def create_reservation(court_id, date, start_time, booked_for_id, booked_by_id):
@@ -24,9 +85,15 @@ class ReservationService:
         Returns:
             tuple: (Reservation object or None, error message or None)
         """
-        # Validate all constraints
+        # Determine if this is a short notice booking
+        is_short_notice = ReservationService.is_short_notice_booking(date, start_time)
+        
+        # Debug logging
+        print(f"DEBUG RESERVATION: Creating reservation - date={date}, start_time={start_time}, is_short_notice={is_short_notice}")
+        
+        # Validate all constraints (pass short notice flag for proper validation)
         is_valid, error_msg = ValidationService.validate_all_booking_constraints(
-            court_id, date, start_time, booked_for_id
+            court_id, date, start_time, booked_for_id, is_short_notice
         )
         
         if not is_valid:
@@ -43,7 +110,8 @@ class ReservationService:
             end_time=end_time,
             booked_for_id=booked_for_id,
             booked_by_id=booked_by_id,
-            status='active'
+            status='active',
+            is_short_notice=is_short_notice
         )
         
         try:
@@ -97,8 +165,8 @@ class ReservationService:
     def cancel_reservation(reservation_id, reason=None):
         """
         Cancel a reservation.
-        Users can only cancel up to 15 minutes before the reservation start time.
-        Cannot cancel reservations in the past.
+        Uses enhanced validation that prevents cancellation within 15 minutes of start time,
+        once the slot has started, or for short notice bookings.
         
         Args:
             reservation_id: ID of the reservation
@@ -107,26 +175,13 @@ class ReservationService:
         Returns:
             tuple: (success boolean, error message or None)
         """
-        from datetime import datetime, timedelta
+        # Use the enhanced validation service
+        is_allowed, error_msg = ValidationService.validate_cancellation_allowed(reservation_id)
+        
+        if not is_allowed:
+            return False, error_msg
         
         reservation = Reservation.query.get(reservation_id)
-        if not reservation:
-            return False, "Buchung nicht gefunden"
-        
-        # Check if reservation is in the past
-        reservation_datetime = datetime.combine(reservation.date, reservation.start_time)
-        now = datetime.now()
-        
-        if reservation_datetime < now:
-            return False, "Stornierung nicht möglich. Buchungen in der Vergangenheit können nicht storniert werden"
-        
-        # Check if cancellation is within 15 minutes of start time
-        time_until_start = reservation_datetime - now
-        
-        # If reservation starts in less than 15 minutes, prevent cancellation
-        if time_until_start < timedelta(minutes=15):
-            return False, "Stornierung nicht möglich. Buchungen können nur bis 15 Minuten vor Beginn storniert werden"
-        
         reservation.status = 'cancelled'
         if reason:
             reservation.reason = reason
@@ -143,13 +198,14 @@ class ReservationService:
             return False, f"Fehler beim Stornieren der Buchung: {str(e)}"
     
     @staticmethod
-    def get_member_active_reservations(member_id):
+    def get_member_active_reservations(member_id, include_short_notice=True):
         """
         Get active reservations for a member.
         Only returns future reservations (today or later).
         
         Args:
             member_id: ID of the member
+            include_short_notice: Whether to include short notice bookings (default True)
             
         Returns:
             list: List of active Reservation objects
@@ -157,11 +213,16 @@ class ReservationService:
         from datetime import date as date_class
         today = date_class.today()
         
-        return Reservation.query.filter(
+        query = Reservation.query.filter(
             (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
             Reservation.status == 'active',
             Reservation.date >= today
-        ).order_by(Reservation.date, Reservation.start_time).all()
+        )
+        
+        if not include_short_notice:
+            query = query.filter(Reservation.is_short_notice == False)
+        
+        return query.order_by(Reservation.date, Reservation.start_time).all()
     
     @staticmethod
     def check_availability(court_id, date, start_time):

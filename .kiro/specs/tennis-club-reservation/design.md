@@ -139,6 +139,7 @@ class Reservation(db.Model):
     booked_for_id: int (foreign key → Member.id, not null)
     booked_by_id: int (foreign key → Member.id, not null)
     status: str (default='active', values: 'active'|'cancelled'|'completed')
+    is_short_notice: bool (default=False, indicates if booking was made within 15 minutes of start time)
     reason: str (nullable, for admin cancellations)
     created_at: datetime
     
@@ -190,19 +191,28 @@ class ReservationService:
     def create_reservation(court_id, date, start_time, booked_for_id, booked_by_id) -> Reservation
     def update_reservation(reservation_id, **updates) -> Reservation
     def cancel_reservation(reservation_id, reason=None) -> bool
-    def get_member_active_reservations(member_id) -> List[Reservation]
+    def get_member_active_reservations(member_id, include_short_notice=True) -> List[Reservation]
+    def get_member_regular_reservations(member_id) -> List[Reservation]
     def check_availability(court_id, date, start_time) -> bool
     def get_reservations_by_date(date) -> List[Reservation]
+    def is_short_notice_booking(date, start_time, current_time=None) -> bool
+    def classify_booking_type(date, start_time, current_time=None) -> str
 ```
 
 #### ValidationService
 ```python
 class ValidationService:
     def validate_booking_time(start_time) -> bool
-    def validate_member_reservation_limit(member_id) -> bool
+    def validate_member_reservation_limit(member_id, is_short_notice=False) -> bool
     def validate_no_conflict(court_id, date, start_time) -> bool
     def validate_not_blocked(court_id, date, start_time) -> bool
-    def validate_all_booking_constraints(court_id, date, start_time, member_id) -> Tuple[bool, str]
+    def validate_cancellation_allowed(reservation_id, current_time=None) -> bool
+    def validate_all_booking_constraints(court_id, date, start_time, member_id, is_short_notice=False) -> Tuple[bool, str]
+    
+    # Enhanced validation for short notice bookings:
+    # - validate_member_reservation_limit() excludes short notice bookings from 2-reservation limit
+    # - validate_all_booking_constraints() allows booking slots that have started but not ended for short notice
+    # - validate_cancellation_allowed() prevents cancellation within 15 minutes AND once slot has started
 ```
 
 #### EmailService
@@ -293,6 +303,7 @@ CREATE TABLE reservation (
     booked_for_id INT NOT NULL,
     booked_by_id INT NOT NULL,
     status ENUM('active', 'cancelled', 'completed') DEFAULT 'active',
+    is_short_notice BOOLEAN DEFAULT FALSE,
     reason VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (court_id) REFERENCES court(id) ON DELETE CASCADE,
@@ -301,7 +312,8 @@ CREATE TABLE reservation (
     UNIQUE KEY unique_booking (court_id, date, start_time),
     INDEX idx_date (date),
     INDEX idx_booked_for (booked_for_id),
-    INDEX idx_booked_by (booked_by_id)
+    INDEX idx_booked_by (booked_by_id),
+    INDEX idx_short_notice (is_short_notice)
 );
 
 -- Blocks table
@@ -351,10 +363,14 @@ CREATE TABLE notification (
 2. **Court Number Validation**: Court number must be 1-6
 3. **Email Validation**: Email must be valid format and unique
 4. **Password Validation**: Minimum 8 characters (enforced at application level)
-5. **Date Validation**: Reservations cannot be created for past dates
-6. **Member Limit Validation**: Member cannot have more than 2 active reservations
+5. **Date Validation**: Regular reservations cannot be created for past dates; short notice reservations can be created for slots that have started but not ended
+6. **Member Limit Validation**: Member cannot have more than 2 active regular reservations (short notice bookings excluded from count)
 7. **Conflict Validation**: No overlapping reservations for same court/time
 8. **Block Validation**: Blocked time slots cannot be booked
+9. **Short Notice Classification**: Reservations created within 15 minutes of start time are automatically classified as short notice
+10. **Cancellation Time Validation**: Reservations cannot be cancelled within 15 minutes of start time or once the slot has started
+11. **Short Notice Booking Window**: Short notice bookings allowed from 15 minutes before start time until end of slot
+12. **Short Notice Non-Cancellable**: Short notice bookings can never be cancelled (inherent from timing rules)
 
 ## Correctness Properties
 
@@ -541,6 +557,92 @@ CREATE TABLE notification (
 *For any* reservation displayed to a user, the times should be converted from UTC to Europe/Berlin timezone.
 **Validates: Requirements 17.2, 17.4**
 
+### Property 40: Short notice booking classification
+*For any* reservation created within 15 minutes of the slot start time, the system should classify it as a short notice booking and set is_short_notice to true.
+**Validates: Requirements 18.1**
+
+### Property 41: Short notice bookings excluded from reservation limit
+*For any* member with short notice bookings, those bookings should not count toward the member's active reservation limit of 2 reservations.
+**Validates: Requirements 18.2, 18.3**
+
+### Property 42: Regular reservation limit with short notice bookings allowed
+*For any* member with 2 regular active reservations, the system should still allow creation of short notice bookings.
+**Validates: Requirements 18.4**
+
+### Property 43: Short notice booking time window
+*For any* time slot, short notice bookings should be allowed from 15 minutes before start time until the end of the slot.
+**Validates: Requirements 18.5, 18.6, 18.7**
+
+### Property 44: Short notice bookings follow all other constraints
+*For any* short notice booking attempt, the system should apply all booking constraints except the reservation limit (court availability, authentication, time slot validity).
+**Validates: Requirements 18.8**
+
+### Property 45: Short notice bookings display with orange background
+*For any* short notice booking displayed in the court grid, the cell should have an orange background color to distinguish it from regular reservations.
+**Validates: Requirements 18.9, 4.4**
+
+### Property 46: Cancellation prevented within 15 minutes and during slot time
+*For any* reservation (regular or short notice) where the current time is within 15 minutes of the start time or at/after the start time, cancellation attempts should be rejected.
+**Validates: Requirements 2.3, 2.4**
+
+### Property 47: Short notice bookings cannot be cancelled
+*For any* short notice booking, cancellation attempts should always be rejected since short notice bookings are by definition created within the cancellation prohibition window.
+**Validates: Requirements 18.10**
+
+## Short Notice Booking Implementation
+
+### Overview
+
+The short notice booking feature allows members to book courts within 15 minutes of the slot start time without counting against their 2-reservation limit. This feature was implemented to maximize court utilization by allowing last-minute bookings.
+
+### Key Features
+
+1. **Automatic Classification**: Bookings made within 15 minutes of start time are automatically classified as short notice
+2. **Reservation Limit Exemption**: Short notice bookings don't count toward the 2-reservation limit
+3. **Visual Distinction**: Short notice bookings display with orange background color in the court grid
+4. **Non-Cancellable**: Short notice bookings cannot be cancelled (inherent from timing rules)
+5. **Extended Booking Window**: Can book slots that have already started but not yet ended
+
+### Implementation Details
+
+#### Database Schema
+- Added `is_short_notice` boolean field to `reservation` table with default `FALSE`
+- Added index on `is_short_notice` field for performance
+- Migration script handles existing reservations
+
+#### Backend Logic
+- `ReservationService.is_short_notice_booking()` determines classification based on timing
+- `ValidationService.validate_member_reservation_limit()` excludes short notice bookings from count
+- `ValidationService.validate_all_booking_constraints()` allows booking started slots for short notice
+- Enhanced cancellation validation prevents cancellation within 15 minutes AND once started
+
+#### Frontend Display
+- Court grid shows orange background (`#f97316`) for short notice bookings
+- Dashboard legend includes "Kurzfristig gebucht" with orange indicator
+- Success messages differentiate between regular and short notice bookings
+- Click on short notice booking shows info message explaining non-cancellable policy
+
+#### API Changes
+- POST `/reservations/` automatically sets `is_short_notice` flag
+- GET `/courts/availability` returns `short_notice` status in grid data
+- GET `/reservations/` includes `is_short_notice` field in response
+- Enhanced validation messages for different cancellation scenarios
+
+### Business Rules
+
+1. **Classification**: Booking within 15 minutes of start time → short notice
+2. **Booking Window**: 15 minutes before start time until end of slot
+3. **Reservation Limit**: Short notice bookings excluded from 2-reservation limit
+4. **Cancellation**: Cannot cancel within 15 minutes of start OR once started
+5. **All Other Constraints**: Court availability, authentication, time slots still apply
+
+### German Language Support
+
+- "Kurzfristig gebucht für [Name] von [Name]" - Grid display text
+- "Kurzfristige Buchung erfolgreich erstellt!" - Success message
+- "Kurzfristige Buchungen können nicht storniert werden" - Cancellation info
+- "Diese Buchung wurde innerhalb von 15 Minuten vor Spielbeginn erstellt" - Explanation
+
 ## User Feedback and Notifications
 
 ### Success Messages
@@ -589,6 +691,7 @@ if (confirm('Möchten Sie diese Buchung wirklich löschen?')) {
 | Action | German Message |
 |--------|----------------|
 | Reservation Created | Buchung erfolgreich erstellt |
+| Short Notice Reservation Created | Kurzfristige Buchung erfolgreich erstellt! |
 | Reservation Updated | Buchung erfolgreich aktualisiert |
 | Reservation Deleted | Buchung erfolgreich gelöscht |
 | Member Created | Mitglied erfolgreich erstellt |
@@ -659,13 +762,18 @@ if (confirm('Möchten Sie diese Buchung wirklich löschen?')) {
 | Error Code | German Message |
 |------------|----------------|
 | BOOKING_CONFLICT | Dieser Platz ist bereits für diese Zeit gebucht |
-| RESERVATION_LIMIT | Sie haben bereits 2 aktive Buchungen |
+| RESERVATION_LIMIT | Sie haben bereits 2 aktive reguläre Buchungen |
 | BLOCKED_SLOT | Dieser Platz ist für diese Zeit gesperrt |
 | INVALID_TIME | Buchungen sind nur zwischen 06:00 und 21:00 Uhr möglich |
+| PAST_BOOKING | Buchungen in der Vergangenheit sind nicht möglich |
+| SLOT_ENDED | Dieser Zeitslot ist bereits beendet |
+| CANCELLATION_TOO_LATE | Diese Buchung kann nicht mehr storniert werden (weniger als 15 Minuten bis Spielbeginn) |
+| CANCELLATION_STARTED | Diese Buchung kann nicht mehr storniert werden (Spielzeit bereits begonnen) |
+| SHORT_NOTICE_NON_CANCELLABLE | Kurzfristige Buchungen können nicht storniert werden |
 | INVALID_CREDENTIALS | E-Mail oder Passwort ist falsch |
 | UNAUTHORIZED | Sie haben keine Berechtigung für diese Aktion |
 | NOT_FOUND | Die angeforderte Ressource wurde nicht gefunden |
-| EMAIL_FAILED | E-Mail konnte nicht gesendet werden |
+| EMAIL_FAILED | E-Mail konnte nicht gesendet werden | nicht gesendet werden |
 
 ## Testing Strategy
 
@@ -787,6 +895,60 @@ def test_property_27_reservation_conflicts_rejected(court, booking_date, start):
     # Second reservation for same slot should fail
     with pytest.raises(ValidationError, match="bereits.*gebucht"):
         create_test_reservation(court_id=court, date=booking_date, start_time=start)
+
+@given(court=court_numbers, booking_date=future_dates, start=booking_times)
+def test_property_40_short_notice_classification(court, booking_date, start):
+    """Feature: tennis-club-reservation, Property 40: Short notice booking classification
+    Validates: Requirements 18.1"""
+    # Mock current time to be 10 minutes before start time
+    booking_datetime = datetime.combine(booking_date, start)
+    current_time = booking_datetime - timedelta(minutes=10)
+    
+    with patch('datetime.datetime.now', return_value=current_time):
+        reservation = create_test_reservation(court_id=court, date=booking_date, start_time=start)
+        assert reservation.is_short_notice == True
+
+@given(member_id=st.integers(min_value=1))
+def test_property_41_short_notice_excluded_from_limit(member_id):
+    """Feature: tennis-club-reservation, Property 41: Short notice bookings excluded from reservation limit
+    Validates: Requirements 18.2, 18.3"""
+    # Create 2 regular reservations
+    create_test_reservation(booked_for_id=member_id, is_short_notice=False)
+    create_test_reservation(booked_for_id=member_id, is_short_notice=False)
+    
+    # Short notice booking should still be allowed
+    short_notice_reservation = create_test_reservation(booked_for_id=member_id, is_short_notice=True)
+    assert short_notice_reservation.is_short_notice == True
+    
+    # Regular reservation should fail
+    with pytest.raises(ValidationError, match="2 aktive reguläre Buchungen"):
+        create_test_reservation(booked_for_id=member_id, is_short_notice=False)
+
+@given(reservation_id=st.integers(min_value=1))
+def test_property_46_cancellation_prevented_within_15_minutes_and_during_slot(reservation_id):
+    """Feature: tennis-club-reservation, Property 46: Cancellation prevented within 15 minutes and during slot time
+    Validates: Requirements 2.3, 2.4"""
+    reservation = create_test_reservation_with_id(reservation_id, 
+                                                 date=date.today(), 
+                                                 start_time=time(14, 0))
+    
+    # Test 1: Mock current time to be 10 minutes before start (should fail)
+    current_time = datetime.combine(date.today(), time(13, 50))
+    with patch('datetime.datetime.now', return_value=current_time):
+        with pytest.raises(ValidationError, match="weniger als 15 Minuten"):
+            ReservationService.cancel_reservation(reservation_id)
+    
+    # Test 2: Mock current time to be during the slot (should fail)
+    current_time = datetime.combine(date.today(), time(14, 30))
+    with patch('datetime.datetime.now', return_value=current_time):
+        with pytest.raises(ValidationError, match="bereits begonnen"):
+            ReservationService.cancel_reservation(reservation_id)
+    
+    # Test 3: Mock current time to be 20 minutes before start (should succeed)
+    current_time = datetime.combine(date.today(), time(13, 40))
+    with patch('datetime.datetime.now', return_value=current_time):
+        result = ReservationService.cancel_reservation(reservation_id)
+        assert result == True
 ```
 
 **Property Test Requirements**:

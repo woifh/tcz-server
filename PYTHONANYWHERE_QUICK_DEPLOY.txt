@@ -1,0 +1,29 @@
+═══════════════════════════════════════════════════════════════
+  PYTHONANYWHERE QUICK DEPLOY - Copy & Paste This
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Open PythonAnywhere Bash Console
+  → Go to: https://www.pythonanywhere.com/
+  → Click: Consoles → Bash
+
+STEP 2: Copy and paste this command:
+───────────────────────────────────────────────────────────────
+cd ~/tcz && git pull origin main && echo "✅ Code updated! Now reload your webapp at: https://www.pythonanywhere.com/user/S84AB/webapps/"
+───────────────────────────────────────────────────────────────
+
+STEP 3: Reload Your Webapp
+  → Go to: https://www.pythonanywhere.com/user/S84AB/webapps/
+  → Click the green "Reload" button
+
+STEP 4: Test Your Site
+  → Visit: https://S84AB.pythonanywhere.com
+  → Try creating a booking for yesterday (should be rejected)
+
+═══════════════════════════════════════════════════════════════
+
+WHAT WAS DEPLOYED:
+  ✅ Past booking validation
+  ✅ 15-minute cancellation window
+  ✅ Future-only active reservations
+
+═══════════════════════════════════════════════════════════════

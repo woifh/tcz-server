@@ -29,27 +29,35 @@ class ValidationService:
         return min_time <= start_time <= max_time
     
     @staticmethod
-    def validate_member_reservation_limit(member_id):
+    def validate_member_reservation_limit(member_id, is_short_notice=False):
         """
         Validate member has not exceeded the 2-reservation limit.
-        Only counts future reservations (today or later).
+        Only counts future regular reservations (today or later).
+        Short notice bookings are excluded from the limit.
         
         Args:
             member_id: ID of the member
+            is_short_notice: Whether this is a short notice booking (default False)
             
         Returns:
             bool: True if member can make another reservation, False otherwise
         """
+        # Short notice bookings are always allowed regardless of limit
+        if is_short_notice:
+            return True
+        
         from datetime import date as date_class
         
         max_reservations = current_app.config.get('MAX_ACTIVE_RESERVATIONS', 2)
         today = date_class.today()
         
-        # Count active reservations where member is booked_for and date is today or in the future
+        # Count active regular reservations where member is booked_for and date is today or in the future
+        # Exclude short notice bookings from the count
         active_count = Reservation.query.filter(
             Reservation.booked_for_id == member_id,
             Reservation.status == 'active',
-            Reservation.date >= today
+            Reservation.date >= today,
+            Reservation.is_short_notice == False
         ).count()
         
         return active_count < max_reservations
@@ -100,7 +108,7 @@ class ValidationService:
         return block is None
     
     @staticmethod
-    def validate_all_booking_constraints(court_id, date, start_time, member_id):
+    def validate_all_booking_constraints(court_id, date, start_time, member_id, is_short_notice=False):
         """
         Validate all booking constraints.
         
@@ -109,15 +117,22 @@ class ValidationService:
             date: date object
             start_time: time object
             member_id: ID of the member making the booking
+            is_short_notice: Whether this is a short notice booking (default False)
             
         Returns:
             tuple: (bool, str) - (is_valid, error_message)
         """
-        from datetime import datetime
+        from datetime import datetime, timedelta
         
-        # Validate not in the past
+        # Validate not in the past (with special handling for short notice bookings)
         booking_datetime = datetime.combine(date, start_time)
         now = datetime.now()
+        
+        # Debug logging
+        print(f"DEBUG VALIDATION: booking_datetime={booking_datetime}, now={now}, is_short_notice={is_short_notice}")
+        
+        # For regular bookings, don't allow past bookings
+        print(f"DEBUG VALIDATION: Regular booking - is_past={booking_datetime < now}")
         if booking_datetime < now:
             return False, "Buchungen in der Vergangenheit sind nicht möglich"
         
@@ -125,9 +140,9 @@ class ValidationService:
         if not ValidationService.validate_booking_time(start_time):
             return False, "Buchungen sind nur zwischen 06:00 und 21:00 Uhr möglich"
         
-        # Validate member reservation limit
-        if not ValidationService.validate_member_reservation_limit(member_id):
-            return False, "Sie haben bereits 2 aktive Buchungen"
+        # Validate member reservation limit (short notice bookings are exempt)
+        if not ValidationService.validate_member_reservation_limit(member_id, is_short_notice):
+            return False, "Sie haben bereits 2 aktive reguläre Buchungen"
         
         # Validate no conflict
         if not ValidationService.validate_no_conflict(court_id, date, start_time):
@@ -136,5 +151,45 @@ class ValidationService:
         # Validate not blocked
         if not ValidationService.validate_not_blocked(court_id, date, start_time):
             return False, "Dieser Platz ist für diese Zeit gesperrt"
+        
+        return True, ""
+    
+    @staticmethod
+    def validate_cancellation_allowed(reservation_id, current_time=None):
+        """
+        Validate if a reservation can be cancelled.
+        Reservations cannot be cancelled within 15 minutes of start time or once started.
+        Short notice bookings can never be cancelled.
+        
+        Args:
+            reservation_id: ID of the reservation
+            current_time: Current datetime (defaults to now)
+            
+        Returns:
+            tuple: (bool, str) - (is_allowed, error_message)
+        """
+        from datetime import datetime, timedelta
+        
+        if current_time is None:
+            current_time = datetime.now()
+        
+        reservation = Reservation.query.get(reservation_id)
+        if not reservation:
+            return False, "Buchung nicht gefunden"
+        
+        # Short notice bookings can never be cancelled
+        if reservation.is_short_notice:
+            return False, "Kurzfristige Buchungen können nicht storniert werden"
+        
+        reservation_datetime = datetime.combine(reservation.date, reservation.start_time)
+        time_until_start = reservation_datetime - current_time
+        
+        # If reservation has already started
+        if time_until_start <= timedelta(0):
+            return False, "Diese Buchung kann nicht mehr storniert werden (Spielzeit bereits begonnen)"
+        
+        # If reservation starts in less than 15 minutes
+        if time_until_start < timedelta(minutes=15):
+            return False, "Diese Buchung kann nicht mehr storniert werden (weniger als 15 Minuten bis Spielbeginn)"
         
         return True, ""
