@@ -23,7 +23,7 @@ module.exports = defineConfig({
   ],
 
   webServer: {
-    command: 'export DATABASE_URL=sqlite:////Users/S84AB/tcz/instance/tennis_club.db && export FLASK_ENV=development && export RATELIMIT_ENABLED=false && python3 -m flask run',
+    command: 'source venv/bin/activate && export FLASK_ENV=development && export RATELIMIT_ENABLED=false && python -m flask run',
     url: 'http://127.0.0.1:5000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

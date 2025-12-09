@@ -1,287 +1,134 @@
-# PythonAnywhere Deployment Guide
-
-This guide provides step-by-step instructions for deploying the Tennis Club Reservation System on PythonAnywhere.
-
-## Prerequisites
-
-- PythonAnywhere account (free or paid)
-- MySQL database (included with paid accounts, or use free SQLite for testing)
-- SMTP email credentials (Gmail, SendGrid, etc.)
-
-## Step 1: Upload Code
-
-1. Log in to PythonAnywhere
-2. Open a Bash console
-3. Clone or upload your repository:
-   ```bash
-   git clone <your-repository-url>
-   cd tennis-club-reservation
-   ```
-
-## Step 2: Create Virtual Environment
-
-```bash
-mkvirtualenv --python=/usr/bin/python3.10 tennis-club
-pip install -r requirements.txt
-```
-
-## Step 3: Configure Environment Variables
-
-Create a `.env` file in the project root:
-
-```bash
-nano .env
-```
-
-Add the following variables:
-
-```env
-# Flask Configuration
-SECRET_KEY=your-secret-key-here-change-this
-FLASK_ENV=production
-
-# Database Configuration
-DATABASE_URL=mysql+pymysql://username:password@username.mysql.pythonanywhere-services.com/dbname
-
-# Email Configuration (Gmail example)
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USE_TLS=true
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
-MAIL_DEFAULT_SENDER=noreply@tennisclub.de
-```
-
-**Note:** For Gmail, you need to create an App Password:
-1. Go to Google Account settings
-2. Security → 2-Step Verification → App passwords
-3. Generate a new app password for "Mail"
-
-## Step 4: Set Up MySQL Database
-
-### For Paid Accounts:
-
-1. Go to the "Databases" tab in PythonAnywhere
-2. Create a new MySQL database
-3. Note the database name, username, and password
-4. Update the `DATABASE_URL` in your `.env` file
-
-### For Free Accounts (SQLite):
-
-Update `.env` to use SQLite:
-```env
-DATABASE_URL=sqlite:///instance/tennis_club.db
-```
-
-## Step 5: Initialize Database
-
-```bash
-workon tennis-club
-cd tennis-club-reservation
-
-# Run database migrations
-flask db upgrade
-
-# Initialize courts (creates 6 courts)
-flask init-courts
-
-# Create admin user
-flask create-admin
-# Follow prompts to enter admin name, email, and password
-```
-
-## Step 6: Configure WSGI
-
-1. Go to the "Web" tab in PythonAnywhere
-2. Click "Add a new web app"
-3. Choose "Manual configuration" and Python 3.10
-4. Set the following:
-
-### Source code directory:
-```
-/home/yourusername/tennis-club-reservation
-```
-
-### Working directory:
-```
-/home/yourusername/tennis-club-reservation
-```
-
-### WSGI configuration file:
-
-Click on the WSGI configuration file link and replace its contents with:
-
-```python
-import sys
-import os
-
-# Add your project directory to the sys.path
-project_home = '/home/yourusername/tennis-club-reservation'
-if project_home not in sys.path:
-    sys.path.insert(0, project_home)
-
-# Load environment variables
-from dotenv import load_dotenv
-load_dotenv(os.path.join(project_home, '.env'))
-
-# Import the Flask app
-from wsgi import application
-```
-
-## Step 7: Configure Static Files
-
-In the "Web" tab, add static file mappings:
-
-| URL | Directory |
-|-----|-----------|
-| `/static/` | `/home/yourusername/tennis-club-reservation/app/static/` |
-
-## Step 8: Configure Virtualenv
-
-In the "Web" tab, set the virtualenv path:
-
-```
-/home/yourusername/.virtualenvs/tennis-club
-```
-
-## Step 9: Reload Web App
-
-Click the green "Reload" button in the "Web" tab.
-
-## Step 10: Test the Application
-
-1. Visit your PythonAnywhere URL: `https://yourusername.pythonanywhere.com`
-2. Log in with the admin credentials you created
-3. Test email functionality:
-   ```bash
-   flask test-email --to your-email@example.com
-   ```
-
-## Troubleshooting
-
-### Error Logs
-
-View error logs in the "Web" tab:
-- Error log: Shows Python errors
-- Server log: Shows HTTP requests
-- Access log: Shows all requests
-
-### Common Issues
-
-**Database Connection Errors:**
-- Verify `DATABASE_URL` is correct
-- Check MySQL credentials
-- Ensure database exists
-
-**Email Not Sending:**
-- Verify SMTP credentials
-- Check firewall settings
-- For Gmail, ensure App Password is used (not regular password)
-- Check error logs for specific email errors
-
-**Import Errors:**
-- Ensure all dependencies are installed: `pip install -r requirements.txt`
-- Check virtualenv is activated
-- Verify Python version (3.10+)
-
-**Static Files Not Loading:**
-- Check static file mappings in Web tab
-- Ensure paths are absolute
-- Click "Reload" after changes
-
-### Database Migrations
-
-To apply new migrations:
-
-```bash
-workon tennis-club
-cd tennis-club-reservation
-flask db upgrade
-```
-
-### Updating Code
-
-```bash
-workon tennis-club
-cd tennis-club-reservation
-git pull origin main
-pip install -r requirements.txt  # If dependencies changed
-flask db upgrade  # If database schema changed
-```
-
-Then reload the web app in the Web tab.
-
-## Security Checklist
-
-- [ ] Change `SECRET_KEY` to a strong random value
-- [ ] Use environment variables for all sensitive data
-- [ ] Enable HTTPS (automatic on PythonAnywhere)
-- [ ] Use strong passwords for admin accounts
-- [ ] Regularly backup the database
-- [ ] Keep dependencies updated
-- [ ] Monitor error logs regularly
-
-## Backup Strategy
-
-### Database Backup
-
-```bash
-# For MySQL
-mysqldump -u username -p database_name > backup_$(date +%Y%m%d).sql
-
-# For SQLite
-cp instance/tennis_club.db backups/tennis_club_$(date +%Y%m%d).db
-```
-
-### Automated Backups
-
-Set up a scheduled task in PythonAnywhere:
-1. Go to "Tasks" tab
-2. Create a new scheduled task
-3. Set frequency (daily recommended)
-4. Add backup command
-
-## Monitoring
-
-### Health Checks
-
-Create a simple health check endpoint to monitor:
-- Database connectivity
-- Email service status
-- Application uptime
-
-### Performance
-
-- Monitor response times in access logs
-- Check database query performance
-- Optimize slow queries if needed
-
-## Support
-
-For issues specific to:
-- **PythonAnywhere:** Check their help pages or forums
-- **Application:** Check error logs and this documentation
-- **Email:** Verify SMTP provider documentation
-
-## Environment Variables Reference
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SECRET_KEY` | Flask secret key | Random string |
-| `FLASK_ENV` | Environment | `production` |
-| `DATABASE_URL` | Database connection | `mysql+pymysql://...` |
-| `MAIL_SERVER` | SMTP server | `smtp.gmail.com` |
-| `MAIL_PORT` | SMTP port | `587` |
-| `MAIL_USE_TLS` | Use TLS | `true` |
-| `MAIL_USERNAME` | Email username | `user@gmail.com` |
-| `MAIL_PASSWORD` | Email password | App password |
-| `MAIL_DEFAULT_SENDER` | Default sender | `noreply@club.de` |
+# PythonAnywhere Deployment - December 8, 2025
+
+## Deployment Status: ✅ IN PROGRESS
+
+Your Tennis Club Reservation System is being deployed to PythonAnywhere!
+
+## What Was Deployed
+
+### Updated Files
+1. **app/__init__.py** - Flask application with cache-busting headers and rate limiting
+2. **app/static/js/app-bundle.js** - Vanilla JS booking modal (Alpine.js migration reverted)
+3. **app/templates/base.html** - Base template with Alpine.js CDN
+4. **app/templates/dashboard.html** - Dashboard with vanilla JS booking modal
+5. **app/templates/favourites.html** - Favourites page with Alpine.js
+6. **app/templates/reservations.html** - Reservations list with Alpine.js
+
+### Features Deployed
+- ✅ 75% Alpine.js migration (favourites and reservations)
+- ✅ Vanilla JS booking modal (stable and working)
+- ✅ No confirmation dialogs for better UX
+- ✅ Increased rate limits (500/hour)
+- ✅ Cache-busting headers for development
+
+## Your Application
+
+**URL**: https://woifh.pythonanywhere.com
+**Database**: MySQL (woifh$tennisclub)
+**Python Version**: 3.10
+**Virtualenv**: /home/woifh/.virtualenvs/tennisclub
 
 ## Next Steps
 
-After deployment:
-1. Create member accounts
-2. Test booking workflow
-3. Configure court blocking
-4. Train administrators
-5. Announce to club members
+### 1. Pull Latest Code on PythonAnywhere
+
+You need to update the code on PythonAnywhere with the latest changes from GitHub:
+
+```bash
+# Open a Bash console on PythonAnywhere
+cd ~/tcz
+git pull origin main
+```
+
+### 2. Install/Update Dependencies
+
+```bash
+workon tennisclub
+pip install -r requirements.txt
+```
+
+### 3. Run Database Migrations (if needed)
+
+```bash
+export FLASK_APP=wsgi.py
+flask db upgrade
+```
+
+### 4. Reload the Web App
+
+After pulling the code, you MUST reload the web app for changes to take effect.
+
+**Option A: Using MCP (I can do this for you)**
+Just say "reload the webapp" and I'll use the PythonAnywhere MCP tools.
+
+**Option B: Manual**
+1. Go to https://www.pythonanywhere.com/user/woifh/webapps/
+2. Click the big green **Reload** button
+
+## Testing After Deployment
+
+1. Visit https://woifh.pythonanywhere.com
+2. Log in with your credentials
+3. Test the dashboard - booking modal should work
+4. Test favourites page - Alpine.js search should work
+5. Test reservations page - Alpine.js list should work
+6. Try creating and cancelling bookings
+
+## Configuration
+
+Your `.env` file on PythonAnywhere is already configured with:
+- ✅ MySQL database connection
+- ✅ Secret key
+- ⚠️ Email settings (needs Gmail app password)
+
+### To Enable Email Notifications
+
+Update `/home/woifh/tcz/.env` on PythonAnywhere:
+```bash
+MAIL_PASSWORD=your-gmail-app-password
+```
+
+Get a Gmail App Password: https://support.google.com/accounts/answer/185833
+
+## Troubleshooting
+
+### If the site doesn't load:
+1. Check error logs: https://www.pythonanywhere.com/user/woifh/webapps/#tab_id_woifh_pythonanywhere_com
+2. Click "Error log" link
+3. Look for Python errors
+
+### If booking modal doesn't work:
+1. Check browser console for JavaScript errors
+2. Clear browser cache (Cmd+Shift+R on Mac)
+3. Verify app-bundle.js was updated
+
+### If Alpine.js features don't work:
+1. Check that Alpine.js CDN is loading (Network tab in browser dev tools)
+2. Verify base.html was updated
+3. Check browser console for errors
+
+## What's Different from Local
+
+- **Database**: MySQL instead of SQLite
+- **Caching**: Production caching (no cache-busting headers in production)
+- **Rate Limiting**: Same limits (500/hour)
+- **Email**: Needs Gmail app password to work
+
+## Files on PythonAnywhere
+
+- **Project**: `/home/woifh/tcz/`
+- **WSGI Config**: `/var/www/woifh_pythonanywhere_com_wsgi.py`
+- **Virtualenv**: `/home/woifh/.virtualenvs/tennisclub`
+- **Error Log**: Available in Web tab
+
+## Ready to Go Live?
+
+Once you've pulled the latest code and reloaded the webapp, your application will be live with all the latest features!
+
+Let me know if you want me to:
+1. Pull the latest code from GitHub
+2. Reload the webapp
+3. Check the error logs
+4. Test the deployment
+
+Just ask and I'll use the PythonAnywhere MCP tools to help!
