@@ -92,7 +92,10 @@ function memberSearch(userId) {
                         loadFavourites();
                     }
                     
-                    this.$refs.searchInput.focus();
+                    // Focus search input if available
+                    if (this.$refs && this.$refs.searchInput) {
+                        this.$refs.searchInput.focus();
+                    }
                 } else {
                     this.error = data.error || 'Fehler beim Hinzufügen';
                 }
