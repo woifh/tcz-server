@@ -32,6 +32,7 @@ class ValidationService:
     def validate_member_reservation_limit(member_id):
         """
         Validate member has not exceeded the 2-reservation limit.
+        Only counts future reservations (today or later).
         
         Args:
             member_id: ID of the member
@@ -39,12 +40,16 @@ class ValidationService:
         Returns:
             bool: True if member can make another reservation, False otherwise
         """
-        max_reservations = current_app.config.get('MAX_ACTIVE_RESERVATIONS', 2)
+        from datetime import date as date_class
         
-        # Count active reservations where member is booked_for
-        active_count = Reservation.query.filter_by(
-            booked_for_id=member_id,
-            status='active'
+        max_reservations = current_app.config.get('MAX_ACTIVE_RESERVATIONS', 2)
+        today = date_class.today()
+        
+        # Count active reservations where member is booked_for and date is today or in the future
+        active_count = Reservation.query.filter(
+            Reservation.booked_for_id == member_id,
+            Reservation.status == 'active',
+            Reservation.date >= today
         ).count()
         
         return active_count < max_reservations
@@ -108,6 +113,14 @@ class ValidationService:
         Returns:
             tuple: (bool, str) - (is_valid, error_message)
         """
+        from datetime import datetime
+        
+        # Validate not in the past
+        booking_datetime = datetime.combine(date, start_time)
+        now = datetime.now()
+        if booking_datetime < now:
+            return False, "Buchungen in der Vergangenheit sind nicht möglich"
+        
         # Validate booking time
         if not ValidationService.validate_booking_time(start_time):
             return False, "Buchungen sind nur zwischen 06:00 und 21:00 Uhr möglich"

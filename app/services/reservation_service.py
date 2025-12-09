@@ -97,6 +97,8 @@ class ReservationService:
     def cancel_reservation(reservation_id, reason=None):
         """
         Cancel a reservation.
+        Users can only cancel up to 15 minutes before the reservation start time.
+        Cannot cancel reservations in the past.
         
         Args:
             reservation_id: ID of the reservation
@@ -105,9 +107,25 @@ class ReservationService:
         Returns:
             tuple: (success boolean, error message or None)
         """
+        from datetime import datetime, timedelta
+        
         reservation = Reservation.query.get(reservation_id)
         if not reservation:
             return False, "Buchung nicht gefunden"
+        
+        # Check if reservation is in the past
+        reservation_datetime = datetime.combine(reservation.date, reservation.start_time)
+        now = datetime.now()
+        
+        if reservation_datetime < now:
+            return False, "Stornierung nicht möglich. Buchungen in der Vergangenheit können nicht storniert werden"
+        
+        # Check if cancellation is within 15 minutes of start time
+        time_until_start = reservation_datetime - now
+        
+        # If reservation starts in less than 15 minutes, prevent cancellation
+        if time_until_start < timedelta(minutes=15):
+            return False, "Stornierung nicht möglich. Buchungen können nur bis 15 Minuten vor Beginn storniert werden"
         
         reservation.status = 'cancelled'
         if reason:
@@ -128,6 +146,7 @@ class ReservationService:
     def get_member_active_reservations(member_id):
         """
         Get active reservations for a member.
+        Only returns future reservations (today or later).
         
         Args:
             member_id: ID of the member
@@ -135,9 +154,13 @@ class ReservationService:
         Returns:
             list: List of active Reservation objects
         """
+        from datetime import date as date_class
+        today = date_class.today()
+        
         return Reservation.query.filter(
             (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
-            Reservation.status == 'active'
+            Reservation.status == 'active',
+            Reservation.date >= today
         ).order_by(Reservation.date, Reservation.start_time).all()
     
     @staticmethod
