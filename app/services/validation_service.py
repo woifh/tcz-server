@@ -134,12 +134,11 @@ class ValidationService:
         
         # Validate not in the past (with special handling for short notice bookings)
         if is_short_notice:
-            # For short notice bookings, allow if within reasonable time window (up to 5 minutes past start)
-            time_diff = now - booking_datetime
-            max_past_minutes = timedelta(minutes=5)
-            # Only check if booking is in the past (positive time_diff)
-            if time_diff > timedelta(0) and time_diff > max_past_minutes:
-                return False, "Kurzfristige Buchungen sind nur bis zu 5 Minuten nach Spielbeginn möglich"
+            # For short notice bookings, allow as long as the slot hasn't ended yet
+            # (booking end time = start time + 1 hour)
+            booking_end_datetime = datetime.combine(date, time(start_time.hour + 1, start_time.minute))
+            if now >= booking_end_datetime:
+                return False, "Kurzfristige Buchungen sind nur möglich, solange die Spielzeit noch nicht beendet ist"
         else:
             # For regular bookings, don't allow past bookings
             if booking_datetime < now:
