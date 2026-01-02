@@ -3,6 +3,7 @@ import pytest
 from hypothesis import given, strategies as st, settings, HealthCheck
 from datetime import time
 from app.services.validation_service import ValidationService
+from app.models import BlockReason
 
 
 # Hypothesis strategies
@@ -262,6 +263,13 @@ def test_property_13_blocks_prevent_reservations(app, court_num, block_date, sta
         db.session.add(admin)
         db.session.commit()
         
+        # Get or create block reason
+        block_reason = BlockReason.query.filter_by(name='Maintenance').first()
+        if not block_reason:
+            block_reason = BlockReason(name='Maintenance', is_active=True, created_by_id=admin.id)
+            db.session.add(block_reason)
+            db.session.commit()
+        
         # Calculate end time
         end = time(start.hour + 1, start.minute) if start.hour < 21 else time(22, 0)
         
@@ -271,7 +279,7 @@ def test_property_13_blocks_prevent_reservations(app, court_num, block_date, sta
             date=block_date,
             start_time=start,
             end_time=end,
-            reason=reason,
+            reason_id=block_reason.id,
             created_by_id=admin.id
         )
         db.session.add(block)

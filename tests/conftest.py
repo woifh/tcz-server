@@ -1,7 +1,7 @@
 """Pytest configuration and fixtures."""
 import pytest
 from app import create_app, db
-from app.models import Member, Court
+from app.models import Member, Court, BlockReason
 from flask_mail import Mail
 
 
@@ -17,6 +17,28 @@ def app():
         for i in range(1, 7):
             court = Court(number=i)
             db.session.add(court)
+        
+        # Create a default admin for block reasons
+        admin = Member(
+            firstname='System',
+            lastname='Admin',
+            email='system@example.com',
+            role='administrator'
+        )
+        admin.set_password('admin123')
+        db.session.add(admin)
+        db.session.commit()
+        
+        # Create default block reasons
+        default_reasons = ['Maintenance', 'Weather', 'Tournament', 'Championship', 'Tennis Course']
+        for reason_name in default_reasons:
+            reason = BlockReason(
+                name=reason_name,
+                is_active=True,
+                created_by_id=admin.id
+            )
+            db.session.add(reason)
+        
         db.session.commit()
         
         yield app

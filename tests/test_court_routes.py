@@ -1,7 +1,7 @@
 """Tests for court routes."""
 import pytest
 from datetime import date, time
-from app.models import Court, Reservation, Block
+from app.models import Court, Reservation, Block, BlockReason
 
 
 class TestListCourts:
@@ -103,6 +103,13 @@ class TestGetAvailability:
     def test_availability_shows_blocks(self, client, test_admin, app, db):
         """Test availability shows blocked slots."""
         with app.app_context():
+            # Get or create block reason
+            block_reason = BlockReason.query.filter_by(name='Maintenance').first()
+            if not block_reason:
+                block_reason = BlockReason(name='Maintenance', is_active=True, created_by_id=test_admin.id)
+                db.session.add(block_reason)
+                db.session.commit()
+            
             # Create a block
             court = Court.query.first()
             block = Block(
@@ -110,7 +117,7 @@ class TestGetAvailability:
                 date=date(2025, 12, 5),
                 start_time=time(14, 0),
                 end_time=time(16, 0),
-                reason='Maintenance',
+                reason_id=block_reason.id,
                 created_by_id=test_admin.id
             )
             db.session.add(block)

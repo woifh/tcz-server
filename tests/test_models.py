@@ -2,7 +2,7 @@
 import pytest
 from hypothesis import given, strategies as st, settings, HealthCheck
 from datetime import date, time, timedelta
-from app.models import Member, Court, Reservation, Block, Notification
+from app.models import Member, Court, Reservation, Block, BlockReason, Notification
 from app import db
 
 
@@ -35,20 +35,38 @@ def test_property_17_member_creation_stores_all_fields(app, name, email, passwor
     a database record containing all fields with the password properly hashed.
     """
     with app.app_context():
+        # Split name into first and last name
+        name_parts = name.split(' ', 1)
+        firstname = name_parts[0]
+        lastname = name_parts[1] if len(name_parts) > 1 else ''
+        
+        # Make email unique by adding timestamp
+        import time
+        unique_email = f"test_{int(time.time() * 1000000)}_{email}"
+        
         # Create member
-        member = Member(name=name, email=email, role=role)
+        member = Member(firstname=firstname, lastname=lastname, email=unique_email, role=role)
         member.set_password(password)
         
         db.session.add(member)
         db.session.commit()
         
         # Retrieve member from database
-        retrieved = Member.query.filter_by(email=email).first()
+        retrieved = Member.query.filter_by(email=unique_email).first()
         
         # Verify all fields are stored correctly
         assert retrieved is not None
-        assert retrieved.name == name
-        assert retrieved.email == email
+        # The name property always concatenates firstname + " " + lastname
+        expected_name = f"{firstname} {lastname}"
+        assert retrieved.name == expected_name
+        assert retrieved.email == unique_email
+        assert retrieved.role == role
+        assert retrieved.check_password(password)  # Verify password is hashed correctly
+        
+        # Cleanup
+        db.session.delete(retrieved)
+        db.session.commit()
+        assert retrieved.email == unique_email
         assert retrieved.role == role
         assert retrieved.created_at is not None
         
@@ -156,6 +174,13 @@ def test_property_16_block_stores_all_fields(app, court_num, block_date, start, 
         db.session.add(admin)
         db.session.commit()
         
+        # Get or create block reason
+        block_reason = BlockReason.query.filter_by(name='Maintenance').first()
+        if not block_reason:
+            block_reason = BlockReason(name='Maintenance', is_active=True, created_by_id=admin.id)
+            db.session.add(block_reason)
+            db.session.commit()
+        
         # Calculate end time (1 hour after start)
         end = time(start.hour + 1, start.minute)
         
@@ -165,7 +190,7 @@ def test_property_16_block_stores_all_fields(app, court_num, block_date, start, 
             date=block_date,
             start_time=start,
             end_time=end,
-            reason=reason,
+            reason_id=block_reason.id,
             created_by_id=admin.id
         )
         db.session.add(block)
@@ -184,11 +209,100 @@ def test_property_16_block_stores_all_fields(app, court_num, block_date, start, 
         assert retrieved.date == block_date
         assert retrieved.start_time == start
         assert retrieved.end_time == end
-        assert retrieved.reason == reason
+        assert retrieved.reason_id == block_reason.id
+        assert retrieved.reason == 'Maintenance'  # Test the legacy property
         assert retrieved.created_by_id == admin.id
         assert retrieved.created_at is not None
         
         # Cleanup (don't delete court - it's shared)
+        db.session.delete(retrieved)
+        db.session.delete(admin)
+        db.session.commit()
+
+# Hypothesis strategies for BlockReason testing
+block_reason_names = st.text(min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=('Cs', 'Cc')))
+block_reason_active_status = st.booleans()
+
+
+@given(reason_name=block_reason_names, is_active=block_reason_active_status)
+@pytest.mark.usefixtures("app")
+@settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_64_block_reason_creation_and_availability(app, reason_name, is_active):
+    """Feature: tennis-club-reservation, Property 64: Block reason creation and availability
+    Validates: Requirements 20.2
+    
+    For any valid reason name and active status, creating a BlockReason should result in a database 
+    record containing all fields with correct values and the reason should be available for use.
+    """
+    with app.app_context():
+        # Get existing court (created by app fixture)
+        court = Court.query.first()
+        assert court is not None, "Court should exist"
+        
+        # Create test admin member with unique email
+        import random
+        import time as time_module
+        unique_id = random.randint(100000, 999999)
+        timestamp = int(time_module.time() * 1000000)  # microsecond timestamp for uniqueness
+        admin = Member(
+            firstname="Admin", 
+            lastname="Admin", 
+            email=f"admin_{unique_id}_{timestamp}_{reason_name[:10]}_{is_active}@example.com", 
+            role="administrator"
+        )
+        admin.set_password("password123")
+        db.session.add(admin)
+        db.session.commit()
+        
+        # Make reason name unique by adding timestamp
+        unique_reason_name = f"{reason_name}_{timestamp}_{unique_id}"
+        
+        # Create block reason
+        block_reason = BlockReason(
+            name=unique_reason_name,
+            is_active=is_active,
+            created_by_id=admin.id
+        )
+        db.session.add(block_reason)
+        db.session.commit()
+        
+        # Retrieve block reason from database
+        retrieved = BlockReason.query.filter_by(
+            name=unique_reason_name,
+            created_by_id=admin.id
+        ).first()
+        
+        # Verify all fields are stored correctly
+        assert retrieved is not None, "BlockReason should be stored in database"
+        assert retrieved.name == unique_reason_name, f"Name should be '{unique_reason_name}', but was '{retrieved.name}'"
+        assert retrieved.is_active == is_active, f"Active status should be {is_active}, but was {retrieved.is_active}"
+        assert retrieved.created_by_id == admin.id, f"Created by ID should be {admin.id}, but was {retrieved.created_by_id}"
+        assert retrieved.created_at is not None, "Created at timestamp should be set"
+        assert retrieved.id is not None, "ID should be assigned"
+        
+        # Verify the reason is available for use (can be referenced by blocks)
+        if is_active:
+            # Create a test block using this reason
+            test_block = Block(
+                court_id=court.id,
+                date=date(2025, 12, 15),
+                start_time=time(10, 0),
+                end_time=time(11, 0),
+                reason_id=retrieved.id,
+                created_by_id=admin.id
+            )
+            db.session.add(test_block)
+            db.session.commit()
+            
+            # Verify the block can access the reason
+            assert test_block.reason_obj is not None, "Block should be able to access its reason"
+            assert test_block.reason_obj.name == unique_reason_name, "Block should access correct reason name"
+            assert test_block.reason == unique_reason_name, "Legacy reason property should work"
+            
+            # Cleanup test block
+            db.session.delete(test_block)
+        
+        # Cleanup
         db.session.delete(retrieved)
         db.session.delete(admin)
         db.session.commit()

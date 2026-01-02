@@ -152,7 +152,7 @@ class Reservation(db.Model):
     unique_constraint(court_id, date, start_time)
 ```
 
-#### Block Model
+#### Block Model (Enhanced)
 ```python
 class Block(db.Model):
     id: int (primary key)
@@ -160,13 +160,105 @@ class Block(db.Model):
     date: date (not null)
     start_time: time (not null)
     end_time: time (not null)
-    reason: str (not null, values: 'rain'|'maintenance'|'tournament'|'championship')
+    reason_id: int (foreign key → BlockReason.id, not null)
+    sub_reason: str (nullable, additional detail for the block)
+    series_id: int (foreign key → BlockSeries.id, nullable, links recurring blocks)
+    is_modified: bool (default=False, indicates if instance was modified from series pattern)
     created_by_id: int (foreign key → Member.id, not null)
     created_at: datetime
     
     # Relationships
     court: Court
+    reason: BlockReason
+    series: BlockSeries
     created_by: Member
+```
+
+#### BlockSeries Model (New)
+```python
+class BlockSeries(db.Model):
+    id: int (primary key)
+    name: str (not null, descriptive name for the series)
+    start_date: date (not null)
+    end_date: date (not null)
+    start_time: time (not null)
+    end_time: time (not null)
+    recurrence_pattern: str (not null, values: 'daily'|'weekly'|'monthly')
+    recurrence_days: str (nullable, JSON array for weekly pattern, e.g., "[1,3,5]" for Mon/Wed/Fri)
+    reason_id: int (foreign key → BlockReason.id, not null)
+    sub_reason: str (nullable)
+    created_by_id: int (foreign key → Member.id, not null)
+    created_at: datetime
+    
+    # Relationships
+    blocks: List[Block] (backref: series)
+    reason: BlockReason
+    created_by: Member
+```
+
+#### BlockReason Model (New)
+```python
+class BlockReason(db.Model):
+    id: int (primary key)
+    name: str (unique, not null, max 50 chars)
+    is_active: bool (default=True, allows soft deletion)
+    created_by_id: int (foreign key → Member.id, not null)
+    created_at: datetime
+    
+    # Relationships
+    blocks: List[Block]
+    templates: List[BlockTemplate]
+    sub_reason_templates: List[SubReasonTemplate]
+    created_by: Member
+```
+
+#### SubReasonTemplate Model (New)
+```python
+class SubReasonTemplate(db.Model):
+    id: int (primary key)
+    reason_id: int (foreign key → BlockReason.id, not null)
+    template_name: str (not null, max 100 chars)
+    created_by_id: int (foreign key → Member.id, not null)
+    created_at: datetime
+    
+    # Relationships
+    reason: BlockReason
+    created_by: Member
+```
+
+#### BlockTemplate Model (New)
+```python
+class BlockTemplate(db.Model):
+    id: int (primary key)
+    name: str (unique, not null, max 100 chars)
+    court_selection: str (JSON array of court IDs, e.g., "[1,2,3]")
+    start_time: time (not null)
+    end_time: time (not null)
+    reason_id: int (foreign key → BlockReason.id, not null)
+    sub_reason: str (nullable)
+    recurrence_pattern: str (nullable, values: 'daily'|'weekly'|'monthly'|null for single blocks)
+    recurrence_days: str (nullable, JSON array for weekly pattern)
+    created_by_id: int (foreign key → Member.id, not null)
+    created_at: datetime
+    
+    # Relationships
+    reason: BlockReason
+    created_by: Member
+```
+
+#### BlockAuditLog Model (New)
+```python
+class BlockAuditLog(db.Model):
+    id: int (primary key)
+    operation: str (not null, values: 'create'|'update'|'delete'|'bulk_delete')
+    block_id: int (nullable, for single block operations)
+    series_id: int (nullable, for series operations)
+    operation_data: str (JSON, stores operation details)
+    admin_id: int (foreign key → Member.id, not null)
+    timestamp: datetime (default=current_timestamp)
+    
+    # Relationships
+    admin: Member
 ```
 
 #### Notification Model
@@ -227,12 +319,60 @@ class EmailService:
     def format_german_email(template: str, **kwargs) -> str
 ```
 
-#### BlockService
+#### BlockService (Enhanced)
 ```python
 class BlockService:
-    def create_block(court_id, date, start_time, end_time, reason, admin_id) -> Block
+    # Basic block operations
+    def create_block(court_id, date, start_time, end_time, reason_id, sub_reason, admin_id) -> Tuple[Block, str]
     def get_blocks_by_date(date) -> List[Block]
     def cancel_conflicting_reservations(block: Block) -> List[Reservation]
+    
+    # Recurring block series operations
+    def create_recurring_block_series(court_ids, start_date, end_date, start_time, end_time, 
+                                    recurrence_pattern, recurrence_days, reason_id, sub_reason, admin_id) -> Tuple[List[Block], str]
+    def get_series_blocks(series_id) -> List[Block]
+    def update_entire_series(series_id, **updates) -> Tuple[bool, str]
+    def update_future_series(series_id, from_date, **updates) -> Tuple[bool, str]
+    def update_single_instance(block_id, **updates) -> Tuple[bool, str]
+    def delete_series_options(series_id, option, from_date=None) -> Tuple[bool, str]
+    
+    # Multi-court operations
+    def create_multi_court_blocks(court_ids, date, start_time, end_time, reason_id, sub_reason, admin_id) -> Tuple[List[Block], str]
+    def bulk_delete_blocks(block_ids, admin_id) -> Tuple[bool, str]
+    
+    # Template operations
+    def create_block_template(name, template_data, admin_id) -> Tuple[BlockTemplate, str]
+    def get_block_templates() -> List[BlockTemplate]
+    def apply_block_template(template_id, date_overrides) -> dict
+    def delete_block_template(template_id, admin_id) -> Tuple[bool, str]
+    
+    # Filtering and search
+    def filter_blocks(date_range, court_ids, reason_ids, block_types) -> List[Block]
+    def get_conflict_preview(court_ids, date, start_time, end_time) -> List[Reservation]
+    
+    # Audit operations
+    def log_block_operation(operation, block_data, admin_id) -> None
+    def get_audit_log(filters) -> List[BlockAuditLog]
+```
+
+#### BlockReasonService (New)
+```python
+class BlockReasonService:
+    # Reason management
+    def create_block_reason(name, admin_id) -> Tuple[BlockReason, str]
+    def update_block_reason(reason_id, name, admin_id) -> Tuple[bool, str]
+    def delete_block_reason(reason_id, admin_id) -> Tuple[bool, str]
+    def get_all_block_reasons() -> List[BlockReason]
+    def get_reason_usage_count(reason_id) -> int
+    
+    # Sub-reason template management
+    def create_sub_reason_template(reason_id, template_name, admin_id) -> Tuple[SubReasonTemplate, str]
+    def get_sub_reason_templates(reason_id) -> List[SubReasonTemplate]
+    def delete_sub_reason_template(template_id, admin_id) -> Tuple[bool, str]
+    
+    # Default reason setup
+    def initialize_default_reasons() -> None
+    def cleanup_future_blocks_with_reason(reason_name) -> int
 ```
 
 ### Routes
@@ -261,10 +401,37 @@ class BlockService:
 - `PUT /reservations/<id>` - Update reservation
 - `DELETE /reservations/<id>` - Cancel reservation
 
-#### Block Routes (`/blocks`) (admin only)
-- `GET /blocks?date=YYYY-MM-DD` - List blocks for date
-- `POST /blocks` - Create block
-- `DELETE /blocks/<id>` - Remove block
+#### Block Routes (`/admin/blocks`) (admin only) (Enhanced)
+- `GET /admin/blocks?date=YYYY-MM-DD` - List blocks for date
+- `GET /admin/blocks?date_range=YYYY-MM-DD,YYYY-MM-DD&court_ids=1,2&reason_ids=1,2&block_type=single|series` - Filter blocks
+- `POST /admin/blocks` - Create single block
+- `POST /admin/blocks/series` - Create recurring block series
+- `POST /admin/blocks/multi-court` - Create blocks for multiple courts
+- `PUT /admin/blocks/<id>` - Update single block instance
+- `PUT /admin/blocks/series/<series_id>` - Update entire series
+- `PUT /admin/blocks/series/<series_id>/future?from_date=YYYY-MM-DD` - Update future series instances
+- `DELETE /admin/blocks/<id>` - Delete single block
+- `DELETE /admin/blocks/series/<series_id>?option=single|future|all&from_date=YYYY-MM-DD` - Delete series with options
+- `POST /admin/blocks/bulk-delete` - Bulk delete selected blocks
+- `GET /admin/blocks/conflict-preview` - Preview conflicting reservations
+- `GET /admin/blocks/audit-log` - Get audit log with filters
+
+#### Block Template Routes (`/admin/block-templates`) (admin only) (New)
+- `GET /admin/block-templates` - List all block templates
+- `POST /admin/block-templates` - Create block template
+- `PUT /admin/block-templates/<id>` - Update block template
+- `DELETE /admin/block-templates/<id>` - Delete block template
+- `POST /admin/block-templates/<id>/apply` - Apply template to create blocks
+
+#### Block Reason Routes (`/admin/block-reasons`) (admin only) (New)
+- `GET /admin/block-reasons` - List all block reasons
+- `POST /admin/block-reasons` - Create block reason
+- `PUT /admin/block-reasons/<id>` - Update block reason
+- `DELETE /admin/block-reasons/<id>` - Delete block reason (with usage check)
+- `GET /admin/block-reasons/<id>/usage` - Get usage count for reason
+- `GET /admin/block-reasons/<id>/sub-reason-templates` - List sub-reason templates
+- `POST /admin/block-reasons/<id>/sub-reason-templates` - Create sub-reason template
+- `DELETE /admin/sub-reason-templates/<id>` - Delete sub-reason template
 
 #### Dashboard Routes (`/`)
 - `GET /` - Main dashboard with court grid
@@ -318,20 +485,105 @@ CREATE TABLE reservation (
     INDEX idx_short_notice (is_short_notice)
 );
 
--- Blocks table
+-- Enhanced Blocks table with series support and customizable reasons
+CREATE TABLE block_reason (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by_id) REFERENCES member(id),
+    INDEX idx_name (name),
+    INDEX idx_active (is_active)
+);
+
+-- Block series for recurring blocks
+CREATE TABLE block_series (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    recurrence_pattern ENUM('daily', 'weekly', 'monthly') NOT NULL,
+    recurrence_days JSON,
+    reason_id INT NOT NULL,
+    sub_reason VARCHAR(255),
+    created_by_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reason_id) REFERENCES block_reason(id),
+    FOREIGN KEY (created_by_id) REFERENCES member(id),
+    INDEX idx_dates (start_date, end_date),
+    INDEX idx_reason (reason_id)
+);
+
+-- Enhanced blocks table
 CREATE TABLE block (
     id INT AUTO_INCREMENT PRIMARY KEY,
     court_id INT NOT NULL,
     date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    reason ENUM('rain', 'maintenance', 'tournament', 'championship') NOT NULL,
+    reason_id INT NOT NULL,
+    sub_reason VARCHAR(255),
+    series_id INT,
+    is_modified BOOLEAN DEFAULT FALSE,
     created_by_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (court_id) REFERENCES court(id) ON DELETE CASCADE,
+    FOREIGN KEY (reason_id) REFERENCES block_reason(id),
+    FOREIGN KEY (series_id) REFERENCES block_series(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by_id) REFERENCES member(id),
     INDEX idx_date (date),
-    INDEX idx_court_date (court_id, date)
+    INDEX idx_court_date (court_id, date),
+    INDEX idx_series (series_id),
+    INDEX idx_reason (reason_id)
+);
+
+-- Sub-reason templates for common scenarios
+CREATE TABLE sub_reason_template (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    reason_id INT NOT NULL,
+    template_name VARCHAR(100) NOT NULL,
+    created_by_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reason_id) REFERENCES block_reason(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by_id) REFERENCES member(id),
+    INDEX idx_reason (reason_id)
+);
+
+-- Block templates for reusable configurations
+CREATE TABLE block_template (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    court_selection JSON NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    reason_id INT NOT NULL,
+    sub_reason VARCHAR(255),
+    recurrence_pattern ENUM('daily', 'weekly', 'monthly'),
+    recurrence_days JSON,
+    created_by_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reason_id) REFERENCES block_reason(id),
+    FOREIGN KEY (created_by_id) REFERENCES member(id),
+    INDEX idx_name (name),
+    INDEX idx_reason (reason_id)
+);
+
+-- Audit log for block operations
+CREATE TABLE block_audit_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    operation ENUM('create', 'update', 'delete', 'bulk_delete') NOT NULL,
+    block_id INT,
+    series_id INT,
+    operation_data JSON,
+    admin_id INT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (admin_id) REFERENCES member(id),
+    INDEX idx_timestamp (timestamp),
+    INDEX idx_admin (admin_id),
+    INDEX idx_operation (operation)
 );
 
 -- Favourites table (many-to-many self-referential)
@@ -596,6 +848,106 @@ CREATE TABLE notification (
 *For any* short notice booking, cancellation attempts should always be rejected since short notice bookings are by definition created within the cancellation prohibition window.
 **Validates: Requirements 18.12**
 
+### Property 48: Recurring block series generation
+*For any* valid recurring block parameters (start date, end date, recurrence pattern, time range), creating a recurring block series should generate the correct number of individual block instances with proper dates and times according to the recurrence pattern.
+**Validates: Requirements 19.1**
+
+### Property 49: Weekly recurring blocks respect day selection
+*For any* weekly recurring block with specific days selected, only blocks on those selected days should be created between the start and end dates.
+**Validates: Requirements 19.2**
+
+### Property 50: Recurring block series linking
+*For any* recurring block series created, all individual block instances should be linked with the same series_id.
+**Validates: Requirements 19.3**
+
+### Property 51: Recurring blocks require end date
+*For any* attempt to create a recurring block without an end date, the operation should be rejected with an error message.
+**Validates: Requirements 19.4**
+
+### Property 52: Series-wide edits affect all future instances
+*For any* recurring block series and valid edit parameters, editing the entire series should apply changes to all future instances in the series while preserving past instances.
+**Validates: Requirements 19.5, 19.6**
+
+### Property 53: Single instance edits don't affect other instances
+*For any* single instance edit in a recurring block series, only that specific instance should be modified while other instances in the series remain unchanged.
+**Validates: Requirements 19.7**
+
+### Property 54: Multi-court block creation
+*For any* set of selected courts and valid block parameters, creating blocks for multiple courts should result in blocks being created for all selected courts with identical time periods, dates, and reasons.
+**Validates: Requirements 19.10**
+
+### Property 55: Block template storage and retrieval
+*For any* valid block template data (name, time range, reason, court selection, recurrence settings), creating a template should store all fields correctly and make them available for future use.
+**Validates: Requirements 19.11, 20.15**
+
+### Property 56: Block template application
+*For any* existing block template, applying the template should pre-fill the block creation form with all saved template values.
+**Validates: Requirements 19.12**
+
+### Property 57: Block filtering functionality
+*For any* combination of filter criteria (date range, court, reason, block type), the filtering should return only blocks that match all specified criteria.
+**Validates: Requirements 19.13**
+
+### Property 58: Bulk block deletion
+*For any* set of selected blocks, bulk deletion should remove all selected blocks after confirmation.
+**Validates: Requirements 19.14**
+
+### Property 59: Series deletion options
+*For any* recurring block series, deletion should offer options to delete single occurrence, all future occurrences, or entire series, and execute the selected option correctly.
+**Validates: Requirements 19.15**
+
+### Property 60: Block tooltip information
+*For any* block displayed in calendar view, the tooltip should contain all relevant block details including time, reason, affected courts, series information, and modification status.
+**Validates: Requirements 19.17**
+
+### Property 61: Conflict preview accuracy
+*For any* block creation that conflicts with existing reservations, the conflict preview should display all affected reservations accurately.
+**Validates: Requirements 19.18**
+
+### Property 62: Block operation audit logging
+*For any* block operation (create, update, delete), the system should create an audit log entry with correct operation details, timestamp, and administrator identification.
+**Validates: Requirements 19.19**
+
+### Property 63: Block reason management interface
+*For any* administrator accessing the block reason management interface, all existing block reasons should be displayed with correct add, edit, and delete options.
+**Validates: Requirements 20.1**
+
+### Property 64: Block reason creation and availability
+*For any* new block reason created by an administrator, the reason should be stored correctly and become available for selection in block creation forms.
+**Validates: Requirements 20.2**
+
+### Property 65: Block reason editing with historical preservation
+*For any* existing block reason that is edited, the reason name should be updated for future use while preserving the original name in historical block data.
+**Validates: Requirements 20.3**
+
+### Property 66: Block reason deletion with usage warning
+*For any* block reason currently in use by existing blocks, deletion attempts should display a warning message and require confirmation before proceeding.
+**Validates: Requirements 20.4**
+
+### Property 67: Block reason deletion with historical preservation
+*For any* confirmed deletion of a block reason in use, all past blocks should retain the original reason, all future blocks using that reason should be deleted, and the reason should be removed from future creation options.
+**Validates: Requirements 20.5**
+
+### Property 68: Unused block reason deletion
+*For any* block reason not currently in use, deletion should remove it from the system and future block creation options after confirmation.
+**Validates: Requirements 20.6**
+
+### Property 69: Sub-reason storage and display
+*For any* block created with both main reason and sub-reason, both should be stored correctly and displayed together in block details and lists.
+**Validates: Requirements 20.7, 20.10, 20.11**
+
+### Property 70: Sub-reason template management
+*For any* sub-reason template created for a block reason, the template should be stored correctly and made available for future use when creating blocks with that reason.
+**Validates: Requirements 20.12**
+
+### Property 71: Filtering by reason and sub-reason
+*For any* filtering operation, the system should allow filtering by both main reason and sub-reason categories and return accurate results.
+**Validates: Requirements 20.13**
+
+### Property 72: Default block reasons initialization
+*For any* system initialization, default block reasons (Maintenance, Weather, Tournament, Championship, Tennis Course) should be created and made available for administrator modification.
+**Validates: Requirements 20.14**
+
 ## Short Notice Booking Implementation
 
 ### Overview
@@ -654,7 +1006,283 @@ The short notice booking feature allows members to book courts within 15 minutes
 - "Sie haben bereits eine aktive kurzfristige Buchung. Nur eine kurzfristige Buchung pro Mitglied ist erlaubt." - Short notice limit error message
 - "Diese Buchung wurde innerhalb von 15 Minuten vor Spielbeginn erstellt" - Explanation
 
+## Enhanced Admin Panel Features
+
+### Advanced Block Management
+
+The enhanced admin panel provides comprehensive block management capabilities including recurring blocks, templates, and customizable reasons.
+
+#### Calendar View
+
+The admin panel features a calendar-based interface for visualizing and managing blocks:
+
+**Calendar Components**:
+- Monthly calendar grid with day cells showing block indicators
+- Color-coded blocks by reason type (maintenance=blue, weather=gray, tournament=green, championship=gold)
+- Series indicators showing linked recurring blocks
+- Hover tooltips with detailed block information
+- Click-to-edit functionality for individual blocks
+
+**Visual Indicators**:
+- Single blocks: Solid color bars
+- Recurring series: Striped pattern with series name
+- Modified instances: Dotted border indicating deviation from series pattern
+- Conflicting reservations: Red warning icons
+
+#### Recurring Block Series Management
+
+**Series Creation**:
+- Start and end date selection (both required)
+- Recurrence pattern selection (daily, weekly, monthly)
+- Day-of-week selection for weekly patterns
+- Multi-court selection for simultaneous blocking
+- Reason and sub-reason assignment
+
+**Series Editing Options**:
+- Edit entire series: Applies changes to all future instances
+- Edit from date: Applies changes to instances from specified date forward
+- Edit single instance: Modifies only the selected occurrence
+- Visual feedback showing which instances will be affected
+
+**Series Deletion Options**:
+- Delete single occurrence: Removes only the selected instance
+- Delete future occurrences: Removes all instances from specified date forward
+- Delete entire series: Removes all instances (past and future)
+
+#### Block Templates
+
+**Template Features**:
+- Save frequently used block configurations
+- Include court selection, time ranges, reasons, and recurrence patterns
+- Quick application to create new blocks
+- Template management (create, edit, delete)
+
+**Template Application**:
+- Pre-fills block creation form with template values
+- Allows date override while preserving other settings
+- Supports both single blocks and recurring series templates
+
+#### Customizable Block Reasons
+
+**Reason Management Interface**:
+- Add, edit, and delete custom block reasons
+- Usage tracking to prevent deletion of reasons in use
+- Historical preservation when editing or deleting reasons
+- Default reasons provided but fully customizable
+
+**Sub-Reason Support**:
+- Optional additional detail for blocks (e.g., "Team A vs Team B" for Championship)
+- Sub-reason templates for common scenarios
+- Combined display format: "Championship - Team A vs Team B"
+- Filtering support for both main reason and sub-reason
+
+#### Bulk Operations
+
+**Multi-Selection**:
+- Checkbox selection for multiple blocks
+- Bulk deletion with single confirmation
+- Bulk editing for common properties
+- Series-aware operations (select entire series or individual instances)
+
+**Conflict Management**:
+- Preview affected reservations before creating blocks
+- Automatic cancellation of conflicting reservations
+- Email notifications to affected members with block reason
+- Conflict resolution options for administrators
+
+#### Filtering and Search
+
+**Advanced Filters**:
+- Date range selection
+- Court selection (single or multiple)
+- Reason and sub-reason filtering
+- Block type filtering (single vs recurring series)
+- Administrator filtering (who created the block)
+
+**Search Functionality**:
+- Text search in block reasons and sub-reasons
+- Series name search
+- Quick filters for common scenarios (today's blocks, upcoming maintenance, etc.)
+
+#### Audit Trail
+
+**Operation Logging**:
+- Complete audit log of all block operations
+- Timestamp and administrator identification
+- Operation details stored as JSON
+- Filterable audit history
+
+**Logged Operations**:
+- Block creation (single and series)
+- Block modifications (single instance and series-wide)
+- Block deletions (single, bulk, and series)
+- Template operations
+- Reason management operations
+
+### German Language Support for Enhanced Features
+
+**Recurring Block Terms**:
+- "Wiederkehrende Sperrung" - Recurring block
+- "Serie bearbeiten" - Edit series
+- "Einzelne Instanz bearbeiten" - Edit single instance
+- "Alle zukünftigen Instanzen" - All future instances
+- "Gesamte Serie löschen" - Delete entire series
+
+**Template Terms**:
+- "Sperrungsvorlage" - Block template
+- "Vorlage anwenden" - Apply template
+- "Vorlage speichern" - Save template
+
+**Reason Management Terms**:
+- "Sperrungsgrund verwalten" - Manage block reason
+- "Untergrund" - Sub-reason
+- "Grund wird verwendet" - Reason is in use
+- "Historische Daten bleiben erhalten" - Historical data will be preserved
+
+**Calendar Terms**:
+- "Kalenderansicht" - Calendar view
+- "Monatliche Ansicht" - Monthly view
+- "Konflikt-Vorschau" - Conflict preview
+- "Betroffene Buchungen" - Affected reservations
+
 ## User Feedback and Notifications
+
+### Advanced Block Management
+
+The enhanced admin panel provides comprehensive block management capabilities including recurring blocks, templates, and customizable reasons.
+
+#### Calendar View
+
+The admin panel features a calendar-based interface for visualizing and managing blocks:
+
+**Calendar Components**:
+- Monthly calendar grid with day cells showing block indicators
+- Color-coded blocks by reason type (maintenance=blue, weather=gray, tournament=green, championship=gold)
+- Series indicators showing linked recurring blocks
+- Hover tooltips with detailed block information
+- Click-to-edit functionality for individual blocks
+
+**Visual Indicators**:
+- Single blocks: Solid color bars
+- Recurring series: Striped pattern with series name
+- Modified instances: Dotted border indicating deviation from series pattern
+- Conflicting reservations: Red warning icons
+
+#### Recurring Block Series Management
+
+**Series Creation**:
+- Start and end date selection (both required)
+- Recurrence pattern selection (daily, weekly, monthly)
+- Day-of-week selection for weekly patterns
+- Multi-court selection for simultaneous blocking
+- Reason and sub-reason assignment
+
+**Series Editing Options**:
+- Edit entire series: Applies changes to all future instances
+- Edit from date: Applies changes to instances from specified date forward
+- Edit single instance: Modifies only the selected occurrence
+- Visual feedback showing which instances will be affected
+
+**Series Deletion Options**:
+- Delete single occurrence: Removes only the selected instance
+- Delete future occurrences: Removes all instances from specified date forward
+- Delete entire series: Removes all instances (past and future)
+
+#### Block Templates
+
+**Template Features**:
+- Save frequently used block configurations
+- Include court selection, time ranges, reasons, and recurrence patterns
+- Quick application to create new blocks
+- Template management (create, edit, delete)
+
+**Template Application**:
+- Pre-fills block creation form with template values
+- Allows date override while preserving other settings
+- Supports both single blocks and recurring series templates
+
+#### Customizable Block Reasons
+
+**Reason Management Interface**:
+- Add, edit, and delete custom block reasons
+- Usage tracking to prevent deletion of reasons in use
+- Historical preservation when editing or deleting reasons
+- Default reasons provided but fully customizable
+
+**Sub-Reason Support**:
+- Optional additional detail for blocks (e.g., "Team A vs Team B" for Championship)
+- Sub-reason templates for common scenarios
+- Combined display format: "Championship - Team A vs Team B"
+- Filtering support for both main reason and sub-reason
+
+#### Bulk Operations
+
+**Multi-Selection**:
+- Checkbox selection for multiple blocks
+- Bulk deletion with single confirmation
+- Bulk editing for common properties
+- Series-aware operations (select entire series or individual instances)
+
+**Conflict Management**:
+- Preview affected reservations before creating blocks
+- Automatic cancellation of conflicting reservations
+- Email notifications to affected members with block reason
+- Conflict resolution options for administrators
+
+#### Filtering and Search
+
+**Advanced Filters**:
+- Date range selection
+- Court selection (single or multiple)
+- Reason and sub-reason filtering
+- Block type filtering (single vs recurring series)
+- Administrator filtering (who created the block)
+
+**Search Functionality**:
+- Text search in block reasons and sub-reasons
+- Series name search
+- Quick filters for common scenarios (today's blocks, upcoming maintenance, etc.)
+
+#### Audit Trail
+
+**Operation Logging**:
+- Complete audit log of all block operations
+- Timestamp and administrator identification
+- Operation details stored as JSON
+- Filterable audit history
+
+**Logged Operations**:
+- Block creation (single and series)
+- Block modifications (single instance and series-wide)
+- Block deletions (single, bulk, and series)
+- Template operations
+- Reason management operations
+
+### German Language Support for Enhanced Features
+
+**Recurring Block Terms**:
+- "Wiederkehrende Sperrung" - Recurring block
+- "Serie bearbeiten" - Edit series
+- "Einzelne Instanz bearbeiten" - Edit single instance
+- "Alle zukünftigen Instanzen" - All future instances
+- "Gesamte Serie löschen" - Delete entire series
+
+**Template Terms**:
+- "Sperrungsvorlage" - Block template
+- "Vorlage anwenden" - Apply template
+- "Vorlage speichern" - Save template
+
+**Reason Management Terms**:
+- "Sperrungsgrund verwalten" - Manage block reason
+- "Untergrund" - Sub-reason
+- "Grund wird verwendet" - Reason is in use
+- "Historische Daten bleiben erhalten" - Historical data will be preserved
+
+**Calendar Terms**:
+- "Kalenderansicht" - Calendar view
+- "Monatliche Ansicht" - Monthly view
+- "Konflikt-Vorschau" - Conflict preview
+- "Betroffene Buchungen" - Affected reservations
 
 ### Success Messages
 
@@ -960,6 +1588,75 @@ def test_property_46_cancellation_prevented_within_15_minutes_and_during_slot(re
     with patch('datetime.datetime.now', return_value=current_time):
         result = ReservationService.cancel_reservation(reservation_id)
         assert result == True
+
+# Enhanced admin panel property tests
+@given(start_date=future_dates, end_date=future_dates, 
+       recurrence_pattern=st.sampled_from(['daily', 'weekly', 'monthly']))
+def test_property_48_recurring_block_series_generation(start_date, end_date, recurrence_pattern):
+    """Feature: tennis-club-reservation, Property 48: Recurring block series generation
+    Validates: Requirements 19.1"""
+    assume(end_date >= start_date)  # Ensure valid date range
+    
+    series_data = {
+        'court_ids': [1, 2],
+        'start_date': start_date,
+        'end_date': end_date,
+        'start_time': time(10, 0),
+        'end_time': time(12, 0),
+        'recurrence_pattern': recurrence_pattern,
+        'reason_id': 1,
+        'admin_id': 1
+    }
+    
+    blocks, error = BlockService.create_recurring_block_series(**series_data)
+    assert error is None
+    assert len(blocks) > 0
+    
+    # Verify all blocks have correct series linkage
+    series_id = blocks[0].series_id
+    for block in blocks:
+        assert block.series_id == series_id
+        assert block.start_time == time(10, 0)
+        assert block.end_time == time(12, 0)
+
+@given(court_ids=st.lists(st.integers(min_value=1, max_value=6), min_size=1, max_size=6))
+def test_property_54_multi_court_block_creation(court_ids):
+    """Feature: tennis-club-reservation, Property 54: Multi-court block creation
+    Validates: Requirements 19.10"""
+    block_data = {
+        'court_ids': court_ids,
+        'date': date.today() + timedelta(days=1),
+        'start_time': time(14, 0),
+        'end_time': time(16, 0),
+        'reason_id': 1,
+        'admin_id': 1
+    }
+    
+    blocks, error = BlockService.create_multi_court_blocks(**block_data)
+    assert error is None
+    assert len(blocks) == len(court_ids)
+    
+    # Verify blocks created for all courts with same parameters
+    for i, block in enumerate(blocks):
+        assert block.court_id == court_ids[i]
+        assert block.date == block_data['date']
+        assert block.start_time == block_data['start_time']
+        assert block.end_time == block_data['end_time']
+
+@given(reason_name=st.text(min_size=1, max_size=50))
+def test_property_64_block_reason_creation_and_availability(reason_name):
+    """Feature: tennis-club-reservation, Property 64: Block reason creation and availability
+    Validates: Requirements 20.2"""
+    assume(reason_name.strip())  # Ensure non-empty after stripping
+    
+    reason, error = BlockReasonService.create_block_reason(reason_name.strip(), admin_id=1)
+    assert error is None
+    assert reason.name == reason_name.strip()
+    
+    # Verify reason is available for block creation
+    available_reasons = BlockReasonService.get_all_block_reasons()
+    reason_names = [r.name for r in available_reasons]
+    assert reason_name.strip() in reason_names
 ```
 
 **Property Test Requirements**:

@@ -640,3 +640,437 @@
   - Verify all existing functionality still works correctly
   - Test complete short notice booking workflow end-to-end
   - Verify German language text is correct and consistent
+
+- [x] 38. Implement enhanced database models for advanced block management
+  - [x] 38.1 Create BlockReason model
+    - Implement BlockReason model with id, name, is_active, created_by_id, created_at
+    - Add unique constraint on name field
+    - Add foreign key relationship to Member (created_by)
+    - Add indexes for name and is_active fields
+    - _Requirements: 20.1, 20.2_
+  
+  - [x] 38.2 Create BlockSeries model for recurring blocks
+    - Implement BlockSeries model with id, name, start_date, end_date, start_time, end_time, recurrence_pattern, recurrence_days, reason_id, sub_reason, created_by_id, created_at
+    - Add foreign key relationships to BlockReason and Member
+    - Add JSON field for recurrence_days to store weekly pattern
+    - Add indexes for date range and reason queries
+    - _Requirements: 19.1, 19.2, 19.3_
+  
+  - [x] 38.3 Create SubReasonTemplate model
+    - Implement SubReasonTemplate model with id, reason_id, template_name, created_by_id, created_at
+    - Add foreign key relationships to BlockReason and Member
+    - Add index for reason_id queries
+    - _Requirements: 20.12_
+  
+  - [x] 38.4 Create BlockTemplate model
+    - Implement BlockTemplate model with id, name, court_selection, start_time, end_time, reason_id, sub_reason, recurrence_pattern, recurrence_days, created_by_id, created_at
+    - Add JSON field for court_selection array
+    - Add foreign key relationships to BlockReason and Member
+    - Add unique constraint on name field
+    - _Requirements: 19.11, 20.15_
+  
+  - [x] 38.5 Create BlockAuditLog model
+    - Implement BlockAuditLog model with id, operation, block_id, series_id, operation_data, admin_id, timestamp
+    - Add JSON field for operation_data
+    - Add foreign key relationship to Member (admin)
+    - Add indexes for timestamp, admin, and operation queries
+    - _Requirements: 19.19_
+  
+  - [x] 38.6 Update Block model for enhanced features
+    - Add reason_id foreign key to BlockReason (replace reason enum)
+    - Add sub_reason text field for additional details
+    - Add series_id foreign key to BlockSeries for recurring blocks
+    - Add is_modified boolean field for series instance modifications
+    - Update indexes and constraints
+    - _Requirements: 19.7, 20.7, 20.10_
+  
+  - [x] 38.7 Create database migration for enhanced block models
+    - Create migration to add new tables (block_reason, block_series, sub_reason_template, block_template, block_audit_log)
+    - Create migration to update existing block table with new fields
+    - Migrate existing block reasons to new BlockReason table
+    - Set up foreign key constraints and indexes
+    - _Requirements: 19.1, 20.1_
+  
+  - [x] 38.8 Write property test for block reason storage
+    - **Property 64: Block reason creation and availability**
+    - **Validates: Requirements 20.2**
+  
+  - [x] 38.9 Write property test for recurring block series generation
+    - **Property 48: Recurring block series generation**
+    - **Validates: Requirements 19.1**
+  
+  - [ ] 38.10 Write property test for block template storage
+    - **Property 55: Block template storage and retrieval**
+    - **Validates: Requirements 19.11, 20.15**
+
+- [x] 39. Implement BlockReasonService for customizable block reasons
+  - [x] 39.1 Create BlockReasonService class
+    - Implement create_block_reason() method with validation
+    - Implement update_block_reason() method with historical preservation
+    - Implement delete_block_reason() method with usage checking
+    - Implement get_all_block_reasons() query method
+    - Implement get_reason_usage_count() for deletion validation
+    - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6_
+  
+  - [x] 39.2 Implement sub-reason template management
+    - Implement create_sub_reason_template() method
+    - Implement get_sub_reason_templates() query method
+    - Implement delete_sub_reason_template() method
+    - _Requirements: 20.12_
+  
+  - [x] 39.3 Implement default reason initialization
+    - Implement initialize_default_reasons() method
+    - Create default reasons: Maintenance, Weather, Tournament, Championship, Tennis Course
+    - Implement cleanup_future_blocks_with_reason() for reason deletion
+    - _Requirements: 20.14, 20.5_
+  
+  - [ ]* 39.4 Write property test for block reason management
+    - **Property 63: Block reason management interface**
+    - **Validates: Requirements 20.1**
+  
+  - [ ]* 39.5 Write property test for reason editing with historical preservation
+    - **Property 65: Block reason editing with historical preservation**
+    - **Validates: Requirements 20.3**
+  
+  - [ ]* 39.6 Write property test for reason deletion with usage warning
+    - **Property 66: Block reason deletion with usage warning**
+    - **Validates: Requirements 20.4**
+  
+  - [ ]* 39.7 Write property test for reason deletion with historical preservation
+    - **Property 67: Block reason deletion with historical preservation**
+    - **Validates: Requirements 20.5**
+  
+  - [ ]* 39.8 Write property test for unused reason deletion
+    - **Property 68: Unused block reason deletion**
+    - **Validates: Requirements 20.6**
+  
+  - [ ]* 39.9 Write property test for sub-reason template management
+    - **Property 70: Sub-reason template management**
+    - **Validates: Requirements 20.12**
+  
+  - [ ]* 39.10 Write property test for default reasons initialization
+    - **Property 72: Default block reasons initialization**
+    - **Validates: Requirements 20.14**
+
+- [x] 40. Enhance BlockService for advanced block management
+  - [x] 40.1 Update BlockService for recurring block series
+    - Implement create_recurring_block_series() method
+    - Implement get_series_blocks() query method
+    - Implement update_entire_series() method for series-wide edits
+    - Implement update_future_series() method for partial series edits
+    - Implement update_single_instance() method for individual modifications
+    - Implement delete_series_options() method with multiple deletion options
+    - _Requirements: 19.1, 19.2, 19.3, 19.5, 19.6, 19.7, 19.15_
+  
+  - [x] 40.2 Implement multi-court block operations
+    - Implement create_multi_court_blocks() method
+    - Implement bulk_delete_blocks() method for selected blocks
+    - Add transaction management for bulk operations
+    - _Requirements: 19.10, 19.14_
+  
+  - [x] 40.3 Implement block template operations
+    - Implement create_block_template() method
+    - Implement get_block_templates() query method
+    - Implement apply_block_template() method for form pre-filling
+    - Implement delete_block_template() method
+    - _Requirements: 19.11, 19.12_
+  
+  - [x] 40.4 Implement filtering and search functionality
+    - Implement filter_blocks() method with multiple criteria
+    - Implement get_conflict_preview() method for reservation conflicts
+    - Add support for date range, court, reason, and block type filtering
+    - _Requirements: 19.13, 19.18_
+  
+  - [x] 40.5 Implement audit logging
+    - Implement log_block_operation() method
+    - Implement get_audit_log() query method with filtering
+    - Add audit logging to all block operations
+    - _Requirements: 19.19_
+  
+  - [x] 40.6 Update existing block methods for enhanced features
+    - Update create_block() to use reason_id instead of reason enum
+    - Add sub_reason parameter to block creation
+    - Update cancel_conflicting_reservations() for enhanced reasons
+    - _Requirements: 20.7, 20.10_
+  
+  - [ ]* 40.7 Write property test for weekly recurring blocks
+    - **Property 49: Weekly recurring blocks respect day selection**
+    - **Validates: Requirements 19.2**
+  
+  - [ ]* 40.8 Write property test for series linking
+    - **Property 50: Recurring block series linking**
+    - **Validates: Requirements 19.3**
+  
+  - [ ]* 40.9 Write property test for end date requirement
+    - **Property 51: Recurring blocks require end date**
+    - **Validates: Requirements 19.4**
+  
+  - [ ]* 40.10 Write property test for series-wide edits
+    - **Property 52: Series-wide edits affect all future instances**
+    - **Validates: Requirements 19.5, 19.6**
+  
+  - [ ]* 40.11 Write property test for single instance edits
+    - **Property 53: Single instance edits don't affect other instances**
+    - **Validates: Requirements 19.7**
+  
+  - [ ]* 40.12 Write property test for multi-court block creation
+    - **Property 54: Multi-court block creation**
+    - **Validates: Requirements 19.10**
+  
+  - [ ]* 40.13 Write property test for block template application
+    - **Property 56: Block template application**
+    - **Validates: Requirements 19.12**
+  
+  - [ ]* 40.14 Write property test for block filtering
+    - **Property 57: Block filtering functionality**
+    - **Validates: Requirements 19.13**
+  
+  - [ ]* 40.15 Write property test for bulk deletion
+    - **Property 58: Bulk block deletion**
+    - **Validates: Requirements 19.14**
+  
+  - [ ]* 40.16 Write property test for series deletion options
+    - **Property 59: Series deletion options**
+    - **Validates: Requirements 19.15**
+  
+  - [ ]* 40.17 Write property test for conflict preview
+    - **Property 61: Conflict preview accuracy**
+    - **Validates: Requirements 19.18**
+  
+  - [ ]* 40.18 Write property test for audit logging
+    - **Property 62: Block operation audit logging**
+    - **Validates: Requirements 19.19**
+  
+  - [ ]* 40.19 Write property test for sub-reason storage and display
+    - **Property 69: Sub-reason storage and display**
+    - **Validates: Requirements 20.7, 20.10, 20.11**
+  
+  - [ ]* 40.20 Write property test for filtering by reason and sub-reason
+    - **Property 71: Filtering by reason and sub-reason**
+    - **Validates: Requirements 20.13**
+
+- [x] 41. Implement enhanced admin routes for advanced block management
+  - [x] 41.1 Update existing admin block routes
+    - Update GET /admin/blocks to support enhanced filtering (date_range, court_ids, reason_ids, block_type)
+    - Update POST /admin/blocks to use reason_id and sub_reason
+    - Update DELETE /admin/blocks/<id> for enhanced audit logging
+    - _Requirements: 19.13, 20.7, 19.19_
+  
+  - [x] 41.2 Implement recurring block series routes
+    - Implement POST /admin/blocks/series for creating recurring block series
+    - Implement PUT /admin/blocks/series/<series_id> for updating entire series
+    - Implement PUT /admin/blocks/series/<series_id>/future for updating future instances
+    - Implement DELETE /admin/blocks/series/<series_id> with deletion options
+    - _Requirements: 19.1, 19.5, 19.6, 19.15_
+  
+  - [x] 41.3 Implement multi-court and bulk operations routes
+    - Implement POST /admin/blocks/multi-court for creating blocks on multiple courts
+    - Implement POST /admin/blocks/bulk-delete for bulk deletion
+    - Implement GET /admin/blocks/conflict-preview for reservation conflict preview
+    - _Requirements: 19.10, 19.14, 19.18_
+  
+  - [x] 41.4 Implement block template routes
+    - Implement GET /admin/block-templates for listing templates
+    - Implement POST /admin/block-templates for creating templates
+    - Implement PUT /admin/block-templates/<id> for updating templates
+    - Implement DELETE /admin/block-templates/<id> for deleting templates
+    - Implement POST /admin/block-templates/<id>/apply for applying templates
+    - _Requirements: 19.11, 19.12_
+  
+  - [x] 41.5 Implement block reason management routes
+    - Implement GET /admin/block-reasons for listing reasons
+    - Implement POST /admin/block-reasons for creating reasons
+    - Implement PUT /admin/block-reasons/<id> for updating reasons
+    - Implement DELETE /admin/block-reasons/<id> for deleting reasons with usage check
+    - Implement GET /admin/block-reasons/<id>/usage for usage count
+    - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6_
+  
+  - [x] 41.6 Implement sub-reason template routes
+    - Implement GET /admin/block-reasons/<id>/sub-reason-templates for listing templates
+    - Implement POST /admin/block-reasons/<id>/sub-reason-templates for creating templates
+    - Implement DELETE /admin/sub-reason-templates/<id> for deleting templates
+    - _Requirements: 20.12_
+  
+  - [x] 41.7 Implement audit log routes
+    - Implement GET /admin/blocks/audit-log for retrieving audit history
+    - Add filtering support for audit log queries
+    - _Requirements: 19.19_
+
+- [x] 42. Create enhanced admin panel UI components
+  - [x] 42.1 Create calendar view component
+    - Create calendar-based interface for visualizing blocks
+    - Implement monthly calendar grid with day cells
+    - Add color-coded block indicators by reason type
+    - Add hover tooltips with detailed block information
+    - Add click-to-edit functionality for individual blocks
+    - _Requirements: 19.9, 19.17_
+  
+  - [x] 42.2 Create recurring block series management interface
+    - Create form for recurring block series creation
+    - Add start/end date selection with validation
+    - Add recurrence pattern selection (daily, weekly, monthly)
+    - Add day-of-week selection for weekly patterns
+    - Add multi-court selection interface
+    - _Requirements: 19.1, 19.2, 19.4_
+  
+  - [x] 42.3 Create series editing interface
+    - Create options for editing entire series vs single instance
+    - Add visual feedback showing which instances will be affected
+    - Implement series deletion options (single, future, all)
+    - Add confirmation dialogs for series operations
+    - _Requirements: 19.5, 19.6, 19.7, 19.15_
+  
+  - [x] 42.4 Create block template management interface
+    - Create template creation form with all block parameters
+    - Create template listing with edit/delete options
+    - Implement template application with date override
+    - Add template preview functionality
+    - _Requirements: 19.11, 19.12_
+  
+  - [x] 42.5 Create block reason management interface
+    - Create reason management panel with add/edit/delete options
+    - Add usage tracking display for each reason
+    - Implement deletion warnings for reasons in use
+    - Create sub-reason template management
+    - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.12_
+  
+  - [x] 42.6 Create advanced filtering interface
+    - Create filter panel with date range selection
+    - Add court selection (single or multiple)
+    - Add reason and sub-reason filtering
+    - Add block type filtering (single vs recurring series)
+    - Add administrator filtering
+    - _Requirements: 19.13_
+  
+  - [x] 42.7 Create bulk operations interface
+    - Add checkbox selection for multiple blocks
+    - Create bulk deletion interface with confirmation
+    - Add series-aware selection (entire series or individual instances)
+    - Implement conflict preview for bulk operations
+    - _Requirements: 19.14, 19.18_
+  
+  - [ ]* 42.8 Write property test for block tooltip information
+    - **Property 60: Block tooltip information**
+    - **Validates: Requirements 19.17**
+
+- [x] 43. Update German language support for enhanced admin features
+  - [x] 43.1 Add German text for recurring block features
+    - Add "Wiederkehrende Sperrung" for recurring block
+    - Add "Serie bearbeiten" for edit series
+    - Add "Einzelne Instanz bearbeiten" for edit single instance
+    - Add "Alle zukünftigen Instanzen" for all future instances
+    - Add "Gesamte Serie löschen" for delete entire series
+    - _Requirements: 10.1_
+  
+  - [x] 43.2 Add German text for template features
+    - Add "Sperrungsvorlage" for block template
+    - Add "Vorlage anwenden" for apply template
+    - Add "Vorlage speichern" for save template
+    - _Requirements: 10.1_
+  
+  - [x] 43.3 Add German text for reason management
+    - Add "Sperrungsgrund verwalten" for manage block reason
+    - Add "Untergrund" for sub-reason
+    - Add "Grund wird verwendet" for reason is in use
+    - Add "Historische Daten bleiben erhalten" for historical data preservation
+    - _Requirements: 10.1_
+  
+  - [x] 43.4 Add German text for calendar and filtering
+    - Add "Kalenderansicht" for calendar view
+    - Add "Monatliche Ansicht" for monthly view
+    - Add "Konflikt-Vorschau" for conflict preview
+    - Add "Betroffene Buchungen" for affected reservations
+    - _Requirements: 10.1_
+
+- [x] 44. Implement frontend JavaScript for enhanced admin features
+  - [x] 44.1 Implement calendar view functionality
+    - Create calendar rendering with block indicators
+    - Add hover tooltips with block details
+    - Implement click handlers for block editing
+    - Add color coding by reason type
+    - _Requirements: 19.9, 19.17_
+  
+  - [x] 44.2 Implement recurring block series management
+    - Create series creation form with validation
+    - Add recurrence pattern selection logic
+    - Implement day-of-week selection for weekly patterns
+    - Add series editing options with visual feedback
+    - _Requirements: 19.1, 19.2, 19.5, 19.6, 19.7_
+  
+  - [x] 44.3 Implement template management functionality
+    - Create template creation and editing forms
+    - Implement template application with form pre-filling
+    - Add template preview functionality
+    - _Requirements: 19.11, 19.12_
+  
+  - [x] 44.4 Implement advanced filtering
+    - Create filter interface with multiple criteria
+    - Add dynamic filtering with AJAX updates
+    - Implement filter persistence across page loads
+    - _Requirements: 19.13_
+  
+  - [x] 44.5 Implement bulk operations
+    - Add checkbox selection for multiple blocks
+    - Create bulk deletion with confirmation
+    - Implement conflict preview before operations
+    - _Requirements: 19.14, 19.18_
+  
+  - [x] 44.6 Implement reason management interface
+    - Create reason CRUD operations
+    - Add usage tracking display
+    - Implement deletion warnings and confirmations
+    - Create sub-reason template management
+    - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.12_
+
+- [x] 45. Integration testing for enhanced admin panel
+  - [x] 45.1 Test recurring block series workflows
+    - Test series creation with different recurrence patterns
+    - Test series editing (entire series, future instances, single instance)
+    - Test series deletion options
+    - Verify proper series linking and modification tracking
+    - _Requirements: 19.1, 19.2, 19.3, 19.5, 19.6, 19.7, 19.15_
+  
+  - [x] 45.2 Test multi-court and bulk operations
+    - Test multi-court block creation
+    - Test bulk deletion of selected blocks
+    - Test conflict preview functionality
+    - Verify proper transaction handling
+    - _Requirements: 19.10, 19.14, 19.18_
+  
+  - [x] 45.3 Test template functionality
+    - Test template creation and storage
+    - Test template application and form pre-filling
+    - Test template editing and deletion
+    - _Requirements: 19.11, 19.12_
+  
+  - [x] 45.4 Test reason management
+    - Test custom reason creation and editing
+    - Test reason deletion with usage checking
+    - Test historical preservation of reason data
+    - Test sub-reason template management
+    - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6, 20.12_
+  
+  - [x] 45.5 Test filtering and search functionality
+    - Test all filter combinations
+    - Test search functionality
+    - Test filter persistence
+    - _Requirements: 19.13_
+  
+  - [x] 45.6 Test audit logging
+    - Test audit log creation for all operations
+    - Test audit log filtering and retrieval
+    - Verify proper operation data storage
+    - _Requirements: 19.19_
+  
+  - [x] 45.7 Test calendar view functionality
+    - Test calendar rendering with blocks
+    - Test hover tooltips and click interactions
+    - Test color coding and visual indicators
+    - _Requirements: 19.9, 19.17_
+
+- [ ] 46. Final checkpoint for enhanced admin panel
+  - Ensure all new tests pass, ask the user if questions arise.
+  - Verify all existing functionality still works correctly
+  - Test complete enhanced admin workflows end-to-end
+  - Verify German language text is correct and consistent
+  - Test responsive design with new admin features

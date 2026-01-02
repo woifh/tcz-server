@@ -12,6 +12,11 @@ This document specifies the requirements for a responsive web application that e
 - **Court**: One of six clay tennis courts numbered 1 through 6
 - **Reservation**: A booking record linking a court, time slot, and member(s)
 - **Block**: An administrative restriction preventing court bookings for specified time periods
+- **Block Reason**: A customizable category explaining why a court is blocked (e.g., Maintenance, Championship, Tennis Course)
+- **Block Sub-reason**: An optional additional detail providing specific information about a block (e.g., "Team A vs Team B" for Championship, "Beginner Course" for Tennis Course)
+- **Recurring Block**: A series of blocks that repeat according to a specified pattern (daily, weekly, monthly) with defined start and end dates
+- **Block Template**: A saved configuration of block settings that can be reused for creating new blocks
+- **Block Series**: A group of related recurring blocks created from a single recurring block definition, where individual instances can be modified independently while maintaining series relationship
 - **Booking Slot**: A one-hour time period between 06:00 and 22:00
 - **Active Reservation**: A future reservation that has not been cancelled or completed
 - **Short Notice Booking**: A reservation created within 15 minutes of the slot start time that does not count toward the member's active reservation limit
@@ -242,3 +247,51 @@ This document specifies the requirements for a responsive web application that e
 10. THE System SHALL apply all other booking constraints to short notice bookings including court availability, member authentication, and time slot validity
 11. WHEN displaying reservations in the court grid, THE System SHALL highlight short notice bookings with a distinct background color to differentiate them from regular reservations
 12. WHEN a short notice booking is created, THE System SHALL prevent cancellation of that booking since it is created within the 15-minute cancellation prohibition window
+
+### Requirement 19
+
+**User Story:** As an administrator, I want advanced block management capabilities, so that I can efficiently manage court availability for recurring events, maintenance schedules, and complex blocking scenarios.
+
+#### Acceptance Criteria
+
+1. WHEN an administrator creates a recurring block, THE System SHALL require a start date, end date, recurrence pattern (daily, weekly, monthly), and time range and generate individual block instances for each occurrence
+2. WHEN an administrator creates a weekly recurring block, THE System SHALL allow selection of specific days of the week (e.g., "every Saturday") and generate blocks for those days only between the start and end dates
+3. WHEN an administrator creates a recurring block series (e.g., "Court 5, every Saturday 10:00-12:00, June 1-30 for tennis course"), THE System SHALL generate individual block instances for each occurrence and link them as part of the same series
+4. WHEN an administrator attempts to create a recurring block without an end date, THE System SHALL reject the operation and display an error message requiring an end date
+5. WHEN an administrator edits an entire recurring block series, THE System SHALL provide options to modify the time range, courts, reason, or recurrence pattern and apply changes to all future instances in the series
+6. WHEN an administrator shifts an entire recurring block series time (e.g., from 10:00-12:00 to 9:00-11:00), THE System SHALL update all future instances in the series with the new time range
+7. WHEN an administrator edits a single instance of a recurring block series, THE System SHALL allow modification of that specific occurrence without affecting other instances in the series
+8. WHEN an administrator modifies a single recurring block instance, THE System SHALL clearly indicate that the instance has been modified and is no longer following the original series pattern
+9. WHEN an administrator views the block management interface, THE System SHALL display a calendar view showing all existing blocks with visual indicators for different block types and series relationships
+10. WHEN an administrator selects multiple courts, THE System SHALL allow creation of blocks for all selected courts simultaneously with the same time period, dates, and reason
+11. WHEN an administrator creates a block template, THE System SHALL store the template with a name, default time range, reason, court selection, and recurrence settings for future reuse
+12. WHEN an administrator applies a block template, THE System SHALL pre-fill the block creation form with the template's saved values including start date, end date, and recurrence pattern
+13. WHEN an administrator views existing blocks, THE System SHALL provide filtering options by date range, court, reason, and block type (single vs recurring series)
+14. WHEN an administrator selects multiple existing blocks, THE System SHALL allow bulk deletion of the selected blocks with a single confirmation
+15. WHEN an administrator deletes a recurring block series, THE System SHALL offer options to delete the single occurrence, all future occurrences, or the entire series
+16. WHEN displaying blocks in the calendar view, THE System SHALL use different colors or patterns to distinguish between maintenance, weather, tournament, and championship blocks
+17. WHEN an administrator hovers over a block in the calendar view, THE System SHALL display a tooltip with block details including time, reason, affected courts, series information, and any individual modifications
+18. WHEN an administrator creates a block that conflicts with existing reservations, THE System SHALL display a preview of affected reservations before confirming the block creation
+19. THE System SHALL maintain an audit log of all block operations including creation, modification, and deletion with timestamps and administrator identification
+
+### Requirement 20
+
+**User Story:** As an administrator, I want to manage custom block reasons and sub-reasons, so that I can accurately categorize and track why courts are blocked with specific details.
+
+#### Acceptance Criteria
+
+1. WHEN an administrator accesses the block reason management interface, THE System SHALL display all existing block reasons with options to add, edit, or delete reasons
+2. WHEN an administrator creates a new block reason, THE System SHALL store the reason name and make it available for selection when creating blocks
+3. WHEN an administrator edits an existing block reason, THE System SHALL update the reason name and apply the change to future block selections while preserving historical block data
+4. WHEN an administrator deletes a block reason that is currently in use by existing blocks, THE System SHALL require confirmation and display a warning message explaining that historical blocks will retain the reason but all future blocks using this reason will be deleted
+5. WHEN an administrator confirms deletion of a block reason in use, THE System SHALL preserve all past blocks with that reason, delete all future blocks using that reason, and remove the reason from future block creation options
+6. WHEN an administrator deletes an unused block reason, THE System SHALL remove it from the system and future block creation options after confirmation
+7. WHEN an administrator creates a block, THE System SHALL allow selection of an optional sub-reason or category to provide additional detail
+8. WHEN an administrator selects "Championship" as a block reason, THE System SHALL allow entry of a sub-reason such as "Team A vs Team B" or "Junior Championship"
+9. WHEN an administrator selects "Tennis Course" as a block reason, THE System SHALL allow entry of a sub-reason such as "Beginner Course" or "Advanced Training"
+10. WHEN an administrator creates a block with a sub-reason, THE System SHALL store both the main reason and sub-reason and display both in block details
+11. WHEN displaying blocks in lists or calendar views, THE System SHALL show both the main reason and sub-reason (e.g., "Championship - Team A vs Team B")
+12. WHEN an administrator manages sub-reasons, THE System SHALL allow creation of predefined sub-reason templates for common scenarios
+13. WHEN filtering blocks, THE System SHALL allow filtering by both main reason and sub-reason categories
+14. THE System SHALL provide default block reasons including "Maintenance", "Weather", "Tournament", "Championship", and "Tennis Course" that can be modified by administrators
+15. WHEN an administrator creates a block template, THE System SHALL include the selected reason and sub-reason in the template for future reuse
