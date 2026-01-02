@@ -19,3 +19,42 @@
 .court-grid-cell.blocked {
     @apply bg-court-blocked text-white cursor-not-allowed;
 }
+
+/* Short notice booking styles - ensure orange background takes precedence */
+.short-notice-booking {
+    background-color: #f97316 !important; /* Orange-500 */
+    color: white !important;
+}
+
+/* Additional fallback for short notice bookings */
+td.short-notice-booking,
+.border.short-notice-booking,
+[class*="short-notice-booking"] {
+    background-color: #f97316 !important; /* Orange-500 */
+    color: white !important;
+}
+
+/* Even more specific rule for Tailwind override */
+table td.bg-orange-500.short-notice-booking,
+.bg-orange-500.short-notice-booking {
+    background-color: #f97316 !important;
+}
+
+/* Force orange background for any element with both classes */
+.bg-orange-500.text-white.short-notice-booking {
+    background-color: #f97316 !important;
+    color: white !important;
+}
+
+/* Ultra-specific rule to override everything */
+table tbody tr td.border.border-gray-300.px-2.py-4.text-center.bg-orange-500.text-white.text-xs.short-notice-booking {
+    background-color: #f97316 !important;
+    color: white !important;
+}
+
+/* Even more specific with all possible combinations */
+.border.border-gray-300.px-2.py-4.text-center.bg-orange-500.text-white.text-xs.short-notice-booking,
+.border.border-gray-300.px-2.py-4.text-center.text-xs.bg-orange-500.text-white.short-notice-booking {
+    background-color: #f97316 !important;
+    color: white !important;
+}

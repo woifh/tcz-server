@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Test</title>
+    <link href="app/static/css/output.css" rel="stylesheet">
+</head>
+<body class="p-8">
+    <h1 class="text-2xl font-bold mb-4">Short Notice Booking CSS Test</h1>
+    
+    <div class="space-y-4">
+        <div class="border border-gray-300 px-2 py-4 text-center bg-green-500 text-white">
+            Available Slot (Green)
+        </div>
+        
+        <div class="border border-gray-300 px-2 py-4 text-center bg-red-500 text-white">
+            Regular Booking (Red)
+        </div>
+        
+        <div class="border border-gray-300 px-2 py-4 text-center bg-orange-500 text-white text-xs short-notice-booking">
+            Short Notice Booking (Should be Orange)
+        </div>
+        
+        <div class="border border-gray-300 px-2 py-4 text-center text-xs bg-orange-500 text-white short-notice-booking">
+            Short Notice Booking Alternative Order (Should be Orange)
+        </div>
+    </div>
+    
+    <script>
+        // Test JavaScript class application
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Testing CSS application...');
+            
+            // Create a test element with the exact classes from JavaScript
+            const testElement = document.createElement('div');
+            testElement.className = 'border border-gray-300 px-2 py-4 text-center bg-orange-500 text-white text-xs short-notice-booking';
+            testElement.textContent = 'Dynamically Created Short Notice (Should be Orange)';
+            testElement.style.marginTop = '1rem';
+            
+            document.body.appendChild(testElement);
+            
+            // Log computed styles
+            const computedStyle = window.getComputedStyle(testElement);
+            console.log('Computed background-color:', computedStyle.backgroundColor);
+            console.log('Computed color:', computedStyle.color);
+        });
+    </script>
+</body>
+</html>

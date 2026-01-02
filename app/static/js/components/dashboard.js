@@ -41,11 +41,21 @@ export function dashboard() {
                 }
                 
                 const data = await response.json();
+                console.log('Availability data received:', data);
                 
                 // Handle both test data format and production format
                 if (data.grid) {
                     this.availability = data;
                     this.courts = data.grid;
+                    
+                    // Debug: Check for short-notice bookings
+                    data.grid.forEach((court, courtIdx) => {
+                        court.slots.forEach((slot, slotIdx) => {
+                            if (slot.status === 'short_notice') {
+                                console.log(`Short-notice booking found: Court ${courtIdx + 1}, Slot ${slotIdx} (${6 + slotIdx}:00)`, slot);
+                            }
+                        });
+                    });
                     
                     // Generate time slots if not already set
                     if (this.timeSlots.length === 0) {
@@ -101,7 +111,7 @@ export function dashboard() {
             if (slot.status === 'available') {
                 console.log('Opening booking modal for available slot');
                 this.openBookingModal(court, time);
-            } else if (slot.status === 'reserved' && this.canCancelSlot(slot)) {
+            } else if ((slot.status === 'reserved' || slot.status === 'short_notice') && this.canCancelSlot(slot)) {
                 console.log('Cancelling reservation');
                 // Handle both test format (reservation) and production format (details)
                 const reservation = slot.reservation || slot.details;
@@ -153,16 +163,28 @@ export function dashboard() {
         getSlotClass(slot) {
             let classes = 'border border-gray-300 px-2 py-4 text-center';
             
+            // Debug logging
+            console.log('getSlotClass called with slot:', slot);
+            
             if (slot.status === 'available') {
                 classes += ' bg-green-500 text-white cursor-pointer hover:opacity-80';
+            } else if (slot.status === 'short_notice') {
+                // Short notice bookings get orange background
+                classes += ' bg-orange-500 text-white text-xs short-notice-booking';
+                console.log('Short-notice slot detected, applying classes:', classes);
+                
+                // Add pointer cursor if user can cancel
+                if (this.canCancelSlot(slot)) {
+                    classes += ' cursor-pointer hover:opacity-80';
+                }
             } else if (slot.status === 'reserved') {
                 // Handle both test format (reservation) and production format (details)
                 const reservation = slot.reservation || slot.details;
                 
-                // Check if short notice
+                // Check if short notice (fallback for different data formats)
                 if (reservation && reservation.is_short_notice) {
-                    classes += ' text-white text-xs';
-                    classes += ' bg-orange-500'; // Using orange for short notice
+                    classes += ' bg-orange-500 text-white text-xs short-notice-booking';
+                    console.log('Reserved slot with short notice detected, applying classes:', classes);
                 } else {
                     classes += ' bg-red-500 text-white text-xs';
                 }
@@ -175,17 +197,23 @@ export function dashboard() {
                 classes += ' bg-gray-400 text-white';
             }
             
+            console.log('Final classes for slot:', classes);
             return classes;
         },
         
         canCancelSlot(slot) {
-            if (slot.status !== 'reserved') {
+            if (slot.status !== 'reserved' && slot.status !== 'short_notice') {
                 return false;
             }
             
             // Handle both test format (reservation) and production format (details)
             const reservation = slot.reservation || slot.details;
             if (!reservation) {
+                return false;
+            }
+            
+            // Short notice bookings cannot be cancelled (per business rules)
+            if (slot.status === 'short_notice' || reservation.is_short_notice) {
                 return false;
             }
             
@@ -236,6 +264,12 @@ export function dashboard() {
         getSlotContent(slot) {
             if (slot.status === 'available') {
                 return 'Frei';
+            } else if (slot.status === 'short_notice') {
+                const reservation = slot.reservation || slot.details;
+                if (reservation) {
+                    return `Gebucht für ${reservation.booked_for}<br>von ${reservation.booked_by}`;
+                }
+                return 'Kurzfristig gebucht';
             } else if (slot.status === 'reserved') {
                 const reservation = slot.reservation || slot.details;
                 if (reservation) {

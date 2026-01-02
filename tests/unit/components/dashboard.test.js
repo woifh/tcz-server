@@ -213,13 +213,22 @@ describe('Dashboard Component', () => {
             expect(classes).toContain('bg-gray-400');
         });
 
-        it('should return orange class for short notice reservation', () => {
+        it('should return orange class for short notice reservation (reserved status)', () => {
             const slot = { 
                 status: 'reserved',
                 reservation: { is_short_notice: true }
             };
             const classes = component.getSlotClass(slot);
             expect(classes).toContain('orange');
+        });
+
+        it('should return orange class for short notice reservation (short_notice status)', () => {
+            const slot = { 
+                status: 'short_notice',
+                details: { booked_for: 'Test User' }
+            };
+            const classes = component.getSlotClass(slot);
+            expect(classes).toContain('bg-orange-500');
         });
 
         it('should include pointer cursor for available slots', () => {

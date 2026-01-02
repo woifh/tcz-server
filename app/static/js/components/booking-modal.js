@@ -123,6 +123,7 @@ export function bookingModal() {
                 const firstOption = bookingForSelect.querySelector('option');
                 const currentUserId = firstOption ? firstOption.value : null;
                 console.log('Current user ID:', currentUserId);
+                console.log('First option:', firstOption);
                 
                 if (!currentUserId) {
                     console.log('No current user ID found');
