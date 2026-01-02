@@ -138,25 +138,6 @@
             </template>
         </div>
     </div>
-
-    {% if current_user.is_admin() %}
-    <div class="mt-6 border border-gray-200 rounded-lg p-6 bg-yellow-50">
-        <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
-            <span class="material-icons">admin_panel_settings</span>
-            Administrator-Funktionen
-        </h3>
-        <div class="flex gap-4">
-            <a href="{{ url_for('admin.admin_panel') }}" class="inline-block bg-yellow-600 text-white py-2 px-4 rounded hover:bg-yellow-700 flex items-center gap-2">
-                <span class="material-icons">settings</span>
-                Admin-Panel
-            </a>
-            <a href="{{ url_for('members.list_members') }}" class="inline-block bg-yellow-600 text-white py-2 px-4 rounded hover:bg-yellow-700 flex items-center gap-2">
-                <span class="material-icons">people</span>
-                Mitglieder verwalten
-            </a>
-        </div>
-    </div>
-    {% endif %}
 </div>
 
 {% endblock %}

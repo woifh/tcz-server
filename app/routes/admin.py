@@ -90,7 +90,7 @@ def create_block():
         end_time = datetime.strptime(end_time_str, '%H:%M').time()
         
         # Create block
-        block = BlockService.create_block(
+        block, error = BlockService.create_block(
             court_id=court_id,
             date=block_date,
             start_time=start_time,
@@ -98,6 +98,9 @@ def create_block():
             reason=reason,
             admin_id=current_user.id
         )
+        
+        if error:
+            return jsonify({'error': error}), 400
         
         return jsonify({
             'id': block.id,

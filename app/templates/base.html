@@ -34,6 +34,16 @@
                     <span class="material-icons text-sm">favorite</span>
                     Favoriten
                 </a>
+                {% if current_user.is_admin() %}
+                <a href="{{ url_for('admin.admin_panel') }}" class="hover:underline flex items-center gap-1">
+                    <span class="material-icons text-sm">admin_panel_settings</span>
+                    Admin-Panel
+                </a>
+                <a href="{{ url_for('members.list_members') }}" class="hover:underline flex items-center gap-1">
+                    <span class="material-icons text-sm">people</span>
+                    Mitglieder
+                </a>
+                {% endif %}
                 <span class="flex items-center gap-1">
                     <span class="material-icons text-sm">account_circle</span>
                     {{ current_user.name }}
