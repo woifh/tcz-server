@@ -213,7 +213,7 @@ export function dashboard() {
                     classes += ' cursor-not-allowed opacity-75';
                 }
             } else if (slot.status === 'blocked') {
-                classes += ' bg-gray-400 text-white';
+                classes += ' bg-gray-400 text-white text-xs min-h-16';
                 if (isPast) {
                     classes += ' cursor-not-allowed opacity-75';
                 }
@@ -329,6 +329,17 @@ export function dashboard() {
                 }
                 return 'Gebucht';
             } else if (slot.status === 'blocked') {
+                const blockDetails = slot.details;
+                console.log('Blocked slot details:', blockDetails); // Debug log
+                if (blockDetails && blockDetails.reason) {
+                    let content = blockDetails.reason;
+                    if (blockDetails.sub_reason && blockDetails.sub_reason.trim()) {
+                        console.log('Adding sub-reason:', blockDetails.sub_reason); // Debug log
+                        content += `<br><span style="font-size: 0.7em; opacity: 0.9;">${blockDetails.sub_reason}</span>`;
+                    }
+                    console.log('Final blocked content:', content); // Debug log
+                    return content;
+                }
                 return 'Gesperrt';
             }
             return '';

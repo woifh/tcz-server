@@ -76,8 +76,15 @@ def get_availability():
                 if (block.court_id == court.id and 
                     block.start_time <= slot_time < block.end_time):
                     slot['status'] = 'blocked'
+                    
+                    # Debug logging
+                    print(f"DEBUG: Block found - ID: {block.id}, Reason: {block.reason_obj.name if block.reason_obj else 'None'}, Sub-reason: '{block.sub_reason}'")
+                    
                     slot['details'] = {
-                        'reason': block.reason
+                        'reason': block.reason_obj.name if block.reason_obj else 'Unbekannt',
+                        'sub_reason': block.sub_reason if block.sub_reason else 'NO_SUB_REASON',
+                        'block_id': block.id,
+                        'debug_test': 'FIELD_ADDED'
                     }
                     break
             

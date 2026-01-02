@@ -89,20 +89,29 @@ function initializeCalendarView() {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Single block form
-    document.getElementById('block-form').addEventListener('submit', handleSingleBlockSubmit);
-    
-    // Multi-court form
-    document.getElementById('multi-court-form').addEventListener('submit', handleMultiCourtSubmit);
+    // Multi-court form (now the only form)
+    const multiCourtForm = document.getElementById('multi-court-form');
+    if (multiCourtForm) {
+        multiCourtForm.addEventListener('submit', handleMultiCourtSubmit);
+    }
     
     // Series form
-    document.getElementById('series-form').addEventListener('submit', handleSeriesSubmit);
+    const seriesForm = document.getElementById('series-form');
+    if (seriesForm) {
+        seriesForm.addEventListener('submit', handleSeriesSubmit);
+    }
     
     // Template form
-    document.getElementById('template-form').addEventListener('submit', handleTemplateSubmit);
+    const templateForm = document.getElementById('template-form');
+    if (templateForm) {
+        templateForm.addEventListener('submit', handleTemplateSubmit);
+    }
     
     // Reason form
-    document.getElementById('reason-form').addEventListener('submit', handleReasonSubmit);
+    const reasonForm = document.getElementById('reason-form');
+    if (reasonForm) {
+        reasonForm.addEventListener('submit', handleReasonSubmit);
+    }
 }
 
 // Tab management
@@ -174,40 +183,6 @@ function populateReasonSelects() {
             });
         }
     });
-}
-
-// Handle single block form submission
-async function handleSingleBlockSubmit(e) {
-    e.preventDefault();
-    
-    const blockData = {
-        court_id: parseInt(document.getElementById('block-court').value),
-        date: document.getElementById('block-date').value,
-        start_time: document.getElementById('block-start').value,
-        end_time: document.getElementById('block-end').value,
-        reason_id: parseInt(document.getElementById('block-reason').value),
-        sub_reason: document.getElementById('block-sub-reason').value
-    };
-    
-    try {
-        const response = await fetch('/admin/blocks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(blockData)
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast('Sperrung erfolgreich erstellt!');
-            e.target.reset();
-            applyFilters(); // Refresh the list
-        } else {
-            showToast(data.error || 'Unbekannter Fehler', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Erstellen der Sperrung', 'error');
-    }
 }
 
 // Handle multi-court form submission
