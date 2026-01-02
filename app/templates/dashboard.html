@@ -43,6 +43,10 @@
             <div class="w-4 h-4 bg-gray-400 rounded"></div>
             <span>Gesperrt</span>
         </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-gray-200 rounded"></div>
+            <span>Vergangen</span>
+        </div>
     </div>
 
     <!-- Court Availability Grid -->
@@ -76,9 +80,9 @@
                         <td class="border border-gray-300 px-4 py-2 font-semibold" x-text="time"></td>
                         <template x-for="courtIndex in [0,1,2,3,4,5]" :key="courtIndex">
                             <td class="border border-gray-300 px-2 py-4 text-center text-xs"
-                                :class="getSlotClass(getSlot(courtIndex, time))"
+                                :class="getSlotClass(getSlot(courtIndex, time), time)"
                                 @click="handleSlotClick(courtIndex + 1, time, getSlot(courtIndex, time))"
-                                x-html="getSlotContent(getSlot(courtIndex, time))">
+                                x-html="getSlotContent(getSlot(courtIndex, time), time)">
                             </td>
                         </template>
                     </tr>
@@ -120,10 +124,15 @@
                             <p class="text-sm text-gray-600" x-text="`${formatDate(reservation.date)} • ${reservation.start_time} - ${reservation.end_time}`"></p>
                             <p class="text-sm text-gray-500" x-text="`Gebucht für: ${reservation.booked_for}`"></p>
                         </div>
-                        <button @click="cancelReservation(reservation.id)" 
+                        <button x-show="!reservation.is_short_notice" 
+                                @click="cancelReservation(reservation.id)" 
                                 class="text-red-600 hover:text-red-800 text-sm font-semibold">
                             Stornieren
                         </button>
+                        <span x-show="reservation.is_short_notice" 
+                              class="text-gray-500 text-sm font-semibold">
+                            Kurzfristig gebucht
+                        </span>
                     </div>
                 </div>
             </template>
@@ -165,7 +174,7 @@
         <form @submit.prevent="submit()">
             <div class="mb-4">
                 <label class="block text-gray-700 font-semibold mb-2">Datum</label>
-                <input type="date" x-model="date" class="w-full border border-gray-300 rounded px-3 py-2" readonly>
+                <input type="date" x-model="date" class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-100" readonly>
             </div>
             <div class="mb-4">
                 <label class="block text-gray-700 font-semibold mb-2">Platz</label>

@@ -42,12 +42,16 @@
                             <td class="px-6 py-4 whitespace-nowrap" x-text="reservation.booked_for"></td>
                             <td class="px-6 py-4 whitespace-nowrap" x-text="reservation.booked_by"></td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <button 
+                                <button x-show="!reservation.is_short_notice"
                                     @click="cancelReservation(reservation.id)"
                                     :disabled="cancelling === reservation.id"
                                     class="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                                     x-text="cancelling === reservation.id ? 'Storniere...' : 'Stornieren'"
                                 ></button>
+                                <span x-show="reservation.is_short_notice" 
+                                      class="text-gray-500 text-sm">
+                                    Kurzfristig gebucht
+                                </span>
                             </td>
                         </tr>
                     </template>

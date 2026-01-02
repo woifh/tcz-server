@@ -1,4 +1,4 @@
-# Implementation Plan
+^# Implementation Plan
 
 - [x] 1. Set up project structure and dependencies
   - Create Flask application factory pattern with `app/__init__.py`
@@ -489,24 +489,35 @@
     - **Property 42: Regular reservation limit with short notice bookings allowed**
     - **Validates: Requirements 18.4**
   
-  - [x] 30.8 Implement enhanced cancellation validation
+  - [x] 30.8 Implement short notice booking limit validation
+    - Add `validate_member_short_notice_limit()` method to ValidationService
+    - Check that member has fewer than 1 active short notice booking
+    - Update `validate_all_booking_constraints()` to include short notice limit check
+    - Add German error message for short notice limit exceeded
+    - _Requirements: 18.5, 18.6_
+  
+  - [x] 30.9 Write property test for short notice booking limit
+    - **Property 42a: Short notice booking limit enforcement**
+    - **Validates: Requirements 18.5, 18.6**
+  
+  - [x] 30.10 Implement enhanced cancellation validation
     - Update `validate_cancellation_allowed()` to check both 15-minute window and slot start time
     - Add logic to prevent cancellation within 15 minutes of start time
     - Add logic to prevent cancellation once slot has started
     - Update error messages to explain combined restriction
     - _Requirements: 2.3, 2.4_
   
-  - [x] 30.9 Write property test for short notice booking time window
+  - [x] 30.11 Write property test for short notice booking time window
     - **Property 43: Short notice booking time window**
-    - **Validates: Requirements 18.5, 18.6, 18.7**
+    - **Validates: Requirements 18.7, 18.8, 18.9**
   
-  - [x] 30.10 Write property test for enhanced cancellation restrictions
+  - [x] 30.12 Write property test for enhanced cancellation restrictions
     - **Property 46: Cancellation prevented within 15 minutes and during slot time**
     - **Validates: Requirements 2.3, 2.4**
   
-  - [x] 30.11 Write property test for short notice booking non-cancellable nature
+  - [x] 30.13 Write property test for short notice booking non-cancellable nature
     - **Property 47: Short notice bookings cannot be cancelled**
-    - **Validates: Requirements 18.10**
+    - **Validates: Requirements 18.12**
 
 - [x] 31. Update frontend for short notice booking display
   - [x] 31.1 Update court grid CSS for orange short notice booking cells

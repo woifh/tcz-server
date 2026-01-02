@@ -529,3 +529,87 @@ def test_property_47_short_notice_bookings_cannot_be_cancelled(app, _):
         db.session.delete(reservation)
         db.session.delete(member)
         db.session.commit()
+
+
+@given(existing_short_notice=st.integers(min_value=0, max_value=1))
+@settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_42a_short_notice_booking_limit_enforcement(app, existing_short_notice):
+    """Feature: tennis-club-reservation, Property 42a: Short notice booking limit enforcement
+    Validates: Requirements 18.5, 18.6
+    
+    For any member with 1 active short notice booking, attempting to create another 
+    short notice booking should be rejected until the existing short notice booking 
+    is completed or cancelled.
+    """
+    with app.app_context():
+        # Get existing court
+        court = Court.query.filter_by(number=1).first()
+        assert court is not None, "Court 1 should exist"
+        
+        # Create test member
+        unique_id = random.randint(100000, 999999)
+        member = Member(firstname="Test", lastname="Member", email=f"test_short_limit_{unique_id}@example.com", role="member")
+        member.set_password("password123")
+        db.session.add(member)
+        db.session.commit()
+        
+        # Create existing short notice reservations
+        for i in range(existing_short_notice):
+            reservation = Reservation(
+                court_id=court.id,
+                date=date.today() + timedelta(days=i+1),
+                start_time=time(10, 0),
+                end_time=time(11, 0),
+                booked_for_id=member.id,
+                booked_by_id=member.id,
+                status='active',
+                is_short_notice=True
+            )
+            db.session.add(reservation)
+        
+        # Create some regular reservations (should not affect short notice limit)
+        for i in range(2):
+            reservation = Reservation(
+                court_id=court.id,
+                date=date.today() + timedelta(days=i+10),
+                start_time=time(11, 0),
+                end_time=time(12, 0),
+                booked_for_id=member.id,
+                booked_by_id=member.id,
+                status='active',
+                is_short_notice=False
+            )
+            db.session.add(reservation)
+        
+        db.session.commit()
+        
+        # Test short notice booking limit
+        result = ValidationService.validate_member_short_notice_limit(member.id)
+        
+        if existing_short_notice == 0:
+            assert result is True, "Member with 0 short notice bookings should be allowed to make one"
+        else:  # existing_short_notice == 1
+            assert result is False, "Member with 1 short notice booking should not be allowed to make another"
+        
+        # Test that the limit is enforced in validate_all_booking_constraints
+        booking_date = date.today() + timedelta(days=20)
+        start_time = time(14, 0)
+        
+        is_valid, error_msg = ValidationService.validate_all_booking_constraints(
+            court_id=court.id,
+            date=booking_date,
+            start_time=start_time,
+            member_id=member.id,
+            is_short_notice=True
+        )
+        
+        if existing_short_notice == 0:
+            assert is_valid is True, "Short notice booking should be allowed when under limit"
+        else:  # existing_short_notice == 1
+            assert is_valid is False, "Short notice booking should be blocked when at limit"
+            assert "bereits eine aktive kurzfristige Buchung" in error_msg, "Error message should mention short notice limit"
+        
+        # Cleanup
+        Reservation.query.filter_by(booked_for_id=member.id).delete()
+        db.session.delete(member)
+        db.session.commit()

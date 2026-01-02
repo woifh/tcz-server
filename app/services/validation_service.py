@@ -67,6 +67,32 @@ class ValidationService:
         return active_count < max_reservations
     
     @staticmethod
+    def validate_member_short_notice_limit(member_id):
+        """
+        Validate member has not exceeded the 1 short notice booking limit.
+        Only counts future active short notice bookings (today or later).
+        
+        Args:
+            member_id: ID of the member
+            
+        Returns:
+            bool: True if member can make another short notice booking, False otherwise
+        """
+        from datetime import date as date_class
+        
+        today = date_class.today()
+        
+        # Count active short notice bookings where member is booked_for and date is today or in the future
+        active_short_notice_count = Reservation.query.filter(
+            Reservation.booked_for_id == member_id,
+            Reservation.status == 'active',
+            Reservation.date >= today,
+            Reservation.is_short_notice == True
+        ).count()
+        
+        return active_short_notice_count < 1
+    
+    @staticmethod
     def validate_no_conflict(court_id, date, start_time):
         """
         Validate no conflicting reservations exist.
@@ -151,6 +177,10 @@ class ValidationService:
         # Validate member reservation limit (short notice bookings are exempt)
         if not ValidationService.validate_member_reservation_limit(member_id, is_short_notice):
             return False, "Sie haben bereits 2 aktive reguläre Buchungen"
+        
+        # Validate short notice booking limit (only for short notice bookings)
+        if is_short_notice and not ValidationService.validate_member_short_notice_limit(member_id):
+            return False, "Sie haben bereits eine aktive kurzfristige Buchung. Nur eine kurzfristige Buchung pro Mitglied ist erlaubt."
         
         # Validate no conflict
         if not ValidationService.validate_no_conflict(court_id, date, start_time):

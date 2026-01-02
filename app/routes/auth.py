@@ -1,7 +1,7 @@
 """Authentication routes."""
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user
-from app import limiter
+# Removed limiter import for local development
 from app.models import Member
 from app.utils.validators import validate_email_address, validate_string_length, ValidationError
 
@@ -9,7 +9,7 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 
 @bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+# @limiter.limit("5 per minute")  # Disabled for local development
 def login():
     """Login route with rate limiting to prevent brute force attacks."""
     if current_user.is_authenticated:

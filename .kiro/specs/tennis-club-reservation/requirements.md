@@ -234,9 +234,11 @@ This document specifies the requirements for a responsive web application that e
 2. WHEN a member creates a short notice booking, THE System SHALL not count it toward the member's active reservation limit of 2 reservations
 3. WHEN calculating active reservations for the 2-reservation limit, THE System SHALL exclude all short notice bookings from the count
 4. WHEN a member has 2 regular active reservations, THE System SHALL still allow creation of short notice bookings
-5. WHEN a time slot can be booked as short notice, THE System SHALL allow booking from 15 minutes before start time until the end of the slot
-6. WHEN a member attempts to book a slot for 10:00-11:00 at 9:45 or later, THE System SHALL classify this as a short notice booking
-7. WHEN a member attempts to book a slot for 10:00-11:00 at 10:59, THE System SHALL still allow the short notice booking
-8. THE System SHALL apply all other booking constraints to short notice bookings including court availability, member authentication, and time slot validity
-9. WHEN displaying reservations in the court grid, THE System SHALL highlight short notice bookings with a distinct background color to differentiate them from regular reservations
-10. WHEN a short notice booking is created, THE System SHALL prevent cancellation of that booking since it is created within the 15-minute cancellation prohibition window
+5. WHEN a member attempts to create a short notice booking AND already has 1 active short notice booking, THE System SHALL reject the booking and display an error message
+6. WHEN a member has 1 active short notice booking AND attempts to create another short notice booking, THE System SHALL prevent the creation until the existing short notice booking is completed or cancelled
+7. WHEN a time slot can be booked as short notice, THE System SHALL allow booking from 15 minutes before start time until the end of the slot
+8. WHEN a member attempts to book a slot for 10:00-11:00 at 9:45 or later, THE System SHALL classify this as a short notice booking
+9. WHEN a member attempts to book a slot for 10:00-11:00 at 10:59, THE System SHALL still allow the short notice booking
+10. THE System SHALL apply all other booking constraints to short notice bookings including court availability, member authentication, and time slot validity
+11. WHEN displaying reservations in the court grid, THE System SHALL highlight short notice bookings with a distinct background color to differentiate them from regular reservations
+12. WHEN a short notice booking is created, THE System SHALL prevent cancellation of that booking since it is created within the 15-minute cancellation prohibition window

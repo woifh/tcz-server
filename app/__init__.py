@@ -45,8 +45,7 @@ def create_app(config_name='default'):
     # Only enable rate limiting if not explicitly disabled
     if app.config.get('RATELIMIT_ENABLED', True):
         limiter.init_app(app)
-    else:
-        limiter.enabled = False
+    # If disabled, don't initialize limiter at all
     
     # Import models for Flask-Migrate
     from app import models

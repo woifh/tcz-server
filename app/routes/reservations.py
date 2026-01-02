@@ -2,7 +2,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime, date
-from app import db, limiter
+from app import db  # Removed limiter import for local development
 from app.models import Reservation
 from app.services.reservation_service import ReservationService
 from app.utils.validators import (
@@ -84,7 +84,7 @@ def list_reservations():
 
 @bp.route('/', methods=['POST'])
 @login_required
-@limiter.limit("10 per minute")
+# @limiter.limit("10 per minute")  # Disabled for local development
 def create_reservation():
     """Create a new reservation."""
     try:

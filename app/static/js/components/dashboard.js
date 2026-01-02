@@ -108,6 +108,12 @@ export function dashboard() {
         handleSlotClick(court, time, slot) {
             console.log('Slot clicked:', { court, time, slot });
             
+            // Don't allow clicking on past time slots
+            if (this.isSlotInPast(time)) {
+                console.log('Slot is in the past, ignoring click');
+                return;
+            }
+            
             if (slot.status === 'available') {
                 console.log('Opening booking modal for available slot');
                 this.openBookingModal(court, time);
@@ -136,6 +142,7 @@ export function dashboard() {
         },
         
         async cancelReservation(reservationId) {
+            // Keep confirmation dialog for cancellation request
             if (!confirm('Möchten Sie diese Buchung wirklich stornieren?')) {
                 return;
             }
@@ -148,6 +155,7 @@ export function dashboard() {
                 const data = await response.json();
                 
                 if (response.ok) {
+                    // Show success as toast message (not dialog)
                     this.showSuccess('Buchung erfolgreich storniert');
                     await this.loadAvailability();
                     await this.loadUserReservations();
@@ -160,22 +168,31 @@ export function dashboard() {
             }
         },
         
-        getSlotClass(slot) {
+        getSlotClass(slot, time) {
             let classes = 'border border-gray-300 px-2 py-4 text-center';
             
             // Debug logging
             console.log('getSlotClass called with slot:', slot);
             
+            // Check if slot is in the past
+            const isPast = this.isSlotInPast(time);
+            
             if (slot.status === 'available') {
-                classes += ' bg-green-500 text-white cursor-pointer hover:opacity-80';
+                if (isPast) {
+                    classes += ' bg-gray-200 text-gray-500 cursor-not-allowed';
+                } else {
+                    classes += ' bg-green-500 text-white cursor-pointer hover:opacity-80';
+                }
             } else if (slot.status === 'short_notice') {
                 // Short notice bookings get orange background
                 classes += ' bg-orange-500 text-white text-xs short-notice-booking';
                 console.log('Short-notice slot detected, applying classes:', classes);
                 
-                // Add pointer cursor if user can cancel
-                if (this.canCancelSlot(slot)) {
+                // Add pointer cursor if user can cancel and not in past
+                if (!isPast && this.canCancelSlot(slot)) {
                     classes += ' cursor-pointer hover:opacity-80';
+                } else if (isPast) {
+                    classes += ' cursor-not-allowed opacity-75';
                 }
             } else if (slot.status === 'reserved') {
                 // Handle both test format (reservation) and production format (details)
@@ -189,12 +206,17 @@ export function dashboard() {
                     classes += ' bg-red-500 text-white text-xs';
                 }
                 
-                // Add pointer cursor if user can cancel
-                if (this.canCancelSlot(slot)) {
+                // Add pointer cursor if user can cancel and not in past
+                if (!isPast && this.canCancelSlot(slot)) {
                     classes += ' cursor-pointer hover:opacity-80';
+                } else if (isPast) {
+                    classes += ' cursor-not-allowed opacity-75';
                 }
             } else if (slot.status === 'blocked') {
                 classes += ' bg-gray-400 text-white';
+                if (isPast) {
+                    classes += ' cursor-not-allowed opacity-75';
+                }
             }
             
             console.log('Final classes for slot:', classes);
@@ -225,6 +247,29 @@ export function dashboard() {
             );
         },
         
+        isSlotInPast(time) {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            // If selected date is before today, all slots are in the past
+            if (this.selectedDate < today) {
+                return true;
+            }
+            
+            // If selected date is after today, no slots are in the past
+            if (this.selectedDate > today) {
+                return false;
+            }
+            
+            // If selected date is today, check the time
+            const currentHour = now.getHours();
+            const [slotHour, slotMinute] = time.split(':').map(Number);
+            
+            // Slot is in the past only if it's before current hour
+            // Current hour is still bookable as short notice booking
+            return slotHour < currentHour;
+        },
+        
         generateTimeSlots() {
             const slots = [];
             for (let hour = 6; hour < 22; hour++) {
@@ -235,7 +280,9 @@ export function dashboard() {
         
         showSuccess(message) {
             // Use existing toast notification system
-            if (typeof window.showSuccess === 'function') {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, 'success');
+            } else if (typeof window.showSuccess === 'function') {
                 window.showSuccess(message);
             } else {
                 alert(message);
@@ -244,7 +291,9 @@ export function dashboard() {
         
         showError(message) {
             // Use existing toast notification system
-            if (typeof window.showError === 'function') {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, 'error');
+            } else if (typeof window.showError === 'function') {
                 window.showError(message);
             } else {
                 alert(message);
@@ -261,8 +310,11 @@ export function dashboard() {
             return this.courts[courtIndex].slots[timeIndex] || { status: 'available' };
         },
         
-        getSlotContent(slot) {
+        getSlotContent(slot, time) {
             if (slot.status === 'available') {
+                if (this.isSlotInPast(time)) {
+                    return 'Vergangen';
+                }
                 return 'Frei';
             } else if (slot.status === 'short_notice') {
                 const reservation = slot.reservation || slot.details;

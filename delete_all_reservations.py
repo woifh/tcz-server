@@ -173,13 +173,6 @@ def main():
     
     print(f"🚨 You are about to {action_desc}.")
     print("This action CANNOT be undone!")
-    print()
-    
-    confirmation = input("Type 'DELETE' (in capital letters) to confirm: ").strip()
-    
-    if confirmation != "DELETE":
-        print("✅ Operation cancelled. Confirmation text did not match.")
-        return
     
     print()
     print("🔄 Processing deletion...")

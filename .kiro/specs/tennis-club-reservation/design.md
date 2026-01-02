@@ -204,6 +204,7 @@ class ReservationService:
 class ValidationService:
     def validate_booking_time(start_time) -> bool
     def validate_member_reservation_limit(member_id, is_short_notice=False) -> bool
+    def validate_member_short_notice_limit(member_id) -> bool
     def validate_no_conflict(court_id, date, start_time) -> bool
     def validate_not_blocked(court_id, date, start_time) -> bool
     def validate_cancellation_allowed(reservation_id, current_time=None) -> bool
@@ -211,6 +212,7 @@ class ValidationService:
     
     # Enhanced validation for short notice bookings:
     # - validate_member_reservation_limit() excludes short notice bookings from 2-reservation limit
+    # - validate_member_short_notice_limit() enforces 1 active short notice booking per member
     # - validate_all_booking_constraints() allows booking slots that have started but not ended for short notice
     # - validate_cancellation_allowed() prevents cancellation within 15 minutes AND once slot has started
 ```
@@ -365,12 +367,13 @@ CREATE TABLE notification (
 4. **Password Validation**: Minimum 8 characters (enforced at application level)
 5. **Date Validation**: Regular reservations cannot be created for past dates; short notice reservations can be created for slots that have started but not ended
 6. **Member Limit Validation**: Member cannot have more than 2 active regular reservations (short notice bookings excluded from count)
-7. **Conflict Validation**: No overlapping reservations for same court/time
-8. **Block Validation**: Blocked time slots cannot be booked
-9. **Short Notice Classification**: Reservations created within 15 minutes of start time are automatically classified as short notice
-10. **Cancellation Time Validation**: Reservations cannot be cancelled within 15 minutes of start time or once the slot has started
-11. **Short Notice Booking Window**: Short notice bookings allowed from 15 minutes before start time until end of slot
-12. **Short Notice Non-Cancellable**: Short notice bookings can never be cancelled (inherent from timing rules)
+7. **Short Notice Limit Validation**: Member cannot have more than 1 active short notice booking at any time
+8. **Conflict Validation**: No overlapping reservations for same court/time
+9. **Block Validation**: Blocked time slots cannot be booked
+10. **Short Notice Classification**: Reservations created within 15 minutes of start time are automatically classified as short notice
+11. **Cancellation Time Validation**: Reservations cannot be cancelled within 15 minutes of start time or once the slot has started
+12. **Short Notice Booking Window**: Short notice bookings allowed from 15 minutes before start time until end of slot
+13. **Short Notice Non-Cancellable**: Short notice bookings can never be cancelled (inherent from timing rules)
 
 ## Correctness Properties
 
@@ -569,17 +572,21 @@ CREATE TABLE notification (
 *For any* member with 2 regular active reservations, the system should still allow creation of short notice bookings.
 **Validates: Requirements 18.4**
 
+### Property 42a: Short notice booking limit enforcement
+*For any* member with 1 active short notice booking, attempting to create another short notice booking should be rejected until the existing short notice booking is completed or cancelled.
+**Validates: Requirements 18.5, 18.6**
+
 ### Property 43: Short notice booking time window
 *For any* time slot, short notice bookings should be allowed from 15 minutes before start time until the end of the slot.
-**Validates: Requirements 18.5, 18.6, 18.7**
+**Validates: Requirements 18.7, 18.8, 18.9**
 
 ### Property 44: Short notice bookings follow all other constraints
 *For any* short notice booking attempt, the system should apply all booking constraints except the reservation limit (court availability, authentication, time slot validity).
-**Validates: Requirements 18.8**
+**Validates: Requirements 18.10**
 
 ### Property 45: Short notice bookings display with orange background
 *For any* short notice booking displayed in the court grid, the cell should have an orange background color to distinguish it from regular reservations.
-**Validates: Requirements 18.9, 4.4**
+**Validates: Requirements 18.11, 4.4**
 
 ### Property 46: Cancellation prevented within 15 minutes and during slot time
 *For any* reservation (regular or short notice) where the current time is within 15 minutes of the start time or at/after the start time, cancellation attempts should be rejected.
@@ -587,7 +594,7 @@ CREATE TABLE notification (
 
 ### Property 47: Short notice bookings cannot be cancelled
 *For any* short notice booking, cancellation attempts should always be rejected since short notice bookings are by definition created within the cancellation prohibition window.
-**Validates: Requirements 18.10**
+**Validates: Requirements 18.12**
 
 ## Short Notice Booking Implementation
 
@@ -599,9 +606,10 @@ The short notice booking feature allows members to book courts within 15 minutes
 
 1. **Automatic Classification**: Bookings made within 15 minutes of start time are automatically classified as short notice
 2. **Reservation Limit Exemption**: Short notice bookings don't count toward the 2-reservation limit
-3. **Visual Distinction**: Short notice bookings display with orange background color in the court grid
-4. **Non-Cancellable**: Short notice bookings cannot be cancelled (inherent from timing rules)
-5. **Extended Booking Window**: Can book slots that have already started but not yet ended
+3. **Single Short Notice Limit**: Members can have only 1 active short notice booking at a time
+4. **Visual Distinction**: Short notice bookings display with orange background color in the court grid
+5. **Non-Cancellable**: Short notice bookings cannot be cancelled (inherent from timing rules)
+6. **Extended Booking Window**: Can book slots that have already started but not yet ended
 
 ### Implementation Details
 
@@ -613,6 +621,7 @@ The short notice booking feature allows members to book courts within 15 minutes
 #### Backend Logic
 - `ReservationService.is_short_notice_booking()` determines classification based on timing
 - `ValidationService.validate_member_reservation_limit()` excludes short notice bookings from count
+- `ValidationService.validate_member_short_notice_limit()` enforces 1 active short notice booking per member
 - `ValidationService.validate_all_booking_constraints()` allows booking started slots for short notice
 - Enhanced cancellation validation prevents cancellation within 15 minutes AND once started
 
@@ -633,14 +642,16 @@ The short notice booking feature allows members to book courts within 15 minutes
 1. **Classification**: Booking within 15 minutes of start time → short notice
 2. **Booking Window**: 15 minutes before start time until end of slot
 3. **Reservation Limit**: Short notice bookings excluded from 2-reservation limit
-4. **Cancellation**: Cannot cancel within 15 minutes of start OR once started
-5. **All Other Constraints**: Court availability, authentication, time slots still apply
+4. **Short Notice Limit**: Members can have only 1 active short notice booking at a time
+5. **Cancellation**: Cannot cancel within 15 minutes of start OR once started
+6. **All Other Constraints**: Court availability, authentication, time slots still apply
 
 ### German Language Support
 
 - "Kurzfristig gebucht für [Name] von [Name]" - Grid display text
 - "Kurzfristige Buchung erfolgreich erstellt!" - Success message
 - "Kurzfristige Buchungen können nicht storniert werden" - Cancellation info
+- "Sie haben bereits eine aktive kurzfristige Buchung. Nur eine kurzfristige Buchung pro Mitglied ist erlaubt." - Short notice limit error message
 - "Diese Buchung wurde innerhalb von 15 Minuten vor Spielbeginn erstellt" - Explanation
 
 ## User Feedback and Notifications
