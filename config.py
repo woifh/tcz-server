@@ -45,8 +45,8 @@ class DevelopmentConfig(Config):
     """Development configuration."""
     DEBUG = True
     SQLALCHEMY_ECHO = True
-    # Use SQLite for local development to avoid MySQL dependency
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///tennis_club_dev.db'
+    # Always respect DATABASE_URL environment variable
+    # Only fall back to SQLite if no DATABASE_URL is set
 
 
 class ProductionConfig(Config):

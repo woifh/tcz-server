@@ -1,4 +1,5 @@
 """Flask application factory for Tennis Club Reservation System."""
+import os
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -21,17 +22,35 @@ limiter = Limiter(
 )
 
 
-def create_app(config_name='default'):
+def create_app(config_name=None):
     """
     Create and configure the Flask application.
     
     Args:
         config_name: Configuration name ('development', 'production', 'testing', 'default')
+                    If None, auto-detect from environment variables
         
     Returns:
         Configured Flask application instance
     """
     app = Flask(__name__)
+    
+    # Auto-detect configuration if not specified
+    if config_name is None:
+        # Check for explicit FLASK_CONFIG first
+        config_name = os.environ.get('FLASK_CONFIG')
+        
+        if not config_name:
+            # Auto-detect based on environment
+            database_url = os.environ.get('DATABASE_URL', '')
+            if database_url.startswith('mysql'):
+                config_name = 'production'
+            elif os.environ.get('FLASK_ENV') == 'production':
+                config_name = 'production'
+            elif os.environ.get('TESTING'):
+                config_name = 'testing'
+            else:
+                config_name = 'development'
     
     # Load configuration
     app.config.from_object(config[config_name])
