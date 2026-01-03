@@ -290,6 +290,11 @@ def update_batch(batch_id):
         new_reason_id = int(data['reason_id'])
         new_sub_reason = data.get('sub_reason', '').strip() or None
         
+        # Validate that the date is not in the past
+        today = datetime.now().date()
+        if new_date < today:
+            return jsonify({'error': 'Sperrungen können nicht für vergangene Tage bearbeitet werden'}), 400
+        
         # Validate time range
         if new_start_time >= new_end_time:
             return jsonify({'error': 'Endzeit muss nach Startzeit liegen'}), 400
@@ -871,6 +876,11 @@ def create_multi_court_blocks():
         block_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         start_time = datetime.strptime(start_time_str, '%H:%M').time()
         end_time = datetime.strptime(end_time_str, '%H:%M').time()
+        
+        # Validate that the date is not in the past
+        today = datetime.now().date()
+        if block_date < today:
+            return jsonify({'error': 'Sperrungen können nicht für vergangene Tage erstellt werden'}), 400
         
         # Create multi-court blocks
         blocks, error = BlockService.create_multi_court_blocks(
