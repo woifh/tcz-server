@@ -6,14 +6,22 @@ bp = Blueprint('dashboard', __name__)
 
 
 @bp.route('/')
-@login_required
 def index():
-    """Main dashboard."""
-    return render_template('dashboard.html')
+    """Root route - redirect based on authentication status."""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard.dashboard'))
+    else:
+        return redirect(url_for('dashboard.anonymous_overview'))
 
 
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-    """User dashboard (redirect to index)."""
-    return redirect(url_for('dashboard.index'))
+    """User dashboard - main authenticated dashboard."""
+    return render_template('dashboard.html')
+
+
+@bp.route('/overview')
+def anonymous_overview():
+    """Anonymous court overview for non-authenticated users."""
+    return render_template('anonymous_overview.html')

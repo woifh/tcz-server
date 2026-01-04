@@ -14,18 +14,28 @@ export function dashboard() {
         loading: false,
         error: null,
         currentUserId: null,
+        isAuthenticated: true, // Default to authenticated, will be overridden for anonymous users
         
         // Lifecycle
         init() {
-            // Get current user ID from the page
-            const bookingForSelect = document.getElementById('booking-for');
-            if (bookingForSelect) {
-                const firstOption = bookingForSelect.querySelector('option');
-                this.currentUserId = firstOption ? parseInt(firstOption.value) : null;
+            // Detect authentication status from global variable or DOM
+            this.isAuthenticated = window.isAuthenticated !== undefined ? window.isAuthenticated : true;
+            
+            // Get current user ID from the page (only for authenticated users)
+            if (this.isAuthenticated) {
+                const bookingForSelect = document.getElementById('booking-for');
+                if (bookingForSelect) {
+                    const firstOption = bookingForSelect.querySelector('option');
+                    this.currentUserId = firstOption ? parseInt(firstOption.value) : null;
+                }
             }
             
             this.loadAvailability();
-            this.loadUserReservations();
+            
+            // Only load user reservations for authenticated users
+            if (this.isAuthenticated) {
+                this.loadUserReservations();
+            }
         },
         
         // Methods
@@ -108,6 +118,12 @@ export function dashboard() {
         handleSlotClick(court, time, slot) {
             console.log('Slot clicked:', { court, time, slot });
             
+            // Don't allow any interactions for anonymous users
+            if (!this.isAuthenticated) {
+                console.log('Anonymous user - no slot interactions allowed');
+                return;
+            }
+            
             // Don't allow clicking on past time slots
             if (this.isSlotInPast(time)) {
                 console.log('Slot is in the past, ignoring click');
@@ -181,15 +197,19 @@ export function dashboard() {
                 if (isPast) {
                     classes += ' bg-gray-200 text-gray-500 cursor-not-allowed';
                 } else {
-                    classes += ' bg-green-500 text-white cursor-pointer hover:opacity-80';
+                    classes += ' bg-green-500 text-white';
+                    // Only add interactive styles for authenticated users
+                    if (this.isAuthenticated) {
+                        classes += ' cursor-pointer hover:opacity-80';
+                    }
                 }
             } else if (slot.status === 'short_notice') {
                 // Short notice bookings get orange background
                 classes += ' bg-orange-500 text-white text-xs short-notice-booking';
                 console.log('Short-notice slot detected, applying classes:', classes);
                 
-                // Add pointer cursor if user can cancel and not in past
-                if (!isPast && this.canCancelSlot(slot)) {
+                // Add pointer cursor if user can cancel and not in past (authenticated users only)
+                if (!isPast && this.isAuthenticated && this.canCancelSlot(slot)) {
                     classes += ' cursor-pointer hover:opacity-80';
                 } else if (isPast) {
                     classes += ' cursor-not-allowed opacity-75';
@@ -206,8 +226,8 @@ export function dashboard() {
                     classes += ' bg-red-500 text-white text-xs';
                 }
                 
-                // Add pointer cursor if user can cancel and not in past
-                if (!isPast && this.canCancelSlot(slot)) {
+                // Add pointer cursor if user can cancel and not in past (authenticated users only)
+                if (!isPast && this.isAuthenticated && this.canCancelSlot(slot)) {
                     classes += ' cursor-pointer hover:opacity-80';
                 } else if (isPast) {
                     classes += ' cursor-not-allowed opacity-75';
@@ -224,6 +244,11 @@ export function dashboard() {
         },
         
         canCancelSlot(slot) {
+            // Anonymous users cannot cancel any slots
+            if (!this.isAuthenticated) {
+                return false;
+            }
+            
             if (slot.status !== 'reserved' && slot.status !== 'short_notice') {
                 return false;
             }
@@ -318,16 +343,18 @@ export function dashboard() {
                 return 'Frei';
             } else if (slot.status === 'short_notice') {
                 const reservation = slot.reservation || slot.details;
-                if (reservation) {
-                    return `Gebucht für ${reservation.booked_for}<br>von ${reservation.booked_by}`;
+                if (reservation && this.isAuthenticated) {
+                    // Show member details only to authenticated users
+                    return `${reservation.booked_for}<br>(von ${reservation.booked_by})`;
                 }
-                return 'Kurzfristig gebucht';
+                return 'Gebucht'; // Anonymous users see generic "Gebucht"
             } else if (slot.status === 'reserved') {
                 const reservation = slot.reservation || slot.details;
-                if (reservation) {
-                    return `Gebucht für ${reservation.booked_for}<br>von ${reservation.booked_by}`;
+                if (reservation && this.isAuthenticated) {
+                    // Show member details only to authenticated users
+                    return `${reservation.booked_for}<br>(von ${reservation.booked_by})`;
                 }
-                return 'Gebucht';
+                return 'Gebucht'; // Anonymous users see generic "Gebucht"
             } else if (slot.status === 'blocked') {
                 const blockDetails = slot.details;
                 console.log('Blocked slot details:', blockDetails); // Debug log

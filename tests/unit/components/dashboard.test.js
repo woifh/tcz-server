@@ -149,6 +149,13 @@ describe('Dashboard Component', () => {
     });
 
     describe('Slot Click Handling', () => {
+        beforeEach(() => {
+            // Set component as authenticated for these tests
+            component.isAuthenticated = true;
+            // Mock a future time to avoid "past slot" logic
+            vi.spyOn(component, 'isSlotInPast').mockReturnValue(false);
+        });
+
         it('should open booking modal for available slot', () => {
             const slot = { status: 'available' };
             const openModalSpy = vi.fn();
@@ -192,24 +199,41 @@ describe('Dashboard Component', () => {
             component.handleSlotClick(1, '10:00', slot);
             expect(cancelSpy).not.toHaveBeenCalled();
         });
+
+        it('should not allow any interactions for anonymous users', () => {
+            component.isAuthenticated = false;
+            const slot = { status: 'available' };
+            const openModalSpy = vi.fn();
+            component.openBookingModal = openModalSpy;
+            
+            component.handleSlotClick(1, '10:00', slot);
+            expect(openModalSpy).not.toHaveBeenCalled();
+        });
     });
 
     describe('Slot Styling', () => {
+        beforeEach(() => {
+            // Set component as authenticated for these tests
+            component.isAuthenticated = true;
+            // Mock a future time to avoid "past slot" logic
+            vi.spyOn(component, 'isSlotInPast').mockReturnValue(false);
+        });
+
         it('should return green class for available slot', () => {
             const slot = { status: 'available' };
-            const classes = component.getSlotClass(slot);
+            const classes = component.getSlotClass(slot, '10:00');
             expect(classes).toContain('bg-green-500');
         });
 
         it('should return red class for reserved slot', () => {
             const slot = { status: 'reserved' };
-            const classes = component.getSlotClass(slot);
+            const classes = component.getSlotClass(slot, '10:00');
             expect(classes).toContain('bg-red-500');
         });
 
         it('should return gray class for blocked slot', () => {
             const slot = { status: 'blocked' };
-            const classes = component.getSlotClass(slot);
+            const classes = component.getSlotClass(slot, '10:00');
             expect(classes).toContain('bg-gray-400');
         });
 
@@ -218,7 +242,7 @@ describe('Dashboard Component', () => {
                 status: 'reserved',
                 reservation: { is_short_notice: true }
             };
-            const classes = component.getSlotClass(slot);
+            const classes = component.getSlotClass(slot, '10:00');
             expect(classes).toContain('orange');
         });
 
@@ -227,23 +251,30 @@ describe('Dashboard Component', () => {
                 status: 'short_notice',
                 details: { booked_for: 'Test User' }
             };
-            const classes = component.getSlotClass(slot);
+            const classes = component.getSlotClass(slot, '10:00');
             expect(classes).toContain('bg-orange-500');
         });
 
-        it('should include pointer cursor for available slots', () => {
+        it('should include pointer cursor for available slots when authenticated', () => {
             const slot = { status: 'available' };
-            const classes = component.getSlotClass(slot);
+            const classes = component.getSlotClass(slot, '10:00');
             expect(classes).toContain('cursor-pointer');
         });
 
-        it('should include pointer cursor for own reservations', () => {
+        it('should not include pointer cursor for available slots when anonymous', () => {
+            component.isAuthenticated = false;
+            const slot = { status: 'available' };
+            const classes = component.getSlotClass(slot, '10:00');
+            expect(classes).not.toContain('cursor-pointer');
+        });
+
+        it('should include pointer cursor for own reservations when authenticated', () => {
             const slot = { 
                 status: 'reserved',
                 reservation: { id: 1, member_id: 1 }
             };
             component.currentUserId = 1;
-            const classes = component.getSlotClass(slot);
+            const classes = component.getSlotClass(slot, '10:00');
             expect(classes).toContain('cursor-pointer');
         });
 
@@ -253,12 +284,16 @@ describe('Dashboard Component', () => {
                 reservation: { id: 1, member_id: 2 }
             };
             component.currentUserId = 1;
-            const classes = component.getSlotClass(slot);
+            const classes = component.getSlotClass(slot, '10:00');
             expect(classes).not.toContain('cursor-pointer');
         });
     });
 
     describe('Can Cancel Slot', () => {
+        beforeEach(() => {
+            component.isAuthenticated = true;
+        });
+
         it('should return true for own reservation', () => {
             const slot = { 
                 status: 'reserved',
@@ -287,6 +322,107 @@ describe('Dashboard Component', () => {
             const slot = { status: 'blocked' };
             component.currentUserId = 1;
             expect(component.canCancelSlot(slot)).toBe(false);
+        });
+
+        it('should return false for any slot when anonymous', () => {
+            component.isAuthenticated = false;
+            const slot = { 
+                status: 'reserved',
+                reservation: { member_id: 1 }
+            };
+            component.currentUserId = 1;
+            expect(component.canCancelSlot(slot)).toBe(false);
+        });
+    });
+
+    describe('Authentication Detection', () => {
+        beforeEach(() => {
+            // Clear any global authentication state
+            delete window.isAuthenticated;
+        });
+
+        it('should default to authenticated when no global variable is set', () => {
+            const newComponent = createComponent(dashboard);
+            newComponent.init();
+            expect(newComponent.isAuthenticated).toBe(true);
+        });
+
+        it('should detect anonymous user from global variable', () => {
+            window.isAuthenticated = false;
+            const newComponent = createComponent(dashboard);
+            newComponent.init();
+            expect(newComponent.isAuthenticated).toBe(false);
+        });
+
+        it('should detect authenticated user from global variable', () => {
+            window.isAuthenticated = true;
+            const newComponent = createComponent(dashboard);
+            newComponent.init();
+            expect(newComponent.isAuthenticated).toBe(true);
+        });
+
+        it('should not load user reservations for anonymous users', () => {
+            window.isAuthenticated = false;
+            const newComponent = createComponent(dashboard);
+            const loadReservationsSpy = vi.spyOn(newComponent, 'loadUserReservations');
+            newComponent.init();
+            expect(loadReservationsSpy).not.toHaveBeenCalled();
+        });
+
+        it('should load user reservations for authenticated users', () => {
+            window.isAuthenticated = true;
+            const newComponent = createComponent(dashboard);
+            const loadReservationsSpy = vi.spyOn(newComponent, 'loadUserReservations');
+            newComponent.init();
+            expect(loadReservationsSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('Slot Content for Anonymous Users', () => {
+        it('should show member details for authenticated users', () => {
+            component.isAuthenticated = true;
+            const slot = { 
+                status: 'reserved',
+                reservation: { booked_for: 'John Doe', booked_by: 'Jane Smith' }
+            };
+            const content = component.getSlotContent(slot, '10:00');
+            expect(content).toContain('John Doe');
+            expect(content).toContain('Jane Smith');
+        });
+
+        it('should hide member details for anonymous users', () => {
+            component.isAuthenticated = false;
+            const slot = { 
+                status: 'reserved',
+                reservation: { booked_for: 'John Doe', booked_by: 'Jane Smith' }
+            };
+            const content = component.getSlotContent(slot, '10:00');
+            expect(content).toBe('Gebucht');
+            expect(content).not.toContain('John Doe');
+            expect(content).not.toContain('Jane Smith');
+        });
+
+        it('should hide short notice member details for anonymous users', () => {
+            component.isAuthenticated = false;
+            const slot = { 
+                status: 'short_notice',
+                reservation: { booked_for: 'John Doe', booked_by: 'Jane Smith' }
+            };
+            const content = component.getSlotContent(slot, '10:00');
+            expect(content).toBe('Gebucht');
+            expect(content).not.toContain('John Doe');
+            expect(content).not.toContain('Jane Smith');
+        });
+
+        it('should show block details for both authenticated and anonymous users', () => {
+            component.isAuthenticated = false;
+            const slot = { 
+                status: 'blocked',
+                details: { reason: 'Maintenance', details: 'Court resurfacing' }
+            };
+            const content = component.getSlotContent(slot, '10:00');
+            expect(content).toContain('Maintenance');
+            expect(content).toContain('Court resurfacing');
         });
     });
 });

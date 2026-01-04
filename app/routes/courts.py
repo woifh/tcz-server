@@ -1,13 +1,44 @@
 """Court and availability routes."""
-from flask import Blueprint, render_template, jsonify, request
-from flask_login import login_required
+from flask import Blueprint, render_template, jsonify, request, current_app
+from flask_login import login_required, current_user
 from datetime import date, time
-from app import db  # Removed limiter import for local development
+import logging
+from app import db, limiter
 from app.models import Court, Block
 from app.services.reservation_service import ReservationService
 from app.services.block_service import BlockService
+from app.services.anonymous_filter_service import AnonymousDataFilter
 
 bp = Blueprint('courts', __name__, url_prefix='/courts')
+
+# Set up logging for anonymous access patterns
+anonymous_logger = logging.getLogger('anonymous_access')
+anonymous_logger.setLevel(logging.INFO)
+
+def is_anonymous_user():
+    """Check if the current user is anonymous (not authenticated)."""
+    return not current_user.is_authenticated
+
+def log_anonymous_access(endpoint, ip_address, user_agent=None):
+    """Log anonymous user access patterns for monitoring."""
+    anonymous_logger.info(
+        f"Anonymous access - Endpoint: {endpoint}, IP: {ip_address}, "
+        f"User-Agent: {user_agent or 'Unknown'}"
+    )
+
+@bp.errorhandler(429)
+def ratelimit_handler(e):
+    """Handle rate limit exceeded errors for anonymous users."""
+    if is_anonymous_user():
+        anonymous_logger.warning(
+            f"Rate limit exceeded for anonymous user - IP: {request.remote_addr}, "
+            f"Endpoint: {request.endpoint}, User-Agent: {request.headers.get('User-Agent', 'Unknown')}"
+        )
+        return jsonify({
+            'error': 'Zu viele Anfragen. Bitte versuchen Sie es später erneut.',
+            'retry_after': e.retry_after
+        }), 429
+    return jsonify({'error': 'Rate limit exceeded'}), 429
 
 
 @bp.route('/', methods=['GET'])
@@ -28,18 +59,30 @@ def list_courts():
 
 
 @bp.route('/availability', methods=['GET'])
-@login_required
-# @limiter.limit("500 per hour")  # Disabled for local development
+@limiter.limit("100 per hour", key_func=lambda: request.remote_addr if is_anonymous_user() else None)
 def get_availability():
     """Get court availability grid for a specific date.
     
     Returns a grid with status (available/reserved/blocked) for each time slot.
+    Supports both authenticated and anonymous users with appropriate data filtering.
+    Rate limiting is applied specifically to anonymous users to prevent abuse.
     """
+    # Log anonymous access for monitoring
+    if is_anonymous_user():
+        log_anonymous_access(
+            endpoint='/courts/availability',
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+    
     date_str = request.args.get('date', date.today().isoformat())
     try:
         query_date = date.fromisoformat(date_str)
     except ValueError:
         return jsonify({'error': 'Ungültiges Datumsformat'}), 400
+    
+    # Detect authentication status
+    is_authenticated = current_user.is_authenticated
     
     # Get all courts
     courts = Court.query.order_by(Court.number).all()
@@ -112,7 +155,10 @@ def get_availability():
         
         grid.append(court_data)
     
+    # Filter data based on authentication status
+    filtered_grid = AnonymousDataFilter.filter_availability_data(grid, is_authenticated)
+    
     return jsonify({
         'date': date_str,
-        'grid': grid
+        'grid': filtered_grid
     })

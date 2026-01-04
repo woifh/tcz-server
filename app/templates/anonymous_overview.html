@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Platzübersicht - Tennisclub{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6" x-data="dashboard()" x-init="init()">
+    <!-- Login Prompt Banner -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="material-icons text-blue-600">info</span>
+                <div>
+                    <h3 class="font-semibold text-blue-800">Willkommen bei Tennisclub Zelllerndorf!</h3>
+                    <p class="text-blue-700 text-sm">Bitte anmelden um Plätze zu buchen und weitere Funktionen zu nutzen.</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ url_for('auth.login') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors flex items-center gap-2">
+                    <span class="material-icons text-sm">login</span>
+                    Anmelden
+                </a>
+                <a href="{{ url_for('auth.login') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition-colors flex items-center gap-2">
+                    <span class="material-icons text-sm">person_add</span>
+                    Registrieren
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold flex items-center gap-2">
+            <span class="material-icons">calendar_today</span>
+            Platzübersicht
+        </h2>
+        <div class="flex items-center gap-3">
+            <label for="date-selector" class="font-semibold">Datum:</label>
+            <button @click="changeDate(-1)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded transition-colors flex items-center" title="Vorheriger Tag">
+                <span class="material-icons">chevron_left</span>
+            </button>
+            <input type="date" id="date-selector" x-model="selectedDate" @change="loadAvailability()" class="border border-gray-300 rounded px-3 py-2" value="{{ today }}">
+            <button @click="changeDate(1)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded transition-colors flex items-center" title="Nächster Tag">
+                <span class="material-icons">chevron_right</span>
+            </button>
+            <button @click="goToToday()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded ml-2 transition-colors flex items-center gap-2" title="Zu heute springen">
+                <span class="material-icons">today</span>
+                Heute
+            </button>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="flex gap-6 mb-4 text-sm">
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-green-500 rounded"></div>
+            <span>Verfügbar</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-red-500 rounded"></div>
+            <span>Gebucht</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-gray-400 rounded"></div>
+            <span>Gesperrt</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-gray-200 rounded"></div>
+            <span>Vergangen</span>
+        </div>
+    </div>
+
+    <!-- Court Availability Grid -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse" id="availability-grid">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="border border-gray-300 px-4 py-2 text-left font-semibold">Uhrzeit</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 1</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 2</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 3</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 4</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 5</th>
+                    <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 6</th>
+                </tr>
+            </thead>
+            <tbody id="grid-body">
+                <!-- Loading state -->
+                <tr x-show="loading">
+                    <td colspan="7" class="text-center py-8 text-gray-500">Lade Verfügbarkeit...</td>
+                </tr>
+                
+                <!-- Error state -->
+                <tr x-show="error && !loading">
+                    <td colspan="7" class="text-center py-8 text-red-500" x-text="error"></td>
+                </tr>
+                
+                <!-- Grid data -->
+                <template x-for="time in timeSlots" :key="time">
+                    <tr x-show="!loading && !error">
+                        <td class="border border-gray-300 px-4 py-2 font-semibold" x-text="time"></td>
+                        <template x-for="courtIndex in [0,1,2,3,4,5]" :key="courtIndex">
+                            <td class="border border-gray-300 px-2 py-4 text-center text-xs"
+                                :class="getSlotClass(getSlot(courtIndex, time), time)"
+                                x-html="getSlotContent(getSlot(courtIndex, time), time)">
+                            </td>
+                        </template>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile View (Vertical List) -->
+    <div id="mobile-grid" class="lg:hidden mt-6 space-y-4">
+        <!-- Mobile grid will be populated by JavaScript -->
+    </div>
+
+    <!-- Information Section for Anonymous Users -->
+    <div class="mt-8 border border-gray-200 rounded-lg p-6 bg-gray-50">
+        <div class="flex items-center gap-3 mb-4">
+            <span class="material-icons text-gray-600">info</span>
+            <h3 class="text-xl font-semibold text-gray-800">Möchten Sie einen Platz buchen?</h3>
+        </div>
+        <div class="space-y-3 text-gray-700">
+            <p>Um Tennisplätze zu buchen und weitere Funktionen zu nutzen, benötigen Sie ein Benutzerkonto.</p>
+            <div class="flex gap-4 mt-4">
+                <a href="{{ url_for('auth.login') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors flex items-center gap-2">
+                    <span class="material-icons text-sm">login</span>
+                    Jetzt anmelden
+                </a>
+                <a href="{{ url_for('auth.login') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition-colors flex items-center gap-2">
+                    <span class="material-icons text-sm">person_add</span>
+                    Konto erstellen
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script type="module">
+import { dashboard } from '{{ url_for("static", filename="js/components/dashboard.js") }}';
+
+// Set global authentication status for anonymous users
+window.isAuthenticated = false;
+
+// Make dashboard component globally available for Alpine
+window.dashboard = dashboard;
+
+console.log('Anonymous dashboard component loaded');
+</script>
+{% endblock %}
+
+</content>

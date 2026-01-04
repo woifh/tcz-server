@@ -1,5 +1,6 @@
 """Flask application factory for Tennis Club Reservation System."""
 import os
+import logging
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -54,6 +55,29 @@ def create_app(config_name=None):
     
     # Load configuration
     app.config.from_object(config[config_name])
+    
+    # Configure logging for anonymous access monitoring
+    if not app.debug and not app.testing:
+        # Set up anonymous access logger
+        anonymous_logger = logging.getLogger('anonymous_access')
+        anonymous_logger.setLevel(logging.INFO)
+        
+        # Create file handler for anonymous access logs
+        log_dir = os.path.join(os.path.dirname(app.instance_path), 'logs')
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        
+        file_handler = logging.FileHandler(os.path.join(log_dir, 'anonymous_access.log'))
+        file_handler.setLevel(logging.INFO)
+        
+        # Create formatter
+        formatter = logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        )
+        file_handler.setFormatter(formatter)
+        
+        # Add handler to logger
+        anonymous_logger.addHandler(file_handler)
     
     # Initialize extensions with app
     db.init_app(app)

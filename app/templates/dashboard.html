@@ -219,6 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
 import { dashboard } from '{{ url_for("static", filename="js/components/dashboard.js") }}';
 import { bookingModal } from '{{ url_for("static", filename="js/components/booking-modal.js") }}';
 
+// Set global authentication status for authenticated users
+window.isAuthenticated = true;
+
 // Make components globally available for Alpine
 window.dashboard = dashboard;
 window.bookingModal = bookingModal;

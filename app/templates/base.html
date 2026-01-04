@@ -18,42 +18,51 @@
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold flex items-center gap-2">
                 <span class="material-icons">sports_tennis</span>
-                Tennisclub
+                Tennisclub Zellerndorf
             </h1>
-            {% if current_user.is_authenticated %}
             <div class="flex gap-4 items-center">
-                <a href="{{ url_for('dashboard.index') }}" class="hover:underline flex items-center gap-1">
-                    <span class="material-icons text-sm">dashboard</span>
-                    Übersicht
-                </a>
-                <a href="{{ url_for('reservations.list_reservations') }}" class="hover:underline flex items-center gap-1">
-                    <span class="material-icons text-sm">event</span>
-                    Meine Buchungen
-                </a>
-                <a href="{{ url_for('members.favourites_page') }}" class="hover:underline flex items-center gap-1">
-                    <span class="material-icons text-sm">favorite</span>
-                    Favoriten
-                </a>
-                {% if current_user.is_admin() %}
-                <a href="{{ url_for('admin.index') }}" class="hover:underline flex items-center gap-1">
-                    <span class="material-icons text-sm">admin_panel_settings</span>
-                    Admin-Panel
-                </a>
-                <a href="{{ url_for('members.list_members') }}" class="hover:underline flex items-center gap-1">
-                    <span class="material-icons text-sm">people</span>
-                    Mitglieder
-                </a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('dashboard.dashboard') }}" class="hover:underline flex items-center gap-1">
+                        <span class="material-icons text-sm">dashboard</span>
+                        Übersicht
+                    </a>
+                    <a href="{{ url_for('reservations.list_reservations') }}" class="hover:underline flex items-center gap-1">
+                        <span class="material-icons text-sm">event</span>
+                        Meine Buchungen
+                    </a>
+                    <a href="{{ url_for('members.favourites_page') }}" class="hover:underline flex items-center gap-1">
+                        <span class="material-icons text-sm">favorite</span>
+                        Favoriten
+                    </a>
+                    {% if current_user.is_admin() %}
+                    <a href="{{ url_for('admin.index') }}" class="hover:underline flex items-center gap-1">
+                        <span class="material-icons text-sm">admin_panel_settings</span>
+                        Admin-Panel
+                    </a>
+                    <a href="{{ url_for('members.list_members') }}" class="hover:underline flex items-center gap-1">
+                        <span class="material-icons text-sm">people</span>
+                        Mitglieder
+                    </a>
+                    {% endif %}
+                    <span class="flex items-center gap-1">
+                        <span class="material-icons text-sm">account_circle</span>
+                        {{ current_user.name }}
+                    </span>
+                    <a href="{{ url_for('auth.logout') }}" class="hover:underline flex items-center gap-1">
+                        <span class="material-icons text-sm">logout</span>
+                        Abmelden
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('dashboard.anonymous_overview') }}" class="hover:underline flex items-center gap-1">
+                        <span class="material-icons text-sm">visibility</span>
+                        Platzübersicht
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="hover:underline flex items-center gap-1">
+                        <span class="material-icons text-sm">login</span>
+                        Anmelden
+                    </a>
                 {% endif %}
-                <span class="flex items-center gap-1">
-                    <span class="material-icons text-sm">account_circle</span>
-                    {{ current_user.name }}
-                </span>
-                <a href="{{ url_for('auth.logout') }}" class="hover:underline flex items-center gap-1">
-                    <span class="material-icons text-sm">logout</span>
-                    Abmelden
-                </a>
             </div>
-            {% endif %}
         </div>
     </nav>
 

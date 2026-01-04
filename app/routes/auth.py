@@ -42,4 +42,4 @@ def logout():
     """Logout route."""
     logout_user()
     flash('Erfolgreich abgemeldet', 'info')
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('dashboard.index'))
