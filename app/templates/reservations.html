@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Meine Buchungen - Tennisclub{% endblock %}
+{% block title %}Meine aktiven Buchungen - Tennisclub{% endblock %}
 
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6" x-data="reservationsList()">
-    <h2 class="text-2xl font-bold mb-6">Meine Buchungen</h2>
+    <h2 class="text-2xl font-bold mb-6">Meine aktiven Buchungen</h2>
     
     <!-- Loading State -->
     <template x-if="loading">
@@ -50,7 +50,7 @@
                                 ></button>
                                 <span x-show="reservation.is_short_notice" 
                                       class="text-gray-500 text-sm">
-                                    Kurzfristig gebucht
+                                    Nicht stornierbar
                                 </span>
                             </td>
                         </tr>

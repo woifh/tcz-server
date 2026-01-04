@@ -3,16 +3,23 @@
 # Validation errors
 VALIDATION_ERRORS = {
     'BOOKING_CONFLICT': 'Dieser Platz ist bereits für diese Zeit gebucht',
-    'RESERVATION_LIMIT': 'Sie haben bereits 2 aktive Buchungen',
+    'RESERVATION_LIMIT': 'Sie haben bereits 2 aktive Buchungen (zukünftige oder laufende Reservierungen). Aktive Buchungen sind solche, die noch nicht beendet sind.',
+    'RESERVATION_LIMIT_SHORT_NOTICE': 'Sie haben bereits eine aktive kurzfristige Buchung (zukünftige oder laufende Reservierung). Nur eine kurzfristige Buchung pro Mitglied ist erlaubt.',
     'BLOCKED_SLOT': 'Dieser Platz ist für diese Zeit gesperrt',
     'INVALID_TIME': 'Buchungen sind nur zwischen 08:00 und 22:00 Uhr möglich',
     'INVALID_DURATION': 'Buchungen müssen genau eine Stunde dauern',
     'PAST_DATE': 'Buchungen können nicht in der Vergangenheit erstellt werden',
+    'PAST_DATE_SHORT_NOTICE': 'Kurzfristige Buchungen sind nur möglich, solange die Spielzeit noch nicht beendet ist',
     'INVALID_COURT': 'Ungültige Platznummer (1-6)',
     'REQUIRED_FIELD': 'Dieses Feld ist erforderlich',
     'INVALID_EMAIL': 'Ungültige E-Mail-Adresse',
     'EMAIL_EXISTS': 'Diese E-Mail-Adresse wird bereits verwendet',
     'WEAK_PASSWORD': 'Das Passwort muss mindestens 8 Zeichen lang sein',
+    'CANCELLATION_STARTED': 'Diese Buchung kann nicht mehr storniert werden (Spielzeit bereits begonnen)',
+    'CANCELLATION_TOO_LATE': 'Diese Buchung kann nicht mehr storniert werden (weniger als 15 Minuten bis Spielbeginn)',
+    'SHORT_NOTICE_NO_CANCEL': 'Kurzfristige Buchungen können nicht storniert werden',
+    'TIME_CALCULATION_ERROR': 'Fehler bei der Zeitberechnung. Bitte versuchen Sie es erneut.',
+    'FALLBACK_ACTIVE': 'System verwendet vereinfachte Zeitlogik aufgrund technischer Probleme',
 }
 
 # Authentication errors
@@ -60,6 +67,8 @@ INFO_MESSAGES = {
     'NO_RESERVATIONS': 'Sie haben derzeit keine aktiven Buchungen',
     'NO_MEMBERS': 'Keine Mitglieder gefunden',
     'NO_BLOCKS': 'Keine Sperrungen für dieses Datum',
+    'AVAILABILITY_INFO': 'Verfügbare Buchungsplätze: {available_slots} von 2 (basierend auf aktueller Zeit)',
+    'FALLBACK_MODE': 'System läuft im Fallback-Modus mit vereinfachter Zeitlogik',
 }
 
 

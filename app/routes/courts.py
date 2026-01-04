@@ -66,6 +66,7 @@ def get_availability():
     Returns a grid with status (available/reserved/blocked) for each time slot.
     Supports both authenticated and anonymous users with appropriate data filtering.
     Rate limiting is applied specifically to anonymous users to prevent abuse.
+    Uses time-based active booking session logic for real-time availability updates.
     """
     # Log anonymous access for monitoring
     if is_anonymous_user():
@@ -83,6 +84,10 @@ def get_availability():
     
     # Detect authentication status
     is_authenticated = current_user.is_authenticated
+    
+    # Get current time for real-time availability calculations
+    from app.utils.timezone_utils import get_current_berlin_time
+    current_time = get_current_berlin_time()
     
     # Get all courts
     courts = Court.query.order_by(Court.number).all()
@@ -137,18 +142,31 @@ def get_availability():
                     if (reservation.court_id == court.id and 
                         reservation.start_time == slot_time and
                         reservation.status == 'active'):
-                        # Set status based on whether it's a short notice booking
-                        slot['status'] = 'short_notice' if reservation.is_short_notice else 'reserved'
-                        slot['details'] = {
-                            'booked_for': f"{reservation.booked_for.firstname} {reservation.booked_for.lastname}",
-                            'booked_for_id': reservation.booked_for_id,
-                            'booked_by': f"{reservation.booked_by.firstname} {reservation.booked_by.lastname}",
-                            'booked_by_id': reservation.booked_by_id,
-                            'reservation_id': reservation.id,
-                            'is_short_notice': reservation.is_short_notice
-                        }
-                        # Debug logging
-                        print(f"DEBUG: Reservation {reservation.id} at {slot_time} - is_short_notice: {reservation.is_short_notice}, status: {slot['status']}")
+                        
+                        # Use time-based logic to determine if reservation is still active
+                        is_reservation_active = ReservationService.is_reservation_currently_active(reservation, current_time)
+                        
+                        # Only show as reserved if the reservation is still active
+                        if is_reservation_active:
+                            # Set status based on whether it's a short notice booking
+                            slot['status'] = 'short_notice' if reservation.is_short_notice else 'reserved'
+                            slot['details'] = {
+                                'booked_for': f"{reservation.booked_for.firstname} {reservation.booked_for.lastname}",
+                                'booked_for_id': reservation.booked_for_id,
+                                'booked_by': f"{reservation.booked_by.firstname} {reservation.booked_by.lastname}",
+                                'booked_by_id': reservation.booked_by_id,
+                                'reservation_id': reservation.id,
+                                'is_short_notice': reservation.is_short_notice,
+                                'is_active': is_reservation_active,
+                                'booking_status': 'active'
+                            }
+                            # Debug logging
+                            print(f"DEBUG: Active reservation {reservation.id} at {slot_time} - is_short_notice: {reservation.is_short_notice}, status: {slot['status']}")
+                        else:
+                            # Reservation has ended, slot becomes available
+                            slot['status'] = 'available'
+                            # Debug logging
+                            print(f"DEBUG: Past reservation {reservation.id} at {slot_time} - no longer active, slot available")
                         break
             
             court_data['slots'].append(slot)
@@ -158,7 +176,98 @@ def get_availability():
     # Filter data based on authentication status
     filtered_grid = AnonymousDataFilter.filter_availability_data(grid, is_authenticated)
     
+    # Add metadata about real-time updates
+    response_data = {
+        'date': date_str,
+        'grid': filtered_grid,
+        'metadata': {
+            'generated_at': current_time.isoformat(),
+            'uses_realtime_logic': True,
+            'timezone': 'Europe/Berlin'
+        }
+    }
+    
+    return jsonify(response_data)
+
+
+@bp.route('/availability/realtime', methods=['GET'])
+@limiter.limit("200 per hour", key_func=lambda: request.remote_addr if is_anonymous_user() else None)
+def get_realtime_availability():
+    """Get real-time court availability information using active booking session logic.
+    
+    This endpoint provides up-to-date availability information that considers
+    whether reservations are currently active based on the current time.
+    Useful for dashboard displays and booking interfaces that need real-time updates.
+    """
+    # Log anonymous access for monitoring
+    if is_anonymous_user():
+        log_anonymous_access(
+            endpoint='/courts/availability/realtime',
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+    
+    date_str = request.args.get('date', date.today().isoformat())
+    try:
+        query_date = date.fromisoformat(date_str)
+    except ValueError:
+        return jsonify({'error': 'Ungültiges Datumsformat'}), 400
+    
+    # Get current time for real-time calculations
+    from app.utils.timezone_utils import get_current_berlin_time
+    current_time = get_current_berlin_time()
+    
+    # Get all courts
+    courts = Court.query.order_by(Court.number).all()
+    
+    # Get reservations for the date
+    reservations = ReservationService.get_reservations_by_date(query_date)
+    
+    # Calculate availability statistics using active booking session logic
+    total_slots = len(courts) * 14  # 6 courts * 14 time slots (08:00-22:00)
+    active_reservations = 0
+    past_reservations = 0
+    short_notice_active = 0
+    
+    for reservation in reservations:
+        if reservation.status == 'active':
+            is_active = ReservationService.is_reservation_currently_active(reservation, current_time)
+            if is_active:
+                active_reservations += 1
+                if reservation.is_short_notice:
+                    short_notice_active += 1
+            else:
+                past_reservations += 1
+    
+    # Get blocks for the date
+    blocks = BlockService.get_blocks_by_date(query_date)
+    blocked_slots = len(blocks)  # Simplified count
+    
+    available_slots = total_slots - active_reservations - blocked_slots
+    
     return jsonify({
         'date': date_str,
-        'grid': filtered_grid
+        'current_time': current_time.isoformat(),
+        'availability_summary': {
+            'total_slots': total_slots,
+            'available_slots': available_slots,
+            'active_reservations': active_reservations,
+            'past_reservations': past_reservations,
+            'short_notice_active': short_notice_active,
+            'blocked_slots': blocked_slots,
+            'availability_percentage': round((available_slots / total_slots) * 100, 1)
+        },
+        'courts': [
+            {
+                'id': court.id,
+                'number': court.number,
+                'status': court.status
+            }
+            for court in courts
+        ],
+        'metadata': {
+            'uses_realtime_logic': True,
+            'timezone': 'Europe/Berlin',
+            'generated_at': current_time.isoformat()
+        }
     })

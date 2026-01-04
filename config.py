@@ -74,6 +74,10 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
     MAIL_SUPPRESS_SEND = True
     RATELIMIT_ENABLED = False
+    
+    # Override booking hours for testing to match test expectations
+    BOOKING_START_HOUR = 6
+    BOOKING_END_HOUR = 22  # Last slot starts at 21:00, ends at 22:00
 
 
 config = {

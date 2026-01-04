@@ -68,15 +68,16 @@ def debug_short_notice():
     """Debug route to test short notice booking functionality."""
     from datetime import datetime, timedelta
     from app.services.reservation_service import ReservationService
+    from app.utils.timezone_utils import get_current_berlin_time
     
     # Test short notice detection with different scenarios
-    now_local = datetime.now()
+    now_berlin = get_current_berlin_time()
     now_utc = datetime.utcnow()
     
     # Test cases
     test_cases = [
-        ("5 min future (local)", now_local.date(), (now_local + timedelta(minutes=5)).time(), now_local),
-        ("20 min future (local)", now_local.date(), (now_local + timedelta(minutes=20)).time(), now_local),
+        ("5 min future (Berlin)", now_berlin.date(), (now_berlin + timedelta(minutes=5)).time(), now_berlin),
+        ("20 min future (Berlin)", now_berlin.date(), (now_berlin + timedelta(minutes=20)).time(), now_berlin),
         ("5 min future (UTC)", now_utc.date(), (now_utc + timedelta(minutes=5)).time(), now_utc),
         ("20 min future (UTC)", now_utc.date(), (now_utc + timedelta(minutes=20)).time(), now_utc),
     ]

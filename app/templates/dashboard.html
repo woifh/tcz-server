@@ -96,12 +96,12 @@
         <!-- Mobile grid will be populated by JavaScript -->
     </div>
 
-    <!-- User's Upcoming Reservations -->
+    <!-- User's Active Booking Sessions -->
     <div class="mt-8 border border-gray-200 rounded-lg p-6 bg-blue-50">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-semibold flex items-center gap-2">
                 <span class="material-icons">event_note</span>
-                Meine kommenden Buchungen
+                Meine aktiven Buchungen
             </h3>
             <a href="{{ url_for('reservations.list_reservations') }}" class="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center gap-1">
                 Alle anzeigen
@@ -112,7 +112,7 @@
             <!-- Loading state -->
             <p x-show="userReservations.length === 0" class="text-gray-500 text-center py-4">
                 <span x-show="loading">Lade Buchungen...</span>
-                <span x-show="!loading">Keine kommenden Buchungen</span>
+                <span x-show="!loading">Keine aktiven Buchungen</span>
             </p>
             
             <!-- Reservations list -->
@@ -123,6 +123,10 @@
                             <h4 class="font-semibold" x-text="`Platz ${reservation.court_number}`"></h4>
                             <p class="text-sm text-gray-600" x-text="`${formatDate(reservation.date)} • ${reservation.start_time} - ${reservation.end_time}`"></p>
                             <p class="text-sm text-gray-500" x-text="`Gebucht für: ${reservation.booked_for}`"></p>
+                            <span x-show="reservation.is_short_notice" 
+                                  class="inline-block mt-1 px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
+                                Kurzfristige Buchung
+                            </span>
                         </div>
                         <button x-show="!reservation.is_short_notice" 
                                 @click="cancelReservation(reservation.id)" 
@@ -131,11 +135,25 @@
                         </button>
                         <span x-show="reservation.is_short_notice" 
                               class="text-gray-500 text-sm font-semibold">
-                            Kurzfristig gebucht
+                            Nicht stornierbar
                         </span>
                     </div>
                 </div>
             </template>
+        </div>
+        
+        <!-- Availability Summary -->
+        <div class="mt-4 pt-4 border-t border-gray-200">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="bg-white rounded p-3">
+                    <div class="text-gray-600">Verfügbare Buchungsplätze</div>
+                    <div class="text-lg font-semibold text-green-600" x-text="getAvailableSlots() + ' von 2'"></div>
+                </div>
+                <div class="bg-white rounded p-3">
+                    <div class="text-gray-600">Kurzfristige Buchungen</div>
+                    <div class="text-lg font-semibold text-orange-600" x-text="getShortNoticeSlots() + ' von 1'"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

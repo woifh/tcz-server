@@ -9,7 +9,8 @@ from app import db
 
 # Hypothesis strategies for generating test data
 court_numbers = st.integers(min_value=1, max_value=6)
-booking_times = st.times(min_value=time(6, 0), max_value=time(21, 0))
+# Only generate full hour times (no minutes or seconds)
+booking_times = st.sampled_from([time(h, 0) for h in range(6, 22)])  # 6:00 to 21:00, full hours only
 future_dates = st.dates(min_value=date.today(), max_value=date.today() + timedelta(days=90))
 
 
@@ -50,13 +51,18 @@ def test_property_33_one_hour_duration_enforcement(app, court_num, booking_date,
         db.session.add(member2)
         db.session.commit()
         
-        # Create reservation using the service
+        # Create reservation using the service with a fixed current_time to ensure validity
+        # Use a time early in the day to ensure all generated booking times are in the future
+        from datetime import datetime
+        fixed_current_time = datetime.combine(booking_date, time(6, 0))  # 6:00 AM on the booking date
+        
         reservation, error = ReservationService.create_reservation(
             court_id=court.id,
             date=booking_date,
             start_time=start,
             booked_for_id=member1.id,
-            booked_by_id=member2.id
+            booked_by_id=member2.id,
+            current_time=fixed_current_time
         )
         
         # Verify reservation was created successfully

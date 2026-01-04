@@ -12,6 +12,7 @@ from app import db
 from app.decorators import admin_required
 from app.models import Block, Court, BlockReason, Reservation
 from app.services.block_service import BlockService
+from app.utils.timezone_utils import get_berlin_date_today
 from . import bp
 
 
@@ -43,7 +44,7 @@ def update_batch(batch_id):
         new_details = data.get('details', '').strip() or None
         
         # Validate that the date is not in the past
-        today = datetime.now().date()
+        today = get_berlin_date_today()
         if new_date < today:
             return jsonify({'error': 'Sperrungen können nicht für vergangene Tage bearbeitet werden'}), 400
         
@@ -172,7 +173,7 @@ def update_multi_court_blocks(primary_block_id):
         new_details = data.get('details', '').strip() or None
         
         # Validate that the date is not in the past
-        today = datetime.now().date()
+        today = get_berlin_date_today()
         if new_date < today:
             return jsonify({'error': 'Sperrungen können nicht für vergangene Tage bearbeitet werden'}), 400
         
@@ -258,7 +259,7 @@ def create_multi_court_blocks():
         end_time = datetime.strptime(end_time_str, '%H:%M').time()
         
         # Validate that the date is not in the past
-        today = datetime.now().date()
+        today = get_berlin_date_today()
         if block_date < today:
             return jsonify({'error': 'Sperrungen können nicht für vergangene Tage erstellt werden'}), 400
         

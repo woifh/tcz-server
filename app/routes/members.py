@@ -25,7 +25,20 @@ def admin_required(f):
 @admin_required
 def list_members():
     """List all members (admin only)."""
+    from app.services.reservation_service import ReservationService
+    
     members = Member.query.order_by(Member.lastname, Member.firstname).all()
+    
+    # Add reservation counts to each member
+    for member in members:
+        # Get active booking sessions (excludes short notice by default)
+        active_sessions = ReservationService.get_member_active_booking_sessions(member.id)
+        member.active_booking_count = len(active_sessions)
+        
+        # Get active short notice bookings
+        short_notice_bookings = ReservationService.get_member_active_short_notice_bookings(member.id)
+        member.short_notice_count = len(short_notice_bookings)
+    
     return render_template('members.html', members=members)
 
 

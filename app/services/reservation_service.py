@@ -1,13 +1,108 @@
 """Reservation service for business logic."""
-from datetime import time, timedelta, datetime
+import logging
+from datetime import time, timedelta, datetime, timezone
+from sqlalchemy import or_, and_
 from app import db
 from app.models import Reservation
 from app.services.validation_service import ValidationService
 from app.services.email_service import EmailService
+from app.utils.timezone_utils import ensure_berlin_timezone, log_timezone_operation
+from app.utils.error_handling import (
+    safe_time_operation, 
+    log_error_with_context, 
+    get_fallback_active_reservations_date_based,
+    monitor_performance,
+    ActiveBookingSessionError
+)
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class ReservationService:
     """Service for managing reservations."""
+    
+    @staticmethod
+    @monitor_performance("is_reservation_active_by_time", threshold_ms=100)
+    def is_reservation_active_by_time(reservation_date, reservation_end_time, current_time=None):
+        """
+        Determine if a reservation is active based on current time.
+        
+        A reservation is considered active if:
+        - It's on a future date, OR
+        - It's on the same date but hasn't ended yet (end_time > current_time)
+        
+        This implements the core time-based logic for active booking sessions,
+        replacing the previous date-only approach.
+        
+        Args:
+            reservation_date: Date of the reservation (date object)
+            reservation_end_time: End time of the reservation (time object)
+            current_time: Current datetime (defaults to Europe/Berlin timezone)
+            
+        Returns:
+            bool: True if reservation is active (future or in progress)
+        """
+        try:
+            # Ensure consistent Europe/Berlin timezone handling
+            berlin_time = ensure_berlin_timezone(current_time)
+            log_timezone_operation("is_reservation_active_by_time", current_time, berlin_time)
+            
+            current_date = berlin_time.date()
+            current_time_only = berlin_time.time()
+            
+            # Future reservation (date > current_date): Always active
+            if reservation_date > current_date:
+                return True
+            
+            # Past reservation (date < current_date): Never active
+            elif reservation_date < current_date:
+                return False
+            
+            # Same day reservation: Active if end_time > current_time
+            else:  # reservation_date == current_date
+                # Handle edge case: if current time exactly matches end time, reservation is NOT active
+                return reservation_end_time > current_time_only
+                
+        except Exception as e:
+            context = {
+                'reservation_date': reservation_date,
+                'reservation_end_time': reservation_end_time,
+                'current_time': current_time
+            }
+            log_error_with_context(e, context, "is_reservation_active_by_time")
+            
+            # Fallback to date-based logic if time calculations fail
+            try:
+                logger.warning("Falling back to date-based logic for is_reservation_active_by_time")
+                fallback_time = ensure_berlin_timezone(None)  # Get current Berlin time
+                return reservation_date >= fallback_time.date()
+            except Exception as fallback_error:
+                log_error_with_context(fallback_error, context, "is_reservation_active_by_time_fallback")
+                # Ultimate fallback: assume reservation is active to be safe
+                logger.error("Ultimate fallback: assuming reservation is active")
+                return True
+    
+    @staticmethod
+    def is_reservation_currently_active(reservation, current_time=None):
+        """
+        Check if a reservation object is currently active based on time.
+        
+        This is a convenience wrapper around is_reservation_active_by_time()
+        that works directly with Reservation model objects.
+        
+        Args:
+            reservation: Reservation object
+            current_time: Current datetime (defaults to Europe/Berlin now)
+            
+        Returns:
+            bool: True if reservation is active (future or in progress)
+        """
+        return ReservationService.is_reservation_active_by_time(
+            reservation.date,
+            reservation.end_time,
+            current_time
+        )
     
     @staticmethod
     def is_short_notice_booking(date, start_time, current_time=None):
@@ -15,44 +110,45 @@ class ReservationService:
         Check if a booking would be classified as short notice.
         
         Args:
-            date: Reservation date (assumed to be in CET/CEST timezone)
-            start_time: Reservation start time (assumed to be in CET/CEST timezone)
-            current_time: Current datetime (defaults to CET/CEST now)
+            date: Reservation date (assumed to be in Europe/Berlin timezone)
+            start_time: Reservation start time (assumed to be in Europe/Berlin timezone)
+            current_time: Current datetime (defaults to Europe/Berlin now)
             
         Returns:
             bool: True if booking is within 15 minutes of start time
         """
-        if current_time is None:
-            # Use CET/CEST timezone (UTC+1/UTC+2)
-            # Simple approach: UTC + 1 hour for CET (winter) / UTC + 2 hours for CEST (summer)
-            from datetime import timedelta
-            utc_now = datetime.utcnow()
+        try:
+            # Ensure consistent Europe/Berlin timezone handling
+            berlin_time = ensure_berlin_timezone(current_time)
+            log_timezone_operation("is_short_notice_booking", current_time, berlin_time)
             
-            # Simple heuristic for CET/CEST (this is approximate)
-            # In practice, you'd want proper timezone handling, but this works for now
-            # Assume CET (UTC+1) - you can adjust this based on your needs
-            current_time = utc_now + timedelta(hours=1)
-        
-        # Ensure we're comparing like with like - both should be naive datetimes
-        # representing the same timezone (CET/CEST)
-        reservation_datetime = datetime.combine(date, start_time)
-        
-        # If current_time is timezone-aware, convert to naive local time
-        if hasattr(current_time, 'tzinfo') and current_time.tzinfo is not None:
-            current_time = current_time.replace(tzinfo=None)
-        
-        time_until_start = reservation_datetime - current_time
-        
-        # Debug logging
-        print(f"DEBUG Short Notice Check:")
-        print(f"  Reservation datetime: {reservation_datetime}")
-        print(f"  Current time (CET): {current_time}")
-        print(f"  UTC time: {datetime.utcnow()}")
-        print(f"  Time until start: {time_until_start}")
-        print(f"  Is short notice: {time_until_start <= timedelta(minutes=15)}")
-        
-        # If reservation starts in 15 minutes or less, it's short notice
-        return time_until_start <= timedelta(minutes=15)
+            # Ensure we're comparing like with like - both should be naive datetimes
+            # representing the same timezone (Europe/Berlin)
+            reservation_datetime = datetime.combine(date, start_time)
+            
+            time_until_start = reservation_datetime - berlin_time
+            
+            # Debug logging
+            logger.debug(f"Short Notice Check:")
+            logger.debug(f"  Reservation datetime: {reservation_datetime}")
+            logger.debug(f"  Current time (Berlin): {berlin_time}")
+            logger.debug(f"  Time until start: {time_until_start}")
+            
+            # If reservation is in the past, it's not short notice (it's invalid)
+            if time_until_start < timedelta(0):
+                logger.debug(f"  Reservation is in the past, not short notice")
+                return False
+            
+            # If reservation starts in 15 minutes or less, it's short notice
+            is_short_notice = time_until_start <= timedelta(minutes=15)
+            logger.debug(f"  Is short notice: {is_short_notice}")
+            
+            return is_short_notice
+            
+        except Exception as e:
+            logger.error(f"Error in is_short_notice_booking: {e}")
+            # Fallback: assume not short notice to be safe
+            return False
     
     @staticmethod
     def classify_booking_type(date, start_time, current_time=None):
@@ -94,7 +190,8 @@ class ReservationService:
         ).order_by(Reservation.date, Reservation.start_time).all()
     
     @staticmethod
-    def create_reservation(court_id, date, start_time, booked_for_id, booked_by_id):
+    @monitor_performance("create_reservation", threshold_ms=2000)
+    def create_reservation(court_id, date, start_time, booked_for_id, booked_by_id, current_time=None):
         """
         Create a new reservation.
         
@@ -104,53 +201,90 @@ class ReservationService:
             start_time: Start time
             booked_for_id: ID of member the reservation is for
             booked_by_id: ID of member creating the reservation
+            current_time: Current datetime for testing (defaults to now)
             
         Returns:
             tuple: (Reservation object or None, error message or None)
         """
-        # Determine if this is a short notice booking
-        is_short_notice = ReservationService.is_short_notice_booking(date, start_time)
-        
-        # Log reservation creation
-        print(f"Creating reservation - date={date}, start_time={start_time}, is_short_notice={is_short_notice}")
-        
-        # Validate all constraints (pass short notice flag for proper validation)
-        is_valid, error_msg = ValidationService.validate_all_booking_constraints(
-            court_id, date, start_time, booked_for_id, is_short_notice
-        )
-        
-        if not is_valid:
-            return None, error_msg
-        
-        # Calculate end time (1 hour after start)
-        end_time = time(start_time.hour + 1, start_time.minute)
-        
-        # Create reservation
-        reservation = Reservation(
-            court_id=court_id,
-            date=date,
-            start_time=start_time,
-            end_time=end_time,
-            booked_for_id=booked_for_id,
-            booked_by_id=booked_by_id,
-            status='active',
-            is_short_notice=is_short_notice
-        )
-        
         try:
-            db.session.add(reservation)
-            db.session.commit()
+            # Use provided current_time or default to Berlin time
+            berlin_time = ensure_berlin_timezone(current_time)
+            log_timezone_operation("create_reservation", current_time, berlin_time)
             
-            # Send email notifications (don't fail if email fails)
-            EmailService.send_booking_created(reservation)
+            # Determine if this is a short notice booking
+            is_short_notice = ReservationService.is_short_notice_booking(date, start_time, berlin_time)
             
-            return reservation, None
+            # Log reservation creation
+            logger.info(f"Creating reservation - date={date}, start_time={start_time}, is_short_notice={is_short_notice}")
+            
+            # Validate all constraints (pass short notice flag and current_time for proper validation)
+            is_valid, error_msg = ValidationService.validate_all_booking_constraints(
+                court_id, date, start_time, booked_for_id, is_short_notice, berlin_time
+            )
+            
+            if not is_valid:
+                logger.warning(f"Reservation validation failed: {error_msg}")
+                return None, error_msg
+            
+            # Calculate end time (1 hour after start)
+            end_time = time(start_time.hour + 1, start_time.minute)
+            
+            # Create reservation
+            reservation = Reservation(
+                court_id=court_id,
+                date=date,
+                start_time=start_time,
+                end_time=end_time,
+                booked_for_id=booked_for_id,
+                booked_by_id=booked_by_id,
+                status='active',
+                is_short_notice=is_short_notice
+            )
+            
+            try:
+                db.session.add(reservation)
+                db.session.commit()
+                
+                logger.info(f"Reservation created successfully: ID={reservation.id}")
+                
+                # Send email notifications (don't fail if email fails)
+                try:
+                    EmailService.send_booking_created(reservation)
+                except Exception as email_error:
+                    logger.warning(f"Email notification failed: {email_error}")
+                    # Don't fail the reservation creation if email fails
+                
+                return reservation, None
+                
+            except Exception as db_error:
+                db.session.rollback()
+                logger.error(f"Database error creating reservation: {db_error}")
+                
+                # Check if it's a duplicate booking error
+                if 'Duplicate entry' in str(db_error) and 'unique_booking' in str(db_error):
+                    return None, "Dieser Platz ist bereits für diese Zeit gebucht"
+                return None, f"Fehler beim Erstellen der Buchung: {str(db_error)}"
+                
         except Exception as e:
-            db.session.rollback()
-            # Check if it's a duplicate booking error
-            if 'Duplicate entry' in str(e) and 'unique_booking' in str(e):
-                return None, "Dieser Platz ist bereits für diese Zeit gebucht"
-            return None, f"Fehler beim Erstellen der Buchung: {str(e)}"
+            # Enhanced error handling with comprehensive logging
+            context = {
+                'court_id': court_id,
+                'date': date,
+                'start_time': start_time,
+                'booked_for_id': booked_for_id,
+                'booked_by_id': booked_by_id,
+                'current_time': current_time
+            }
+            log_error_with_context(e, context, "create_reservation")
+            
+            # Get system health info for debugging
+            from app.utils.error_handling import get_system_health_info, get_time_based_error_messages
+            health_info = get_system_health_info()
+            logger.error(f"System health during reservation creation error: {health_info}")
+            
+            # Return user-friendly error message
+            error_messages = get_time_based_error_messages()
+            return None, error_messages.get('TIME_CALCULATION_ERROR', "Ein unerwarteter Fehler ist beim Erstellen der Buchung aufgetreten. Bitte versuchen Sie es erneut.")
     
     @staticmethod
     def update_reservation(reservation_id, **updates):
@@ -221,47 +355,285 @@ class ReservationService:
             return False, f"Fehler beim Stornieren der Buchung: {str(e)}"
     
     @staticmethod
-    def get_member_active_reservations(member_id, include_short_notice=True):
+    def get_member_active_reservations(member_id, include_short_notice=True, current_time=None):
         """
-        Get active reservations for a member.
-        Only returns future reservations (today or later).
+        Get active reservations for a member using time-based logic.
+        Returns reservations that are either in the future or currently in progress.
         
         Args:
             member_id: ID of the member
             include_short_notice: Whether to include short notice bookings (default True)
+            current_time: Current datetime for testing (defaults to Europe/Berlin now)
             
         Returns:
             list: List of active Reservation objects
         """
-        from datetime import date as date_class
-        today = date_class.today()
-        
-        query = Reservation.query.filter(
-            (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
-            Reservation.status == 'active',
-            Reservation.date >= today
-        )
-        
-        if not include_short_notice:
-            query = query.filter(Reservation.is_short_notice == False)
-        
-        return query.order_by(Reservation.date, Reservation.start_time).all()
+        try:
+            # Ensure consistent Europe/Berlin timezone handling
+            berlin_time = ensure_berlin_timezone(current_time)
+            log_timezone_operation("get_member_active_reservations", current_time, berlin_time)
+            
+            current_date = berlin_time.date()
+            current_time_only = berlin_time.time()
+            
+            # Build time-based filter: reservation is active if it hasn't ended yet
+            time_filter = or_(
+                Reservation.date > current_date,  # Future date
+                and_(
+                    Reservation.date == current_date,  # Same date
+                    Reservation.end_time > current_time_only  # But hasn't ended
+                )
+            )
+            
+            query = Reservation.query.filter(
+                (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+                Reservation.status == 'active',
+                time_filter
+            )
+            
+            if not include_short_notice:
+                query = query.filter(Reservation.is_short_notice == False)
+            
+            return query.order_by(Reservation.date, Reservation.start_time).all()
+            
+        except Exception as e:
+            # Enhanced error handling with comprehensive logging
+            context = {
+                'member_id': member_id,
+                'include_short_notice': include_short_notice,
+                'current_time': current_time
+            }
+            log_error_with_context(e, context, "get_member_active_reservations")
+            
+            # Fallback to date-based logic
+            try:
+                logger.warning("get_member_active_reservations: Falling back to date-based logic")
+                from datetime import date as date_class
+                today = date_class.today()
+                
+                query = Reservation.query.filter(
+                    (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+                    Reservation.status == 'active',
+                    Reservation.date >= today
+                )
+                
+                if not include_short_notice:
+                    query = query.filter(Reservation.is_short_notice == False)
+                
+                result = query.order_by(Reservation.date, Reservation.start_time).all()
+                logger.info(f"Fallback successful: returned {len(result)} reservations")
+                return result
+                
+            except Exception as fallback_error:
+                log_error_with_context(fallback_error, context, "get_member_active_reservations_fallback")
+                logger.error("All fallback methods failed, returning empty list")
+                return []
     
     @staticmethod
-    def check_availability(court_id, date, start_time):
+    @monitor_performance("get_member_active_booking_sessions", threshold_ms=500)
+    def get_member_active_booking_sessions(member_id, include_short_notice=False, current_time=None):
         """
-        Check if a court is available.
+        Get active booking sessions for a member using time-based logic.
+        
+        This method specifically implements the "active booking session" concept for
+        reservation limit enforcement. By default, it excludes short notice bookings
+        since they don't count toward the 2-reservation limit.
+        
+        An active booking session is a reservation that:
+        - Has status='active' AND
+        - Is either in the future or currently in progress (hasn't ended yet) AND
+        - Optionally excludes short notice bookings (default behavior)
+        
+        Args:
+            member_id: ID of the member
+            include_short_notice: Whether to include short notice bookings (default False)
+            current_time: Current datetime for testing (defaults to Europe/Berlin now)
+            
+        Returns:
+            list: List of active booking session Reservation objects
+            
+        Examples:
+            # Get regular active booking sessions (for 2-reservation limit)
+            sessions = ReservationService.get_member_active_booking_sessions(member_id)
+            
+            # Get all active booking sessions including short notice
+            all_sessions = ReservationService.get_member_active_booking_sessions(
+                member_id, include_short_notice=True
+            )
+            
+            # Get active booking sessions at a specific time (for testing)
+            test_time = datetime(2024, 1, 15, 14, 30)
+            sessions = ReservationService.get_member_active_booking_sessions(
+                member_id, current_time=test_time
+            )
+        """
+        try:
+            # Ensure consistent Europe/Berlin timezone handling
+            berlin_time = ensure_berlin_timezone(current_time)
+            log_timezone_operation("get_member_active_booking_sessions", current_time, berlin_time)
+            
+            current_date = berlin_time.date()
+            current_time_only = berlin_time.time()
+            
+            # Build time-based filter: reservation is active if it hasn't ended yet
+            time_filter = or_(
+                Reservation.date > current_date,  # Future date
+                and_(
+                    Reservation.date == current_date,  # Same date
+                    Reservation.end_time > current_time_only  # But hasn't ended
+                )
+            )
+            
+            query = Reservation.query.filter(
+                (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+                Reservation.status == 'active',
+                time_filter
+            )
+            
+            if not include_short_notice:
+                query = query.filter(Reservation.is_short_notice == False)
+            
+            return query.order_by(Reservation.date, Reservation.start_time).all()
+            
+        except Exception as e:
+            context = {
+                'member_id': member_id,
+                'include_short_notice': include_short_notice,
+                'current_time': current_time
+            }
+            log_error_with_context(e, context, "get_member_active_booking_sessions")
+            
+            # Fallback to date-based logic
+            try:
+                logger.warning("Falling back to date-based logic for get_member_active_booking_sessions")
+                return get_fallback_active_reservations_date_based(member_id, include_short_notice)
+                
+            except Exception as fallback_error:
+                log_error_with_context(fallback_error, context, "get_member_active_booking_sessions_fallback")
+                logger.error("All fallback methods failed, returning empty list")
+                return []
+    
+    @staticmethod
+    def get_member_active_short_notice_bookings(member_id, current_time=None):
+        """
+        Get active short notice bookings for a member using time-based logic.
+        
+        This method specifically gets short notice bookings that are currently active
+        (future or in progress) for the purpose of enforcing the 1 short notice booking limit.
+        
+        Uses the same time-based logic as regular reservations:
+        - Future reservations (date > current_date): Active
+        - Same-day reservations: Active if end_time > current_time
+        - Past reservations: Not active
+        
+        Args:
+            member_id: ID of the member
+            current_time: Current datetime for testing (defaults to Europe/Berlin now)
+            
+        Returns:
+            list: List of active short notice Reservation objects
+            
+        Examples:
+            # Get active short notice bookings (for 1-booking limit enforcement)
+            short_notice = ReservationService.get_member_active_short_notice_bookings(member_id)
+            
+            # Get active short notice bookings at a specific time (for testing)
+            test_time = datetime(2024, 1, 15, 14, 30)
+            short_notice = ReservationService.get_member_active_short_notice_bookings(
+                member_id, current_time=test_time
+            )
+        """
+        try:
+            # Ensure consistent Europe/Berlin timezone handling
+            berlin_time = ensure_berlin_timezone(current_time)
+            log_timezone_operation("get_member_active_short_notice_bookings", current_time, berlin_time)
+            
+            current_date = berlin_time.date()
+            current_time_only = berlin_time.time()
+            
+            # Build time-based filter: reservation is active if it hasn't ended yet
+            time_filter = or_(
+                Reservation.date > current_date,  # Future date
+                and_(
+                    Reservation.date == current_date,  # Same date
+                    Reservation.end_time > current_time_only  # But hasn't ended
+                )
+            )
+            
+            return Reservation.query.filter(
+                (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+                Reservation.status == 'active',
+                Reservation.is_short_notice == True,  # Only short notice bookings
+                time_filter
+            ).order_by(Reservation.date, Reservation.start_time).all()
+            
+        except Exception as e:
+            # Enhanced error handling with comprehensive logging
+            context = {
+                'member_id': member_id,
+                'current_time': current_time
+            }
+            log_error_with_context(e, context, "get_member_active_short_notice_bookings")
+            
+            # Fallback to date-based logic
+            try:
+                logger.warning("get_member_active_short_notice_bookings: Falling back to date-based logic")
+                from datetime import date as date_class
+                today = date_class.today()
+                
+                result = Reservation.query.filter(
+                    (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+                    Reservation.status == 'active',
+                    Reservation.is_short_notice == True,
+                    Reservation.date >= today
+                ).order_by(Reservation.date, Reservation.start_time).all()
+                
+                logger.info(f"Fallback successful: returned {len(result)} short notice bookings")
+                return result
+                
+            except Exception as fallback_error:
+                log_error_with_context(fallback_error, context, "get_member_active_short_notice_bookings_fallback")
+                logger.error("All fallback methods failed, returning empty list")
+                return []
+    
+    @staticmethod
+    def check_availability(court_id, date, start_time, current_time=None):
+        """
+        Check if a court is available using time-based active booking session logic.
         
         Args:
             court_id: ID of the court
             date: Date to check
             start_time: Time to check
+            current_time: Current datetime (defaults to now)
             
         Returns:
             bool: True if available, False otherwise
         """
-        return ValidationService.validate_no_conflict(court_id, date, start_time) and \
-               ValidationService.validate_not_blocked(court_id, date, start_time)
+        if current_time is None:
+            from app.utils.timezone_utils import get_current_berlin_time
+            current_time = get_current_berlin_time()
+        
+        # Check if not blocked (this doesn't need time-based logic)
+        if not ValidationService.validate_not_blocked(court_id, date, start_time):
+            return False
+        
+        # Check for conflicting reservations using time-based logic
+        conflicting_reservation = Reservation.query.filter_by(
+            court_id=court_id,
+            date=date,
+            start_time=start_time,
+            status='active'
+        ).first()
+        
+        if conflicting_reservation:
+            # Use time-based logic to determine if the conflicting reservation is still active
+            is_still_active = ReservationService.is_reservation_currently_active(
+                conflicting_reservation, current_time
+            )
+            return not is_still_active  # Available if the conflicting reservation is no longer active
+        
+        return True  # No conflicting reservation found
     
     @staticmethod
     def get_reservations_by_date(date):

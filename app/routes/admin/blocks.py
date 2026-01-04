@@ -113,7 +113,8 @@ def create_block():
         end_time = datetime.strptime(end_time_str, '%H:%M').time()
         
         # Validate that the date is not in the past
-        today = datetime.now().date()
+        from app.utils.timezone_utils import get_berlin_date_today
+        today = get_berlin_date_today()
         if block_date < today:
             return jsonify({'error': 'Sperrungen können nicht für vergangene Tage erstellt werden'}), 400
         
@@ -159,7 +160,8 @@ def update_block(id):
         new_details = data.get('details', '').strip() or None
         
         # Validate that the date is not in the past
-        today = datetime.now().date()
+        from app.utils.timezone_utils import get_berlin_date_today
+        today = get_berlin_date_today()
         if new_date < today:
             return jsonify({'error': 'Sperrungen können nicht für vergangene Tage bearbeitet werden'}), 400
         

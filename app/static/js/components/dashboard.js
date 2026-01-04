@@ -96,6 +96,8 @@ export function dashboard() {
                 
                 if (response.ok) {
                     const data = await response.json();
+                    // The backend now returns only active booking sessions (time-based filtering)
+                    // so we don't need additional filtering here
                     this.userReservations = data.reservations || [];
                 }
             } catch (err) {
@@ -376,6 +378,23 @@ export function dashboard() {
             if (!dateStr) return '';
             const [year, month, day] = dateStr.split('-');
             return `${day}.${month}.${year}`;
+        },
+        
+        // Availability calculation methods
+        getAvailableSlots() {
+            if (!this.userReservations) return 2;
+            
+            // Count regular (non-short-notice) active booking sessions
+            const regularBookings = this.userReservations.filter(r => !r.is_short_notice);
+            return Math.max(0, 2 - regularBookings.length);
+        },
+        
+        getShortNoticeSlots() {
+            if (!this.userReservations) return 1;
+            
+            // Count short notice active booking sessions
+            const shortNoticeBookings = this.userReservations.filter(r => r.is_short_notice);
+            return Math.max(0, 1 - shortNoticeBookings.length);
         }
     };
 }
