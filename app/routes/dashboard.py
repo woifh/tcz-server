@@ -68,11 +68,10 @@ def debug_short_notice():
     """Debug route to test short notice booking functionality."""
     from datetime import datetime, timedelta
     from app.services.reservation_service import ReservationService
-    import pytz
     
-    # Test short notice detection with different timezone scenarios
-    now_utc = datetime.utcnow()
+    # Test short notice detection with different scenarios
     now_local = datetime.now()
+    now_utc = datetime.utcnow()
     
     # Test cases
     test_cases = [
@@ -84,12 +83,15 @@ def debug_short_notice():
     
     results = []
     for description, test_date, test_time, current_time in test_cases:
-        is_short = ReservationService.is_short_notice_booking(test_date, test_time, current_time)
-        reservation_dt = datetime.combine(test_date, test_time)
-        time_diff = reservation_dt - current_time
-        results.append(f"{description}: Date={test_date}, Time={test_time}, Short Notice={is_short}, Time Diff={time_diff}")
+        try:
+            is_short = ReservationService.is_short_notice_booking(test_date, test_time, current_time)
+            reservation_dt = datetime.combine(test_date, test_time)
+            time_diff = reservation_dt - current_time
+            results.append(f"{description}: Date={test_date}, Time={test_time}, Short Notice={is_short}, Time Diff={time_diff}")
+        except Exception as e:
+            results.append(f"{description}: ERROR - {str(e)}")
     
-    # Test actual booking creation (dry run)
+    # Test actual booking scenario
     try:
         from app.models import Court
         court = Court.query.first()
@@ -110,6 +112,7 @@ def debug_short_notice():
         <h1>Short Notice Booking Debug</h1>
         <p><strong>Current time (local):</strong> {now_local}</p>
         <p><strong>Current time (UTC):</strong> {now_utc}</p>
+        <p><strong>Time difference:</strong> {now_local - now_utc}</p>
         <h2>Test Results:</h2>
         <ul>
             {''.join(f'<li>{result}</li>' for result in results)}

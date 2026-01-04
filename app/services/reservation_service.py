@@ -15,18 +15,36 @@ class ReservationService:
         Check if a booking would be classified as short notice.
         
         Args:
-            date: Reservation date
-            start_time: Reservation start time
-            current_time: Current datetime (defaults to now)
+            date: Reservation date (assumed to be in local timezone)
+            start_time: Reservation start time (assumed to be in local timezone)
+            current_time: Current datetime (defaults to local now)
             
         Returns:
             bool: True if booking is within 15 minutes of start time
         """
         if current_time is None:
+            # Use local time consistently
             current_time = datetime.now()
         
+        # Ensure we're comparing like with like - both should be naive datetimes
+        # representing the same timezone (local time)
         reservation_datetime = datetime.combine(date, start_time)
+        
+        # If current_time is timezone-aware, convert to naive local time
+        if hasattr(current_time, 'tzinfo') and current_time.tzinfo is not None:
+            # Convert to local time and make naive
+            import time
+            local_offset = time.timezone if time.daylight == 0 else time.altzone
+            current_time = current_time.replace(tzinfo=None) - timedelta(seconds=local_offset)
+        
         time_until_start = reservation_datetime - current_time
+        
+        # Debug logging
+        print(f"DEBUG Short Notice Check:")
+        print(f"  Reservation datetime: {reservation_datetime}")
+        print(f"  Current time: {current_time}")
+        print(f"  Time until start: {time_until_start}")
+        print(f"  Is short notice: {time_until_start <= timedelta(minutes=15)}")
         
         # If reservation starts in 15 minutes or less, it's short notice
         return time_until_start <= timedelta(minutes=15)
