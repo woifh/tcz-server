@@ -15,34 +15,38 @@ class ReservationService:
         Check if a booking would be classified as short notice.
         
         Args:
-            date: Reservation date (assumed to be in local timezone)
-            start_time: Reservation start time (assumed to be in local timezone)
-            current_time: Current datetime (defaults to local now)
+            date: Reservation date (assumed to be in CET/CEST timezone)
+            start_time: Reservation start time (assumed to be in CET/CEST timezone)
+            current_time: Current datetime (defaults to CET/CEST now)
             
         Returns:
             bool: True if booking is within 15 minutes of start time
         """
         if current_time is None:
-            # Use local time consistently
-            current_time = datetime.now()
+            # Use CET/CEST timezone (UTC+1/UTC+2)
+            import pytz
+            try:
+                cet = pytz.timezone('Europe/Vienna')  # Austria timezone (CET/CEST)
+                current_time = datetime.now(cet).replace(tzinfo=None)  # Convert to naive local time
+            except:
+                # Fallback: assume UTC+1 (CET) for now
+                from datetime import timedelta
+                current_time = datetime.utcnow() + timedelta(hours=1)
         
         # Ensure we're comparing like with like - both should be naive datetimes
-        # representing the same timezone (local time)
+        # representing the same timezone (CET/CEST)
         reservation_datetime = datetime.combine(date, start_time)
         
         # If current_time is timezone-aware, convert to naive local time
         if hasattr(current_time, 'tzinfo') and current_time.tzinfo is not None:
-            # Convert to local time and make naive
-            import time
-            local_offset = time.timezone if time.daylight == 0 else time.altzone
-            current_time = current_time.replace(tzinfo=None) - timedelta(seconds=local_offset)
+            current_time = current_time.replace(tzinfo=None)
         
         time_until_start = reservation_datetime - current_time
         
         # Debug logging
         print(f"DEBUG Short Notice Check:")
         print(f"  Reservation datetime: {reservation_datetime}")
-        print(f"  Current time: {current_time}")
+        print(f"  Current time (CET/CEST): {current_time}")
         print(f"  Time until start: {time_until_start}")
         print(f"  Is short notice: {time_until_start <= timedelta(minutes=15)}")
         
