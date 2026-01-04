@@ -68,33 +68,58 @@ def debug_short_notice():
     """Debug route to test short notice booking functionality."""
     from datetime import datetime, timedelta
     from app.services.reservation_service import ReservationService
+    import pytz
     
-    # Test short notice detection
-    now = datetime.now()
+    # Test short notice detection with different timezone scenarios
+    now_utc = datetime.utcnow()
+    now_local = datetime.now()
+    
+    # Test cases
     test_cases = [
-        (now.date(), (now + timedelta(minutes=5)).time()),   # 5 minutes from now - should be short notice
-        (now.date(), (now + timedelta(minutes=20)).time()),  # 20 minutes from now - should be regular
-        (now.date(), (now - timedelta(minutes=5)).time()),   # 5 minutes ago - should be regular (past)
+        ("5 min future (local)", now_local.date(), (now_local + timedelta(minutes=5)).time(), now_local),
+        ("20 min future (local)", now_local.date(), (now_local + timedelta(minutes=20)).time(), now_local),
+        ("5 min future (UTC)", now_utc.date(), (now_utc + timedelta(minutes=5)).time(), now_utc),
+        ("20 min future (UTC)", now_utc.date(), (now_utc + timedelta(minutes=20)).time(), now_utc),
     ]
     
     results = []
-    for test_date, test_time in test_cases:
-        is_short = ReservationService.is_short_notice_booking(test_date, test_time, now)
-        results.append(f"Date: {test_date}, Time: {test_time}, Short Notice: {is_short}")
+    for description, test_date, test_time, current_time in test_cases:
+        is_short = ReservationService.is_short_notice_booking(test_date, test_time, current_time)
+        reservation_dt = datetime.combine(test_date, test_time)
+        time_diff = reservation_dt - current_time
+        results.append(f"{description}: Date={test_date}, Time={test_time}, Short Notice={is_short}, Time Diff={time_diff}")
+    
+    # Test actual booking creation (dry run)
+    try:
+        from app.models import Court
+        court = Court.query.first()
+        if court:
+            # Test with a time 10 minutes from now
+            test_time_10min = (now_local + timedelta(minutes=10)).time()
+            is_short_10min = ReservationService.is_short_notice_booking(now_local.date(), test_time_10min)
+            booking_test = f"Booking test (10min future): Court {court.id}, Time {test_time_10min}, Would be short notice: {is_short_10min}"
+        else:
+            booking_test = "No courts found for booking test"
+    except Exception as e:
+        booking_test = f"Booking test error: {str(e)}"
     
     return f"""
     <html>
     <head><title>Short Notice Debug</title></head>
     <body>
         <h1>Short Notice Booking Debug</h1>
-        <p><strong>Current time:</strong> {now}</p>
+        <p><strong>Current time (local):</strong> {now_local}</p>
+        <p><strong>Current time (UTC):</strong> {now_utc}</p>
         <h2>Test Results:</h2>
         <ul>
             {''.join(f'<li>{result}</li>' for result in results)}
         </ul>
+        <h2>Booking Test:</h2>
+        <p>{booking_test}</p>
         <hr>
         <p><a href="/">Go to root</a></p>
         <p><a href="/debug">Go to debug</a></p>
+        <p><a href="/courts/availability">Check availability API</a></p>
     </body>
     </html>
     """
