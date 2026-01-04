@@ -49,6 +49,11 @@ if command -v flask &> /dev/null; then
     echo "✅ Database migrations complete"
 fi
 
+# Update deployment timestamp
+echo ""
+echo "📝 Updating deployment info..."
+python3 update_deployment_timestamp.py
+
 echo ""
 echo "✅ Code deployment complete!"
 echo ""
