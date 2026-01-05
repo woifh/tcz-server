@@ -121,4 +121,4 @@ def templates():
 @admin_required
 def reasons():
     """Block reasons management page."""
-    return render_template('admin.html')
+    return render_template('admin/reasons.html')

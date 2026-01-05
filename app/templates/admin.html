@@ -83,30 +83,30 @@ input[type="time"] {
 <div class="bg-white rounded-lg shadow-md p-6">
     <h2 class="text-2xl font-bold mb-6">Administrator-Panel</h2>
     
-    <!-- Tabs -->
+    <!-- Navigation Links -->
     <div class="border-b border-gray-200 mb-6">
-        <nav class="-mb-px flex space-x-8">
-            <button onclick="showTab('overview')" id="tab-overview" class="tab-button border-b-2 border-green-600 py-4 px-1 text-sm font-medium text-green-600">
+        <nav class="-mb-px flex space-x-8 overflow-x-auto">
+            <a href="{{ url_for('admin.overview') }}" class="border-b-2 border-green-600 py-4 px-1 text-sm font-medium text-green-600 whitespace-nowrap">
                 Übersicht
-            </button>
-            <button onclick="showTab('calendar')" id="tab-calendar" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            </a>
+            <button onclick="showTab('calendar')" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
                 Kalenderansicht
             </button>
-            <button onclick="showTab('blocks')" id="tab-blocks" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            <a href="{{ url_for('admin.court_blocking') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
                 Platz-Sperrungen
-            </button>
-            <button onclick="showTab('recurring')" id="tab-recurring" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            </a>
+            <a href="{{ url_for('admin.recurring_series') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
                 Wiederkehrende Serien
-            </button>
-            <button onclick="showTab('templates')" id="tab-templates" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            </a>
+            <a href="{{ url_for('admin.templates') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
                 Vorlagen
-            </button>
-            <button onclick="showTab('reasons')" id="tab-reasons" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            </a>
+            <a href="{{ url_for('admin.reasons') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
                 Sperrungsgründe
-            </button>
-            <button onclick="showTab('members')" id="tab-members" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            </a>
+            <a href="{{ url_for('members.list_members') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
                 Mitglieder
-            </button>
+            </a>
         </nav>
     </div>
     
@@ -116,33 +116,33 @@ input[type="time"] {
             <div class="border border-gray-200 rounded-lg p-6">
                 <h3 class="text-xl font-semibold mb-4">Einzelne Sperrungen</h3>
                 <p class="text-gray-600 mb-4">Einzelne Plätze für bestimmte Zeiten sperren.</p>
-                <button onclick="showTab('blocks')" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                <a href="{{ url_for('admin.court_blocking') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
                     Sperrungen verwalten
-                </button>
+                </a>
             </div>
             
             <div class="border border-gray-200 rounded-lg p-6">
                 <h3 class="text-xl font-semibold mb-4">Wiederkehrende Serien</h3>
                 <p class="text-gray-600 mb-4">Regelmäßige Sperrungen für Kurse oder Events.</p>
-                <button onclick="showTab('recurring')" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                <a href="{{ url_for('admin.recurring_series') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
                     Serien verwalten
-                </button>
+                </a>
             </div>
             
             <div class="border border-gray-200 rounded-lg p-6">
                 <h3 class="text-xl font-semibold mb-4">Vorlagen</h3>
                 <p class="text-gray-600 mb-4">Wiederverwendbare Sperrungsvorlagen.</p>
-                <button onclick="showTab('templates')" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                <a href="{{ url_for('admin.templates') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
                     Vorlagen verwalten
-                </button>
+                </a>
             </div>
             
             <div class="border border-gray-200 rounded-lg p-6">
                 <h3 class="text-xl font-semibold mb-4">Sperrungsgründe</h3>
                 <p class="text-gray-600 mb-4">Anpassbare Gründe für Sperrungen.</p>
-                <button onclick="showTab('reasons')" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                <a href="{{ url_for('admin.reasons') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
                     Gründe verwalten
-                </button>
+                </a>
             </div>
             
             <div class="border border-gray-200 rounded-lg p-6">
@@ -176,320 +176,6 @@ input[type="time"] {
         </div>
     </div>
     
-    <!-- Blocks Tab -->
-    <div id="content-blocks" class="tab-content hidden">
-        <div class="mb-6">
-            <h3 class="text-xl font-semibold mb-4">Platz-Sperrung erstellen</h3>
-            
-            <!-- Block Form -->
-            <form id="multi-court-form" class="bg-gray-50 p-6 rounded-lg mb-6">
-                <!-- 2-Column Layout: Courts Left, Everything Else Right -->
-                <div class="flex flex-col md:flex-row gap-6">
-                    <!-- Column 1: Court Selection -->
-                    <div class="md:w-1/3">
-                        <label class="block text-gray-700 font-semibold mb-2">Plätze auswählen</label>
-                        <div class="space-y-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="multi-courts" value="1" class="mr-2">&nbsp; Platz 1
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="multi-courts" value="2" class="mr-2">&nbsp; Platz 2
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="multi-courts" value="3" class="mr-2">&nbsp; Platz 3
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="multi-courts" value="4" class="mr-2">&nbsp; Platz 4
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="multi-courts" value="5" class="mr-2">&nbsp; Platz 5
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="multi-courts" value="6" class="mr-2">&nbsp; Platz 6
-                            </label>
-                        </div>
-                        <div class="flex gap-2 mt-2">
-                            <button type="button" id="select-all-courts" class="text-sm text-blue-600 hover:text-blue-800">Alle auswählen</button>
-                            <span class="text-sm text-gray-300">•</span>
-                            <button type="button" id="clear-all-courts" class="text-sm text-blue-600 hover:text-blue-800">Alle abwählen</button>
-                        </div>
-                        <!-- Court Selection Error -->
-                        <div id="court-selection-hint" class="hidden mt-2">
-                            <p class="text-sm text-amber-600">⚠ Mindestens einen Platz auswählen</p>
-                        </div>
-                    </div>
-
-                    <!-- Column 2: Date, Time, Reason, Button -->
-                    <div class="md:w-2/3 space-y-4">
-                        <!-- Date and Time in one line -->
-                        <div class="flex flex-wrap gap-2">
-                            <div class="w-32">
-                                <label class="block text-gray-700 font-semibold mb-2">Datum</label>
-                                <input type="date" id="multi-date" class="w-full border border-gray-300 rounded px-2 py-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Von</label>
-                                <input type="time" id="multi-start" class="border border-gray-300 rounded px-2 py-2 text-sm" style="width: 150px; min-width: 150px;" value="08:00">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Bis</label>
-                                <input type="time" id="multi-end" class="border border-gray-300 rounded px-2 py-2 text-sm" style="width: 150px; min-width: 150px;" value="22:00">
-                            </div>
-                        </div>
-                        
-                        <!-- Time Error -->
-                        <div id="time-error" class="hidden">
-                            <p class="text-sm text-red-600">⚠ Endzeit muss nach Startzeit liegen</p>
-                        </div>
-
-                        <!-- Reason and Details in separate lines -->
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">
-                                Grund <span class="text-red-500">*</span>
-                            </label>
-                            <select id="multi-reason" class="w-full border border-gray-300 rounded px-3 py-2">
-                                <option value="">Grund auswählen...</option>
-                                <!-- Will be populated by JavaScript -->
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-gray-700 font-semibold mb-2">Details (optional)</label>
-                            <input type="text" id="multi-details" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="z. B. Regen, Reparatur">
-                        </div>
-
-                        <!-- Submit Button -->
-                        <div>
-                            <button type="submit" id="create-block-btn" disabled class="w-full bg-green-600 text-white py-2 px-6 rounded hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed">
-                                Sperrung erstellen
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Upcoming Blocks List -->
-        <div class="mb-6">
-            <h3 class="text-xl font-semibold mb-4">Kommende Sperrungen</h3>
-            
-            <div id="blocks-list" class="bg-white border border-gray-200 rounded-lg">
-                <div class="p-4 text-center text-gray-600">
-                    <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mr-2"></div>
-                    Lade Sperrungen...
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Recurring Series Tab -->
-    <div id="content-recurring" class="tab-content hidden">
-        <h3 class="text-xl font-semibold mb-4">Wiederkehrende Sperrungsserien</h3>
-        
-        <!-- Series Creation Form -->
-        <form id="series-form" class="bg-gray-50 p-6 rounded-lg mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Serienname</label>
-                    <input type="text" id="series-name" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="z.B. Tenniskurs Montags">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Startdatum</label>
-                    <input type="date" id="series-start-date" class="w-full border border-gray-300 rounded px-3 py-2">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Enddatum</label>
-                    <input type="date" id="series-end-date" class="w-full border border-gray-300 rounded px-3 py-2">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Wiederholung</label>
-                    <select id="series-pattern" class="w-full border border-gray-300 rounded px-3 py-2" onchange="toggleRecurrenceDays()">
-                        <option value="daily">Täglich</option>
-                        <option value="weekly">Wöchentlich</option>
-                        <option value="monthly">Monatlich</option>
-                    </select>
-                </div>
-                <div id="recurrence-days-container" class="md:col-span-3 hidden">
-                    <label class="block text-gray-700 font-semibold mb-2">Wochentage auswählen</label>
-                    <div class="flex flex-wrap gap-2">
-                        <label class="flex items-center">
-                            <input type="checkbox" name="recurrence-days" value="0" class="mr-2"> Montag
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="recurrence-days" value="1" class="mr-2"> Dienstag
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="recurrence-days" value="2" class="mr-2"> Mittwoch
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="recurrence-days" value="3" class="mr-2"> Donnerstag
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="recurrence-days" value="4" class="mr-2"> Freitag
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="recurrence-days" value="5" class="mr-2"> Samstag
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="recurrence-days" value="6" class="mr-2"> Sonntag
-                        </label>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Von (Uhrzeit)</label>
-                    <input type="time" id="series-start-time" class="w-full border border-gray-300 rounded px-3 py-2" value="08:00">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Bis (Uhrzeit)</label>
-                    <input type="time" id="series-end-time" class="w-full border border-gray-300 rounded px-3 py-2" value="22:00">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Grund</label>
-                    <select id="series-reason" class="w-full border border-gray-300 rounded px-3 py-2">
-                        <!-- Will be populated by JavaScript -->
-                    </select>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-gray-700 font-semibold mb-2">Details (optional)</label>
-                    <input type="text" id="series-details" class="w-full border border-gray-300 rounded px-3 py-2">
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Plätze auswählen</label>
-                    <div class="flex flex-wrap gap-4">
-                        <label class="flex items-center">
-                            <input type="checkbox" name="series-courts" value="1" class="mr-2"> Platz 1
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="series-courts" value="2" class="mr-2"> Platz 2
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="series-courts" value="3" class="mr-2"> Platz 3
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="series-courts" value="4" class="mr-2"> Platz 4
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="series-courts" value="5" class="mr-2"> Platz 5
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="series-courts" value="6" class="mr-2"> Platz 6
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4">
-                <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded hover:bg-green-700">
-                    Serie erstellen
-                </button>
-            </div>
-        </form>
-        
-        <!-- Series List -->
-        <div id="series-list">
-            <p class="text-gray-600">Lade Serien...</p>
-        </div>
-    </div>
-    
-    <!-- Templates Tab -->
-    <div id="content-templates" class="tab-content hidden">
-        <h3 class="text-xl font-semibold mb-4">Sperrungsvorlagen</h3>
-        
-        <!-- Template Creation Form -->
-        <form id="template-form" class="bg-gray-50 p-6 rounded-lg mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Vorlagenname</label>
-                    <input type="text" id="template-name" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="z.B. Wartung Wochenende">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Von (Uhrzeit)</label>
-                    <input type="time" id="template-start-time" class="w-full border border-gray-300 rounded px-3 py-2" value="08:00">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Bis (Uhrzeit)</label>
-                    <input type="time" id="template-end-time" class="w-full border border-gray-300 rounded px-3 py-2" value="22:00">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Grund</label>
-                    <select id="template-reason" class="w-full border border-gray-300 rounded px-3 py-2">
-                        <!-- Will be populated by JavaScript -->
-                    </select>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-gray-700 font-semibold mb-2">Details (optional)</label>
-                    <input type="text" id="template-details" class="w-full border border-gray-300 rounded px-3 py-2">
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Plätze auswählen</label>
-                    <div class="flex flex-wrap gap-4">
-                        <label class="flex items-center">
-                            <input type="checkbox" name="template-courts" value="1" class="mr-2"> Platz 1
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="template-courts" value="2" class="mr-2"> Platz 2
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="template-courts" value="3" class="mr-2"> Platz 3
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="template-courts" value="4" class="mr-2"> Platz 4
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="template-courts" value="5" class="mr-2"> Platz 5
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="template-courts" value="6" class="mr-2"> Platz 6
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4">
-                <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded hover:bg-green-700">
-                    Vorlage erstellen
-                </button>
-            </div>
-        </form>
-        
-        <!-- Template List -->
-        <div id="template-list">
-            <p class="text-gray-600">Lade Vorlagen...</p>
-        </div>
-    </div>
-    
-    <!-- Reasons Tab -->
-    <div id="content-reasons" class="tab-content hidden">
-        <h3 class="text-xl font-semibold mb-4">Sperrungsgründe verwalten</h3>
-        
-        <!-- Reason Creation Form -->
-        <form id="reason-form" class="bg-gray-50 p-6 rounded-lg mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Neuer Sperrungsgrund</label>
-                    <input type="text" id="reason-name" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="z.B. Platzrenovierung">
-                </div>
-                <div class="flex items-end">
-                    <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded hover:bg-green-700">
-                        Grund hinzufügen
-                    </button>
-                </div>
-            </div>
-        </form>
-        
-        <!-- Reason List -->
-        <div id="reason-list">
-            <p class="text-gray-600">Lade Sperrungsgründe...</p>
-        </div>
-    </div>
-    
-    <!-- Members Tab -->
-    <div id="content-members" class="tab-content hidden">
-        <h3 class="text-xl font-semibold mb-4">Mitgliederverwaltung</h3>
-        <p class="text-gray-600 mb-4">Vollständige Mitgliederverwaltung verfügbar unter:</p>
-        <a href="{{ url_for('members.list_members') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-            Zur Mitgliederverwaltung
-        </a>
-    </div>
-    
     <div class="mt-8">
         <a href="{{ url_for('dashboard.index') }}" class="text-green-600 hover:underline">← Zurück zur Übersicht</a>
     </div>
@@ -512,42 +198,82 @@ input[type="time"] {
 
 <script type="module" src="{{ url_for('static', filename='js/components/admin/admin-main.js') }}"></script>
 <script>
-// Tab switching functionality (legacy support)
+// Calendar tab switching functionality
 function showTab(tabName) {
-    // Hide all tab contents
-    const tabContents = document.querySelectorAll('.tab-content');
-    tabContents.forEach(content => content.classList.add('hidden'));
-    
-    // Remove active class from all tab buttons
-    const tabButtons = document.querySelectorAll('.tab-button');
-    tabButtons.forEach(button => {
-        button.classList.remove('border-green-600', 'text-green-600');
-        button.classList.add('border-transparent', 'text-gray-500');
-    });
-    
-    // Show selected tab content
-    const selectedContent = document.getElementById(`content-${tabName}`);
-    if (selectedContent) {
-        selectedContent.classList.remove('hidden');
-    }
-    
-    // Activate selected tab button
-    const selectedButton = document.getElementById(`tab-${tabName}`);
-    if (selectedButton) {
-        selectedButton.classList.remove('border-transparent', 'text-gray-500');
-        selectedButton.classList.add('border-green-600', 'text-green-600');
+    if (tabName === 'calendar') {
+        // Hide overview content
+        const overviewContent = document.getElementById('content-overview');
+        if (overviewContent) {
+            overviewContent.classList.add('hidden');
+        }
+        
+        // Show calendar content
+        const calendarContent = document.getElementById('content-calendar');
+        if (calendarContent) {
+            calendarContent.classList.remove('hidden');
+        }
+        
+        // Update navigation styling
+        const navLinks = document.querySelectorAll('nav a, nav button');
+        navLinks.forEach(link => {
+            link.classList.remove('border-green-600', 'text-green-600');
+            link.classList.add('border-transparent', 'text-gray-500');
+        });
+        
+        // Activate calendar button
+        const calendarButton = document.querySelector('button[onclick="showTab(\'calendar\')"]');
+        if (calendarButton) {
+            calendarButton.classList.remove('border-transparent', 'text-gray-500');
+            calendarButton.classList.add('border-green-600', 'text-green-600');
+        }
     }
 }
 
+// Show overview by default (reset to overview)
+function showOverview() {
+    // Show overview content
+    const overviewContent = document.getElementById('content-overview');
+    if (overviewContent) {
+        overviewContent.classList.remove('hidden');
+    }
+    
+    // Hide calendar content
+    const calendarContent = document.getElementById('content-calendar');
+    if (calendarContent) {
+        calendarContent.classList.add('hidden');
+    }
+    
+    // Update navigation styling
+    const navLinks = document.querySelectorAll('nav a, nav button');
+    navLinks.forEach(link => {
+        link.classList.remove('border-green-600', 'text-green-600');
+        link.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Activate overview link
+    const overviewLink = document.querySelector('nav a[href*="overview"]');
+    if (overviewLink) {
+        overviewLink.classList.remove('border-transparent', 'text-gray-500');
+        overviewLink.classList.add('border-green-600', 'text-green-600');
+    }
+}
+
+// Initialize overview on page load
+document.addEventListener('DOMContentLoaded', function() {
+    showOverview();
+});
+
 // Toggle recurrence days visibility
 function toggleRecurrenceDays() {
-    const pattern = document.getElementById('series-pattern').value;
+    const pattern = document.getElementById('series-pattern');
     const container = document.getElementById('recurrence-days-container');
     
-    if (pattern === 'weekly') {
-        container.classList.remove('hidden');
-    } else {
-        container.classList.add('hidden');
+    if (pattern && container) {
+        if (pattern.value === 'weekly') {
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+        }
     }
 }
 

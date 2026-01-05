@@ -27,8 +27,7 @@ def list_block_reasons():
             reason_data = {
                 'id': reason.id,
                 'name': reason.name,
-                'description': reason.description if hasattr(reason, 'description') else None,
-                'color': reason.color if hasattr(reason, 'color') else '#007bff',
+                'color': '#007bff',  # Default color since model doesn't have this field
                 'is_active': reason.is_active,
                 'usage_count': BlockReasonService.get_reason_usage_count(reason.id),
                 'created_by': reason.created_by.name,
@@ -50,10 +49,7 @@ def create_block_reason():
     try:
         data = request.get_json() if request.is_json else request.form
         
-        name = data.get('name', '').strip()
-        description = data.get('description', '').strip()
-        color = data.get('color', '#007bff')
-        is_active = data.get('is_active', True)
+        name = data.get('name', '').strip() if data.get('name') else ''
         
         if not name:
             return jsonify({'error': 'Name ist erforderlich'}), 400
@@ -63,12 +59,10 @@ def create_block_reason():
         if existing:
             return jsonify({'error': 'Ein Grund mit diesem Namen existiert bereits'}), 400
         
+        # Create the reason using the service
         reason, error = BlockReasonService.create_block_reason(
             name=name,
-            admin_id=current_user.id,
-            description=description,
-            color=color,
-            is_active=is_active
+            admin_id=current_user.id
         )
         
         if error:
@@ -97,7 +91,7 @@ def update_block_reason(reason_id):
     try:
         data = request.get_json() if request.is_json else request.form
         
-        name = data.get('name', '').strip()
+        name = data.get('name', '').strip() if data.get('name') else ''
         
         if not name:
             return jsonify({'error': 'Name ist erforderlich'}), 400
@@ -186,7 +180,7 @@ def create_details_template(reason_id):
     try:
         data = request.get_json() if request.is_json else request.form
         
-        template_name = data.get('template_name', '').strip()
+        template_name = data.get('template_name', '').strip() if data.get('template_name') else ''
         
         if not template_name:
             return jsonify({'error': 'Vorlagenname ist erforderlich'}), 400

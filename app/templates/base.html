@@ -11,6 +11,29 @@
         .material-icons { vertical-align: middle; }
         /* Hide elements until Alpine.js loads */
         [x-cloak] { display: none !important; }
+        /* Screen reader only content */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        /* Show skip links when focused */
+        .focus\:not-sr-only:focus {
+            position: static;
+            width: auto;
+            height: auto;
+            padding: 0.5rem 1rem;
+            margin: 0;
+            overflow: visible;
+            clip: auto;
+            white-space: normal;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -83,30 +106,121 @@
         {% block content %}{% endblock %}
     </div>
     
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <!-- Screen Reader Live Region for Announcements -->
+    <div id="sr-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    
     <script>
-    // Global toast notification function
-    function showToast(message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg ${
-            type === 'success' ? 'bg-green-600' : 'bg-red-600'
-        } text-white z-50 flex items-center gap-2`;
+    // Enhanced toast notification system
+    class ToastManager {
+        constructor() {
+            this.container = document.getElementById('toast-container');
+            this.toasts = new Map();
+            this.toastId = 0;
+        }
         
-        const icon = document.createElement('span');
-        icon.className = 'material-icons text-sm';
-        icon.textContent = type === 'success' ? 'check_circle' : 'error';
+        show(message, type = 'success', options = {}) {
+            const id = ++this.toastId;
+            const toast = this.createToast(id, message, type, options);
+            
+            this.container.appendChild(toast);
+            this.toasts.set(id, toast);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.style.transform = 'translateX(0)';
+                toast.style.opacity = '1';
+            });
+            
+            // Auto-dismiss for success messages, keep error messages until dismissed
+            if (type === 'success' || type === 'info' || type === 'warning') {
+                const duration = options.duration || (type === 'success' ? 3000 : type === 'warning' ? 5000 : 4000);
+                setTimeout(() => this.dismiss(id), duration);
+            }
+            
+            return id;
+        }
         
-        const text = document.createElement('span');
-        text.textContent = message;
+        createToast(id, message, type, options) {
+            const toast = document.createElement('div');
+            toast.className = `toast-item transform translate-x-full opacity-0 transition-all duration-300 ease-out`;
+            toast.setAttribute('data-toast-id', id);
+            
+            const typeConfig = {
+                success: { bg: 'bg-green-600', icon: 'check_circle' },
+                error: { bg: 'bg-red-600', icon: 'error' },
+                warning: { bg: 'bg-yellow-600', icon: 'warning' },
+                info: { bg: 'bg-blue-600', icon: 'info' }
+            };
+            
+            const config = typeConfig[type] || typeConfig.success;
+            
+            toast.innerHTML = `
+                <div class="${config.bg} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 min-w-80 max-w-md">
+                    <span class="material-icons text-sm flex-shrink-0">${config.icon}</span>
+                    <span class="flex-1 text-sm font-medium">${this.escapeHtml(message)}</span>
+                    ${type === 'error' ? `
+                        <button onclick="toastManager.dismiss(${id})" class="flex-shrink-0 ml-2 text-white hover:text-gray-200 transition-colors">
+                            <span class="material-icons text-sm">close</span>
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            
+            return toast;
+        }
         
-        toast.appendChild(icon);
-        toast.appendChild(text);
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
+        dismiss(id) {
+            const toast = this.toasts.get(id);
+            if (!toast) return;
+            
+            // Animate out
+            toast.style.transform = 'translateX(100%)';
             toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.3s';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
+            
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+                this.toasts.delete(id);
+            }, 300);
+        }
+        
+        dismissAll() {
+            this.toasts.forEach((toast, id) => this.dismiss(id));
+        }
+        
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    }
+    
+    // Global toast manager instance
+    const toastManager = new ToastManager();
+    
+    // Global convenience functions for backward compatibility
+    function showToast(message, type = 'success', options = {}) {
+        return toastManager.show(message, type, options);
+    }
+    
+    function showSuccessToast(message, options = {}) {
+        return toastManager.show(message, 'success', options);
+    }
+    
+    function showErrorToast(message, options = {}) {
+        return toastManager.show(message, 'error', options);
+    }
+    
+    function showWarningToast(message, options = {}) {
+        return toastManager.show(message, 'warning', options);
+    }
+    
+    function showInfoToast(message, options = {}) {
+        return toastManager.show(message, 'info', options);
     }
     </script>
     

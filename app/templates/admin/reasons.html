@@ -3,16 +3,1571 @@
 {% block title %}Sperrungsgründe - Admin - Tennisclub{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-lg shadow-md p-6">
-    <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold">Sperrungsgründe verwalten</h2>
-        <a href="{{ url_for('admin.overview') }}" class="text-green-600 hover:underline">← Zurück zur Übersicht</a>
+<div class="bg-white rounded-lg shadow-md p-6" x-data="reasonsManager()" x-init="init()" x-cloak>
+    <!-- Skip Links for Keyboard Navigation -->
+    <div class="sr-only">
+        <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-50">Zum Hauptinhalt springen</a>
+        <a href="#create-button" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-32 bg-blue-600 text-white px-4 py-2 rounded-lg z-50">Zum Erstellen-Button springen</a>
     </div>
     
-    <p class="text-gray-600 mb-4">Anpassbare Gründe für Sperrungen erstellen und bearbeiten.</p>
+    <!-- Header with Navigation -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-bold flex items-center gap-2">
+                <span class="material-icons" aria-hidden="true">category</span>
+                Sperrungsgründe verwalten
+            </h2>
+            <p class="text-gray-600 mt-1">Anpassbare Gründe für Sperrungen erstellen und bearbeiten</p>
+        </div>
+        <a href="{{ url_for('admin.overview') }}" class="text-green-600 hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded p-1">
+            <span class="material-icons text-sm" aria-hidden="true">arrow_back</span>
+            Zurück zur Übersicht
+        </a>
+    </div>
     
-    <div class="p-8 text-center text-gray-500">
-        <p>Sperrungsgründe - Funktionalität wird implementiert...</p>
+    <!-- Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <button 
+                id="create-button"
+                @click="openCreateModal()" 
+                :disabled="loading"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-h-[44px]"
+                aria-label="Neuen Sperrungsgrund erstellen"
+            >
+                <span class="material-icons text-sm" aria-hidden="true">add</span>
+                <span class="hidden sm:inline">Neuen Grund erstellen</span>
+                <span class="sm:hidden">Erstellen</span>
+            </button>
+            
+            <!-- Search/Filter -->
+            <div class="relative flex-1 sm:flex-initial">
+                <input 
+                    type="text" 
+                    placeholder="Gründe durchsuchen..." 
+                    class="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent focus:outline-none min-h-[44px]"
+                    x-model="searchTerm"
+                    aria-label="Sperrungsgründe durchsuchen"
+                >
+                <span class="material-icons absolute left-3 top-2.5 text-gray-400 text-sm pointer-events-none" aria-hidden="true">search</span>
+            </div>
+        </div>
+        
+        <!-- Status Indicator -->
+        <div class="flex items-center gap-2 text-sm text-gray-600 justify-center sm:justify-end">
+            <span class="material-icons text-sm" aria-hidden="true">info</span>
+            <span x-text="`${filteredReasons.length} Gründe gefunden`" aria-live="polite"></span>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div x-show="loading" class="flex items-center justify-center py-12">
+        <div class="flex items-center gap-3 text-gray-600">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+            <span>Lade Sperrungsgründe...</span>
+        </div>
+    </div>
+    
+    <!-- Error State with Retry Option -->
+    <div x-show="error && !loading" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div class="flex items-start gap-2 text-red-700">
+            <span class="material-icons text-sm mt-0.5 flex-shrink-0">error</span>
+            <div class="flex-1">
+                <span x-text="error"></span>
+                <div x-show="error && error.includes('Netzwerkfehler')" class="mt-3">
+                    <button 
+                        @click="loadReasons()" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                        Erneut versuchen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content Area -->
+    <div id="main-content" x-show="!loading && !error" class="space-y-6" role="main">
+        <!-- Reasons Table -->
+        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <!-- Desktop Table View -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200" role="table" aria-label="Sperrungsgründe Tabelle">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <button @click="sortBy('name')" class="flex items-center gap-1 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded p-1" aria-label="Nach Grund sortieren">
+                                    Grund
+                                    <span class="material-icons text-sm" aria-hidden="true">sort</span>
+                                </button>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <button @click="sortBy('usage_count')" class="flex items-center gap-1 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded p-1" aria-label="Nach Verwendungen sortieren">
+                                    Verwendungen
+                                    <span class="material-icons text-sm" aria-hidden="true">sort</span>
+                                </button>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Erstellt von
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <button @click="sortBy('created_at')" class="flex items-center gap-1 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded p-1" aria-label="Nach Erstellungsdatum sortieren">
+                                    Erstellt am
+                                    <span class="material-icons text-sm" aria-hidden="true">sort</span>
+                                </button>
+                            </th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Aktionen
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Empty State -->
+                        <tr x-show="filteredReasons.length === 0">
+                            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center gap-3">
+                                    <span class="material-icons text-4xl text-gray-300" aria-hidden="true">category</span>
+                                    <div>
+                                        <p class="text-lg font-medium">Keine Sperrungsgründe gefunden</p>
+                                        <p class="text-sm">Erstellen Sie den ersten Grund, um zu beginnen.</p>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Reason Rows -->
+                        <template x-for="reason in filteredReasons" :key="reason.id">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-3 h-3 rounded-full flex-shrink-0" :style="`background-color: ${reason.color || '#007bff'}`" aria-hidden="true"></div>
+                                        <div class="flex-1 min-w-0">
+                                            <!-- Display Mode -->
+                                            <div x-show="editingReason?.id !== reason.id" class="cursor-pointer" @click="startEdit(reason)" @keydown="handleKeyboardNavigation($event, reason)" tabindex="0" role="button" :aria-label="`Grund ${reason.name} bearbeiten`">
+                                                <div class="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors truncate" x-text="reason.name"></div>
+                                                <div x-show="reason.description" class="text-sm text-gray-500 truncate" x-text="reason.description"></div>
+                                            </div>
+                                            
+                                            <!-- Edit Mode -->
+                                            <div x-show="editingReason?.id === reason.id" class="space-y-2">
+                                                <div class="flex items-center gap-2">
+                                                    <input 
+                                                        type="text" 
+                                                        x-model="editForm.name"
+                                                        @keydown.enter="saveEdit()"
+                                                        @keydown.escape="cancelEdit()"
+                                                        @input="validateEditForm()"
+                                                        @blur="validateEditForm()"
+                                                        class="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                                        :class="{ 
+                                                            'border-red-300 focus:ring-red-500 bg-red-50': editForm.errors.name,
+                                                            'border-green-300 focus:ring-green-500 bg-green-50': editForm.isValid && editForm.name.trim() && editForm.name.trim() !== editForm.originalName
+                                                        }"
+                                                        maxlength="100"
+                                                        minlength="2"
+                                                        pattern="[a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&]+"
+                                                        title="Erlaubt sind: Buchstaben, Zahlen, Leerzeichen und die Zeichen: - _ . , ! ? ( ) / &"
+                                                        x-ref="editInput"
+                                                        autocomplete="off"
+                                                        spellcheck="false"
+                                                        :aria-label="`Grund-Name bearbeiten: ${reason.name}`"
+                                                        :aria-describedby="editForm.errors.name ? 'edit-error-' + reason.id : null"
+                                                    >
+                                                    <div class="flex items-center gap-1">
+                                                        <button 
+                                                            @click="saveEdit()"
+                                                            :disabled="!editForm.isValid || editForm.submitting"
+                                                            class="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                                                            title="Speichern (Enter)"
+                                                            aria-label="Änderungen speichern"
+                                                        >
+                                                            <span x-show="!editForm.submitting" class="material-icons text-sm" aria-hidden="true">check</span>
+                                                            <div x-show="editForm.submitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600" aria-hidden="true"></div>
+                                                            <span x-show="editForm.submitting" class="sr-only">Speichere...</span>
+                                                        </button>
+                                                        <button 
+                                                            @click="cancelEdit()"
+                                                            :disabled="editForm.submitting"
+                                                            class="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                                                            title="Abbrechen (Escape)"
+                                                            aria-label="Bearbeitung abbrechen"
+                                                        >
+                                                            <span class="material-icons text-sm" aria-hidden="true">close</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div x-show="editForm.errors.name" class="text-xs text-red-600" x-text="editForm.errors.name" :id="'edit-error-' + reason.id" role="alert"></div>
+                                                <div x-show="editForm.errors.general" class="text-xs text-red-600" x-text="editForm.errors.general" role="alert"></div>
+                                                <div x-show="reason.description" class="text-sm text-gray-500 truncate" x-text="reason.description"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm text-gray-900" x-text="reason.usage_count"></span>
+                                        <span x-show="reason.usage_count > 0" class="material-icons text-sm text-green-600" title="Wird verwendet" aria-label="Wird verwendet">check_circle</span>
+                                        <span x-show="reason.usage_count === 0" class="material-icons text-sm text-gray-400" title="Nicht verwendet" aria-label="Nicht verwendet">radio_button_unchecked</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="reason.created_by"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(reason.created_at)"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button 
+                                            x-show="editingReason?.id !== reason.id"
+                                            @click="startEdit(reason)"
+                                            :disabled="loading"
+                                            class="text-blue-600 hover:text-blue-900 p-2 rounded hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                                            title="Bearbeiten"
+                                            :aria-label="`${reason.name} bearbeiten`"
+                                        >
+                                            <span class="material-icons text-sm" aria-hidden="true">edit</span>
+                                        </button>
+                                        <button 
+                                            x-show="editingReason?.id !== reason.id"
+                                            @click="confirmDelete(reason)"
+                                            :disabled="loading"
+                                            class="text-red-600 hover:text-red-900 p-2 rounded hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                                            title="Löschen"
+                                            :aria-label="`${reason.name} löschen`"
+                                        >
+                                            <span class="material-icons text-sm" aria-hidden="true">delete</span>
+                                        </button>
+                                        <!-- Show editing indicator when in edit mode -->
+                                        <div x-show="editingReason?.id === reason.id" class="text-blue-600 text-xs font-medium" aria-live="polite">
+                                            Bearbeiten...
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Mobile Card View -->
+            <div class="md:hidden">
+                <!-- Empty State for Mobile -->
+                <div x-show="filteredReasons.length === 0" class="p-6 text-center text-gray-500">
+                    <div class="flex flex-col items-center gap-3">
+                        <span class="material-icons text-4xl text-gray-300" aria-hidden="true">category</span>
+                        <div>
+                            <p class="text-lg font-medium">Keine Sperrungsgründe gefunden</p>
+                            <p class="text-sm">Erstellen Sie den ersten Grund, um zu beginnen.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mobile Reason Cards -->
+                <div class="divide-y divide-gray-200">
+                    <template x-for="reason in filteredReasons" :key="reason.id">
+                        <div class="p-4 hover:bg-gray-50 transition-colors">
+                            <!-- Card Header -->
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                    <div class="w-3 h-3 rounded-full flex-shrink-0" :style="`background-color: ${reason.color || '#007bff'}`" aria-hidden="true"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <!-- Display Mode -->
+                                        <div x-show="editingReason?.id !== reason.id" class="cursor-pointer" @click="startEdit(reason)" @keydown="handleKeyboardNavigation($event, reason)" tabindex="0" role="button" :aria-label="`Grund ${reason.name} bearbeiten`">
+                                            <h3 class="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors truncate" x-text="reason.name"></h3>
+                                            <p x-show="reason.description" class="text-sm text-gray-500 truncate mt-1" x-text="reason.description"></p>
+                                        </div>
+                                        
+                                        <!-- Edit Mode -->
+                                        <div x-show="editingReason?.id === reason.id" class="space-y-2">
+                                            <div class="flex items-center gap-2">
+                                                <input 
+                                                    type="text" 
+                                                    x-model="editForm.name"
+                                                    @keydown.enter="saveEdit()"
+                                                    @keydown.escape="cancelEdit()"
+                                                    @input="validateEditForm()"
+                                                    @blur="validateEditForm()"
+                                                    class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                                                    :class="{ 
+                                                        'border-red-300 focus:ring-red-500 bg-red-50': editForm.errors.name,
+                                                        'border-green-300 focus:ring-green-500 bg-green-50': editForm.isValid && editForm.name.trim() && editForm.name.trim() !== editForm.originalName
+                                                    }"
+                                                    maxlength="100"
+                                                    minlength="2"
+                                                    pattern="[a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&]+"
+                                                    title="Erlaubt sind: Buchstaben, Zahlen, Leerzeichen und die Zeichen: - _ . , ! ? ( ) / &"
+                                                    x-ref="editInput"
+                                                    autocomplete="off"
+                                                    spellcheck="false"
+                                                    :aria-label="`Grund-Name bearbeiten: ${reason.name}`"
+                                                    :aria-describedby="editForm.errors.name ? 'mobile-edit-error-' + reason.id : null"
+                                                >
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <button 
+                                                    @click="saveEdit()"
+                                                    :disabled="!editForm.isValid || editForm.submitting"
+                                                    class="flex-1 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center justify-center gap-2"
+                                                    aria-label="Änderungen speichern"
+                                                >
+                                                    <span x-show="!editForm.submitting" class="material-icons text-sm" aria-hidden="true">check</span>
+                                                    <div x-show="editForm.submitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white" aria-hidden="true"></div>
+                                                    <span x-text="editForm.submitting ? 'Speichere...' : 'Speichern'"></span>
+                                                </button>
+                                                <button 
+                                                    @click="cancelEdit()"
+                                                    :disabled="editForm.submitting"
+                                                    class="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                                                    aria-label="Bearbeitung abbrechen"
+                                                >
+                                                    Abbrechen
+                                                </button>
+                                            </div>
+                                            <div x-show="editForm.errors.name" class="text-xs text-red-600" x-text="editForm.errors.name" :id="'mobile-edit-error-' + reason.id" role="alert"></div>
+                                            <div x-show="editForm.errors.general" class="text-xs text-red-600" x-text="editForm.errors.general" role="alert"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Mobile Actions -->
+                                <div x-show="editingReason?.id !== reason.id" class="flex items-center gap-1 ml-2">
+                                    <button 
+                                        @click="startEdit(reason)"
+                                        :disabled="loading"
+                                        class="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                                        title="Bearbeiten"
+                                        :aria-label="`${reason.name} bearbeiten`"
+                                    >
+                                        <span class="material-icons text-lg" aria-hidden="true">edit</span>
+                                    </button>
+                                    <button 
+                                        @click="confirmDelete(reason)"
+                                        :disabled="loading"
+                                        class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                                        title="Löschen"
+                                        :aria-label="`${reason.name} löschen`"
+                                    >
+                                        <span class="material-icons text-lg" aria-hidden="true">delete</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Card Details -->
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="text-gray-500">Verwendungen:</span>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="font-medium text-gray-900" x-text="reason.usage_count"></span>
+                                        <span x-show="reason.usage_count > 0" class="material-icons text-sm text-green-600" title="Wird verwendet" aria-label="Wird verwendet">check_circle</span>
+                                        <span x-show="reason.usage_count === 0" class="material-icons text-sm text-gray-400" title="Nicht verwendet" aria-label="Nicht verwendet">radio_button_unchecked</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Erstellt von:</span>
+                                    <p class="font-medium text-gray-900 mt-1 truncate" x-text="reason.created_by"></p>
+                                </div>
+                                <div class="col-span-2">
+                                    <span class="text-gray-500">Erstellt am:</span>
+                                    <p class="font-medium text-gray-900 mt-1" x-text="formatDate(reason.created_at)"></p>
+                                </div>
+                            </div>
+                            
+                            <!-- Editing Indicator -->
+                            <div x-show="editingReason?.id === reason.id" class="mt-3 text-blue-600 text-sm font-medium" aria-live="polite">
+                                Bearbeiten...
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Modal -->
+    <div x-show="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4" x-cloak role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4" @click.away="cancelCreate()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="create-modal-title" class="text-lg font-semibold text-gray-900">Neuen Sperrungsgrund erstellen</h3>
+                <button @click="cancelCreate()" class="text-gray-400 hover:text-gray-600 p-1 rounded focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2" aria-label="Modal schließen">
+                    <span class="material-icons" aria-hidden="true">close</span>
+                </button>
+            </div>
+            
+            <form @submit.prevent="createReason()" class="space-y-4">
+                <!-- Reason Name Field -->
+                <div>
+                    <label for="create-reason-name" class="block text-sm font-medium text-gray-700 mb-1">
+                        Grund-Name *
+                    </label>
+                    <input 
+                        id="create-reason-name"
+                        type="text" 
+                        x-model="createForm.name"
+                        @input="validateCreateForm()"
+                        @blur="validateCreateForm()"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors focus:outline-none"
+                        :class="{ 
+                            'border-red-300 focus:ring-red-500 bg-red-50': createForm.errors.name,
+                            'border-green-300 focus:ring-green-500 bg-green-50': createForm.isValid && createForm.name.trim()
+                        }"
+                        placeholder="z.B. Wartung, Turnier, Wetter..."
+                        maxlength="100"
+                        minlength="2"
+                        pattern="[a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&]+"
+                        title="Erlaubt sind: Buchstaben, Zahlen, Leerzeichen und die Zeichen: - _ . , ! ? ( ) / &"
+                        required
+                        autocomplete="off"
+                        spellcheck="false"
+                        :aria-describedby="createForm.errors.name ? 'create-name-error' : 'create-name-help'"
+                        :aria-invalid="createForm.errors.name ? 'true' : 'false'"
+                    >
+                    <div x-show="createForm.errors.name" class="mt-1 text-sm text-red-600" x-text="createForm.errors.name" id="create-name-error" role="alert"></div>
+                    <div class="mt-1 flex justify-between items-center text-xs">
+                        <div class="text-gray-500" id="create-name-help">
+                            <span x-text="createForm.name.length"></span>/100 Zeichen
+                            <span x-show="createForm.name.trim() && createForm.isValid" class="text-green-600 ml-2" aria-label="Eingabe gültig">✓ Gültig</span>
+                            <span x-show="createForm.name.trim() && !createForm.isValid && !createForm.errors.name" class="text-red-600 ml-2" aria-label="Eingabe ungültig">✗ Ungültig</span>
+                        </div>
+                        <div x-show="createForm.name.trim()" class="text-gray-400">
+                            <span x-show="createForm.name.trim().length >= 2 && createForm.name.trim().length <= 100" class="text-green-600" aria-label="Länge in Ordnung">✓ Länge OK</span>
+                            <span x-show="createForm.name.trim().length < 2" class="text-red-600" aria-label="Zu kurz">✗ Zu kurz</span>
+                            <span x-show="createForm.name.trim().length > 100" class="text-red-600" aria-label="Zu lang">✗ Zu lang</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Description Field (Optional) -->
+                <div>
+                    <label for="create-reason-description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Beschreibung (optional)
+                    </label>
+                    <textarea 
+                        id="create-reason-description"
+                        x-model="createForm.description"
+                        @input="validateCreateForm()"
+                        @blur="validateCreateForm()"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none transition-colors focus:outline-none"
+                        :class="{ 
+                            'border-red-300 focus:ring-red-500 bg-red-50': createForm.errors.general && createForm.errors.general.includes('Beschreibung'),
+                            'border-green-300 focus:ring-green-500 bg-green-50': createForm.description && createForm.description.trim() && createForm.description.trim().length <= 255
+                        }"
+                        placeholder="Zusätzliche Details zum Sperrungsgrund..."
+                        rows="3"
+                        maxlength="255"
+                        pattern="[a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&\n\r]+"
+                        title="Erlaubt sind: Buchstaben, Zahlen, Leerzeichen, Zeilenumbrüche und die Zeichen: - _ . , ! ? ( ) / &"
+                        autocomplete="off"
+                        spellcheck="true"
+                        :aria-describedby="createForm.errors.general && createForm.errors.general.includes('Beschreibung') ? 'create-desc-error' : 'create-desc-help'"
+                        :aria-invalid="createForm.errors.general && createForm.errors.general.includes('Beschreibung') ? 'true' : 'false'"
+                    ></textarea>
+                    <div class="mt-1 flex justify-between items-center text-xs">
+                        <div class="text-gray-500" id="create-desc-help">
+                            <span x-text="createForm.description.length"></span>/255 Zeichen
+                            <span x-show="createForm.description.trim() && createForm.description.trim().length <= 255" class="text-green-600 ml-2" aria-label="Länge in Ordnung">✓ Länge OK</span>
+                            <span x-show="createForm.description.trim().length > 255" class="text-red-600 ml-2" aria-label="Zu lang">✗ Zu lang</span>
+                        </div>
+                        <div x-show="createForm.description.trim()" class="text-gray-400">
+                            Optional
+                        </div>
+                    </div>
+                    <div x-show="createForm.errors.general && createForm.errors.general.includes('Beschreibung')" class="mt-1 text-sm text-red-600" x-text="createForm.errors.general" id="create-desc-error" role="alert"></div>
+                </div>
+                
+                <!-- Error Display -->
+                <div x-show="createForm.errors.general" class="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div class="flex items-center gap-2 text-red-700 text-sm">
+                        <span class="material-icons text-sm">error</span>
+                        <span x-text="createForm.errors.general"></span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button 
+                        type="button"
+                        @click="cancelCreate()"
+                        class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 min-h-[44px]"
+                        :disabled="createForm.submitting"
+                    >
+                        Abbrechen
+                    </button>
+                    <button 
+                        type="submit"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-h-[44px]"
+                        :disabled="!createForm.isValid || createForm.submitting"
+                    >
+                        <span x-show="createForm.submitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white" aria-hidden="true"></span>
+                        <span x-text="createForm.submitting ? 'Erstelle...' : 'Erstellen'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div x-show="showDeleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4" x-cloak role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4" @click.away="cancelDelete()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="delete-modal-title" class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <span class="material-icons text-red-600" aria-hidden="true">warning</span>
+                    Sperrungsgrund löschen
+                </h3>
+                <button @click="cancelDelete()" class="text-gray-400 hover:text-gray-600 p-1 rounded focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2" aria-label="Modal schließen">
+                    <span class="material-icons" aria-hidden="true">close</span>
+                </button>
+            </div>
+            
+            <div x-show="deletingReason" class="space-y-4">
+                <!-- Reason Info -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                        <div>
+                            <div class="font-medium text-gray-900" x-text="deletingReason?.name"></div>
+                            <div class="text-sm text-gray-600">
+                                <span x-text="deletingReason?.usage_count || 0"></span> Verwendungen
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Usage Impact Explanation -->
+                <div class="space-y-3">
+                    <!-- For unused reasons -->
+                    <div x-show="deletingReason?.usage_count === 0" class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <span class="material-icons text-green-600 text-sm mt-0.5">check_circle</span>
+                            <div class="text-sm">
+                                <p class="font-medium text-green-800 mb-1">Sicheres Löschen möglich</p>
+                                <p class="text-green-700">
+                                    Dieser Grund wird derzeit nicht verwendet und kann sicher gelöscht werden. 
+                                    Er wird vollständig aus dem System entfernt.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- For used reasons -->
+                    <div x-show="deletingReason?.usage_count > 0" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <span class="material-icons text-yellow-600 text-sm mt-0.5">info</span>
+                            <div class="text-sm">
+                                <p class="font-medium text-yellow-800 mb-1">Deaktivierung statt Löschung</p>
+                                <p class="text-yellow-700 mb-2">
+                                    Dieser Grund wird derzeit verwendet und kann nicht vollständig gelöscht werden.
+                                </p>
+                                <p class="text-yellow-700">
+                                    <strong>Stattdessen wird er:</strong><br>
+                                    • Deaktiviert und aus der Liste entfernt<br>
+                                    • Zukünftige Sperrungen mit diesem Grund werden gelöscht<br>
+                                    • Vergangene Sperrungen bleiben zur Dokumentation erhalten
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Confirmation Question -->
+                <div class="border-t border-gray-200 pt-4">
+                    <p class="text-gray-900 font-medium mb-2">
+                        <span x-show="deletingReason?.usage_count === 0">
+                            Möchten Sie diesen Sperrungsgrund wirklich löschen?
+                        </span>
+                        <span x-show="deletingReason?.usage_count > 0">
+                            Möchten Sie diesen Sperrungsgrund wirklich deaktivieren?
+                        </span>
+                    </p>
+                    <p class="text-sm text-gray-600">
+                        Diese Aktion kann nicht rückgängig gemacht werden.
+                    </p>
+                </div>
+                
+                <!-- Error Display -->
+                <div x-show="deleteForm.errors.general" class="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div class="flex items-center gap-2 text-red-700 text-sm">
+                        <span class="material-icons text-sm">error</span>
+                        <span x-text="deleteForm.errors.general"></span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button 
+                        type="button"
+                        @click="cancelDelete()"
+                        class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 min-h-[44px]"
+                        :disabled="deleteForm.submitting"
+                    >
+                        Abbrechen
+                    </button>
+                    <button 
+                        type="button"
+                        @click="executeDelete()"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 min-h-[44px]"
+                        :disabled="deleteForm.submitting"
+                        data-delete-confirm
+                    >
+                        <span x-show="deleteForm.submitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white" aria-hidden="true"></span>
+                        <span x-show="deletingReason?.usage_count === 0 && !deleteForm.submitting">Löschen</span>
+                        <span x-show="deletingReason?.usage_count > 0 && !deleteForm.submitting">Deaktivieren</span>
+                        <span x-show="deleteForm.submitting">
+                            <span x-show="deletingReason?.usage_count === 0">Lösche...</span>
+                            <span x-show="deletingReason?.usage_count > 0">Deaktiviere...</span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function reasonsManager() {
+    return {
+        // State management
+        reasons: [],
+        filteredReasons: [],
+        loading: true,
+        error: null,
+        searchTerm: '',
+        sortField: 'name',
+        sortDirection: 'asc',
+        
+        // Modal states
+        showCreateModal: false,
+        showDeleteModal: false,
+        editingReason: null,
+        deletingReason: null,
+        
+        // Create form state
+        createForm: {
+            name: '',
+            description: '',
+            submitting: false,
+            isValid: false,
+            errors: {
+                name: null,
+                general: null
+            }
+        },
+        
+        // Edit form state
+        editForm: {
+            name: '',
+            originalName: '',
+            submitting: false,
+            isValid: false,
+            errors: {
+                name: null,
+                general: null
+            }
+        },
+        
+        // Delete form state
+        deleteForm: {
+            submitting: false,
+            errors: {
+                general: null
+            }
+        },
+        
+        // Initialization
+        async init() {
+            await this.loadReasons();
+            this.setupWatchers();
+        },
+        
+        // Setup reactive watchers
+        setupWatchers() {
+            this.$watch('searchTerm', () => this.filterReasons());
+            this.$watch('reasons', () => this.filterReasons());
+        },
+        
+        // Data loading with enhanced error handling
+        async loadReasons() {
+            try {
+                this.loading = true;
+                this.error = null;
+                
+                const response = await fetch('/admin/block-reasons', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.');
+                    } else if (response.status === 403) {
+                        throw new Error('Sie haben keine Berechtigung für diese Aktion.');
+                    } else if (response.status >= 500) {
+                        throw new Error('Serverfehler. Bitte versuchen Sie es später erneut.');
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                }
+                
+                const data = await response.json();
+                this.reasons = data.reasons || [];
+                
+            } catch (error) {
+                console.error('Error loading reasons:', error);
+                
+                // Handle different types of errors
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    this.error = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+                } else if (error.message.includes('abgelaufen')) {
+                    this.error = error.message;
+                    // Redirect to login after a delay
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 3000);
+                } else {
+                    this.error = 'Fehler beim Laden der Sperrungsgründe: ' + error.message;
+                }
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        // Filtering and sorting
+        filterReasons() {
+            let filtered = [...this.reasons];
+            
+            // Apply search filter
+            if (this.searchTerm.trim()) {
+                const term = this.searchTerm.toLowerCase();
+                filtered = filtered.filter(reason => 
+                    reason.name.toLowerCase().includes(term) ||
+                    (reason.description && reason.description.toLowerCase().includes(term)) ||
+                    reason.created_by.toLowerCase().includes(term)
+                );
+            }
+            
+            // Apply sorting
+            filtered.sort((a, b) => {
+                let aVal = a[this.sortField];
+                let bVal = b[this.sortField];
+                
+                // Handle different data types
+                if (this.sortField === 'created_at') {
+                    aVal = new Date(aVal);
+                    bVal = new Date(bVal);
+                } else if (typeof aVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+                
+                if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            this.filteredReasons = filtered;
+        },
+        
+        // Sorting
+        sortBy(field) {
+            if (this.sortField === field) {
+                this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.sortField = field;
+                this.sortDirection = 'asc';
+            }
+            this.filterReasons();
+        },
+        
+        // Editing actions
+        startEdit(reason) {
+            // Cancel any existing edit
+            if (this.editingReason) {
+                this.cancelEdit();
+            }
+            
+            this.editingReason = reason;
+            this.editForm.name = reason.name;
+            this.editForm.originalName = reason.name;
+            this.editForm.submitting = false;
+            this.editForm.isValid = true; // Start as valid since it's the current name
+            this.editForm.errors.name = null;
+            this.editForm.errors.general = null;
+            
+            // Announce the edit mode to screen readers
+            this.announceChange(`Bearbeitung von ${reason.name} gestartet`);
+            
+            // Focus management
+            this.manageFocus();
+        },
+        
+        cancelEdit() {
+            const reasonName = this.editingReason?.name;
+            this.editingReason = null;
+            this.resetEditForm();
+            
+            // Announce cancellation to screen readers
+            if (reasonName) {
+                this.announceChange(`Bearbeitung von ${reasonName} abgebrochen`);
+            }
+        },
+        
+        resetEditForm() {
+            this.editForm = {
+                name: '',
+                originalName: '',
+                submitting: false,
+                isValid: false,
+                errors: {
+                    name: null,
+                    general: null
+                }
+            };
+        },
+        
+        // Enhanced edit form validation with comprehensive character and length validation
+        validateEditForm() {
+            const form = this.editForm;
+            form.errors.name = null;
+            form.errors.general = null;
+            
+            // Validate name field - required field validation
+            if (!form.name || !form.name.trim()) {
+                form.errors.name = 'Grund-Name ist erforderlich';
+                form.isValid = false;
+                return;
+            }
+            
+            const trimmedName = form.name.trim();
+            
+            // Enhanced length validation with specific limits
+            if (trimmedName.length < 2) {
+                form.errors.name = 'Grund-Name muss mindestens 2 Zeichen lang sein';
+                form.isValid = false;
+                return;
+            }
+            
+            if (trimmedName.length > 100) {
+                form.errors.name = 'Grund-Name darf maximal 100 Zeichen lang sein';
+                form.isValid = false;
+                return;
+            }
+            
+            // Enhanced character validation - only appropriate characters allowed
+            // Allow: German letters (including umlauts), numbers, spaces, and safe punctuation
+            const validCharPattern = /^[a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&]+$/;
+            if (!validCharPattern.test(trimmedName)) {
+                form.errors.name = 'Grund-Name enthält ungültige Zeichen. Erlaubt sind: Buchstaben, Zahlen, Leerzeichen und die Zeichen: - _ . , ! ? ( ) / &';
+                form.isValid = false;
+                return;
+            }
+            
+            // Prevent names that could cause system conflicts
+            const conflictPatterns = [
+                /^(null|undefined|admin|system|root|test)$/i,
+                /^[\s\-_.,!?()\/&]+$/, // Only special characters
+                /^\d+$/, // Only numbers
+                /^(true|false)$/i, // Boolean values
+                /^(select|insert|update|delete|drop|create|alter)$/i // SQL keywords
+            ];
+            
+            for (const pattern of conflictPatterns) {
+                if (pattern.test(trimmedName)) {
+                    form.errors.name = 'Dieser Name könnte zu Systemkonflikten führen. Bitte wählen Sie einen anderen Namen.';
+                    form.isValid = false;
+                    return;
+                }
+            }
+            
+            // Check for excessive whitespace
+            if (trimmedName !== form.name.trim() || /\s{2,}/.test(trimmedName)) {
+                form.errors.name = 'Grund-Name darf keine führenden/nachfolgenden Leerzeichen oder mehrfache Leerzeichen enthalten';
+                form.isValid = false;
+                return;
+            }
+            
+            // Check for duplicate names (case-insensitive), excluding the current reason
+            const lowerName = trimmedName.toLowerCase();
+            const originalName = form.originalName.toLowerCase();
+            
+            // Only check for duplicates if the name has actually changed
+            if (lowerName !== originalName) {
+                const isDuplicate = this.reasons.some(reason => 
+                    reason.name.toLowerCase() === lowerName && reason.id !== this.editingReason.id
+                );
+                
+                if (isDuplicate) {
+                    form.errors.name = 'Ein Grund mit diesem Namen existiert bereits';
+                    form.isValid = false;
+                    return;
+                }
+            }
+            
+            form.isValid = true;
+        },
+        
+        // Save edit functionality with enhanced error handling and input sanitization
+        async saveEdit() {
+            if (!this.editForm.isValid || this.editForm.submitting || !this.editingReason) {
+                return;
+            }
+            
+            // Sanitize input before processing
+            const sanitizedName = this.sanitizeReasonName(this.editForm.name);
+            
+            // Check if name actually changed after sanitization
+            if (sanitizedName === this.editForm.originalName) {
+                this.cancelEdit();
+                return;
+            }
+            
+            // Validate sanitized data
+            if (!sanitizedName || sanitizedName.length < 2) {
+                this.editForm.errors.name = 'Name ist nach der Bereinigung zu kurz oder leer';
+                return;
+            }
+            
+            // Check if sanitization changed the input significantly
+            if (sanitizedName !== this.editForm.name.trim()) {
+                this.editForm.errors.name = 'Name wurde bereinigt. Bitte überprüfen Sie die Eingabe.';
+                this.editForm.name = sanitizedName;
+                return;
+            }
+            
+            try {
+                this.editForm.submitting = true;
+                this.editForm.errors.general = null;
+                
+                const requestData = {
+                    name: sanitizedName
+                };
+                
+                // Validate data types
+                const typeErrors = this.validateDataTypes(requestData);
+                if (typeErrors.length > 0) {
+                    this.editForm.errors.general = typeErrors.join(', ');
+                    return;
+                }
+                
+                const response = await fetch(`/admin/block-reasons/${this.editingReason.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    // Handle specific HTTP status codes
+                    if (response.status === 400 && data.error) {
+                        if (data.error.includes('bereits') || data.error.includes('exists')) {
+                            this.editForm.errors.name = data.error;
+                        } else {
+                            this.editForm.errors.general = data.error;
+                        }
+                    } else if (response.status === 401) {
+                        this.editForm.errors.general = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
+                        setTimeout(() => window.location.href = '/login', 3000);
+                    } else if (response.status === 403) {
+                        this.editForm.errors.general = 'Sie haben keine Berechtigung für diese Aktion.';
+                    } else if (response.status === 404) {
+                        this.editForm.errors.general = 'Der Sperrungsgrund wurde nicht gefunden. Möglicherweise wurde er bereits gelöscht.';
+                        // Refresh the list to reflect current state
+                        setTimeout(() => this.loadReasons(), 2000);
+                    } else if (response.status >= 500) {
+                        this.editForm.errors.general = 'Serverfehler. Bitte versuchen Sie es später erneut.';
+                    } else {
+                        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return;
+                }
+                
+                // Success - update the reason in the local list
+                const reasonIndex = this.reasons.findIndex(r => r.id === this.editingReason.id);
+                if (reasonIndex !== -1) {
+                    // Update the reason name while preserving other properties
+                    this.reasons[reasonIndex] = {
+                        ...this.reasons[reasonIndex],
+                        name: sanitizedName
+                    };
+                    this.filterReasons(); // Refresh the filtered list
+                }
+                
+                // Show success message
+                this.showSuccessMessage(data.message || 'Sperrungsgrund erfolgreich aktualisiert');
+                
+                // Exit edit mode
+                this.cancelEdit();
+                
+            } catch (error) {
+                console.error('Error updating reason:', error);
+                
+                // Handle network errors
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    this.editForm.errors.general = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+                } else {
+                    this.editForm.errors.general = 'Fehler beim Aktualisieren des Grundes: ' + error.message;
+                }
+                
+                // Show error toast for network issues
+                if (error.name === 'TypeError') {
+                    this.showErrorMessage('Netzwerkfehler beim Speichern. Bitte versuchen Sie es erneut.');
+                }
+            } finally {
+                this.editForm.submitting = false;
+            }
+        },
+        
+        confirmDelete(reason) {
+            this.deletingReason = reason;
+            this.resetDeleteForm();
+            this.showDeleteModal = true;
+            this.announceChange(`Löschbestätigung für ${reason.name} geöffnet`);
+            this.manageFocus();
+        },
+        
+        cancelDelete() {
+            this.showDeleteModal = false;
+            this.deletingReason = null;
+            this.resetDeleteForm();
+        },
+        
+        resetDeleteForm() {
+            this.deleteForm = {
+                submitting: false,
+                errors: {
+                    general: null
+                }
+            };
+        },
+        
+        // Execute deletion or deactivation with enhanced error handling
+        async executeDelete() {
+            if (!this.deletingReason || this.deleteForm.submitting) {
+                return;
+            }
+            
+            try {
+                this.deleteForm.submitting = true;
+                this.deleteForm.errors.general = null;
+                
+                const response = await fetch(`/admin/block-reasons/${this.deletingReason.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    // Handle specific HTTP status codes
+                    if (response.status === 400) {
+                        this.deleteForm.errors.general = data.error || 'Ungültige Anfrage. Der Grund kann nicht gelöscht werden.';
+                    } else if (response.status === 401) {
+                        this.deleteForm.errors.general = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
+                        setTimeout(() => window.location.href = '/login', 3000);
+                    } else if (response.status === 403) {
+                        this.deleteForm.errors.general = 'Sie haben keine Berechtigung für diese Aktion.';
+                    } else if (response.status === 404) {
+                        this.deleteForm.errors.general = 'Der Sperrungsgrund wurde nicht gefunden. Möglicherweise wurde er bereits gelöscht.';
+                        // Close modal and refresh list
+                        setTimeout(() => {
+                            this.cancelDelete();
+                            this.loadReasons();
+                        }, 2000);
+                    } else if (response.status === 409) {
+                        this.deleteForm.errors.general = 'Der Grund kann nicht gelöscht werden, da er derzeit verwendet wird.';
+                    } else if (response.status >= 500) {
+                        this.deleteForm.errors.general = 'Serverfehler. Bitte versuchen Sie es später erneut.';
+                    } else {
+                        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return;
+                }
+                
+                // Success - remove the reason from the local list
+                const reasonIndex = this.reasons.findIndex(r => r.id === this.deletingReason.id);
+                if (reasonIndex !== -1) {
+                    this.reasons.splice(reasonIndex, 1);
+                    this.filterReasons(); // Refresh the filtered list
+                }
+                
+                // Show appropriate success message based on the action taken
+                let successMessage = data.message;
+                if (!successMessage) {
+                    if (this.deletingReason.usage_count === 0) {
+                        successMessage = 'Sperrungsgrund erfolgreich gelöscht';
+                    } else {
+                        successMessage = 'Sperrungsgrund erfolgreich deaktiviert';
+                    }
+                }
+                
+                this.showSuccessMessage(successMessage);
+                
+                // Close modal and reset
+                this.cancelDelete();
+                
+            } catch (error) {
+                console.error('Error deleting reason:', error);
+                
+                // Handle network errors
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    this.deleteForm.errors.general = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+                    this.showErrorMessage('Netzwerkfehler beim Löschen. Bitte versuchen Sie es erneut.');
+                } else {
+                    this.deleteForm.errors.general = 'Fehler beim Löschen des Grundes: ' + error.message;
+                }
+            } finally {
+                this.deleteForm.submitting = false;
+            }
+        },
+        
+        // Create modal management
+        openCreateModal() {
+            this.resetCreateForm();
+            this.showCreateModal = true;
+            this.announceChange('Formular zum Erstellen eines neuen Sperrungsgrunds geöffnet');
+            this.manageFocus();
+        },
+        
+        cancelCreate() {
+            this.showCreateModal = false;
+            this.resetCreateForm();
+        },
+        
+        resetCreateForm() {
+            this.createForm = {
+                name: '',
+                description: '',
+                submitting: false,
+                isValid: false,
+                errors: {
+                    name: null,
+                    general: null
+                }
+            };
+        },
+        
+        // Enhanced create form validation with comprehensive character and length validation
+        validateCreateForm() {
+            const form = this.createForm;
+            form.errors.name = null;
+            form.errors.general = null;
+            
+            // Validate name field - required field validation
+            if (!form.name || !form.name.trim()) {
+                form.errors.name = 'Grund-Name ist erforderlich';
+                form.isValid = false;
+                return;
+            }
+            
+            const trimmedName = form.name.trim();
+            
+            // Enhanced length validation with specific limits
+            if (trimmedName.length < 2) {
+                form.errors.name = 'Grund-Name muss mindestens 2 Zeichen lang sein';
+                form.isValid = false;
+                return;
+            }
+            
+            if (trimmedName.length > 100) {
+                form.errors.name = 'Grund-Name darf maximal 100 Zeichen lang sein';
+                form.isValid = false;
+                return;
+            }
+            
+            // Enhanced character validation - only appropriate characters allowed
+            // Allow: German letters (including umlauts), numbers, spaces, and safe punctuation
+            const validCharPattern = /^[a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&]+$/;
+            if (!validCharPattern.test(trimmedName)) {
+                form.errors.name = 'Grund-Name enthält ungültige Zeichen. Erlaubt sind: Buchstaben, Zahlen, Leerzeichen und die Zeichen: - _ . , ! ? ( ) / &';
+                form.isValid = false;
+                return;
+            }
+            
+            // Prevent names that could cause system conflicts
+            const conflictPatterns = [
+                /^(null|undefined|admin|system|root|test)$/i,
+                /^[\s\-_.,!?()\/&]+$/, // Only special characters
+                /^\d+$/, // Only numbers
+                /^(true|false)$/i, // Boolean values
+                /^(select|insert|update|delete|drop|create|alter)$/i // SQL keywords
+            ];
+            
+            for (const pattern of conflictPatterns) {
+                if (pattern.test(trimmedName)) {
+                    form.errors.name = 'Dieser Name könnte zu Systemkonflikten führen. Bitte wählen Sie einen anderen Namen.';
+                    form.isValid = false;
+                    return;
+                }
+            }
+            
+            // Check for excessive whitespace
+            if (trimmedName !== form.name.trim() || /\s{2,}/.test(trimmedName)) {
+                form.errors.name = 'Grund-Name darf keine führenden/nachfolgenden Leerzeichen oder mehrfache Leerzeichen enthalten';
+                form.isValid = false;
+                return;
+            }
+            
+            // Check for duplicate names (case-insensitive)
+            const lowerName = trimmedName.toLowerCase();
+            const isDuplicate = this.reasons.some(reason => 
+                reason.name.toLowerCase() === lowerName
+            );
+            
+            if (isDuplicate) {
+                form.errors.name = 'Ein Grund mit diesem Namen existiert bereits';
+                form.isValid = false;
+                return;
+            }
+            
+            // Validate description field if provided
+            if (form.description && form.description.trim()) {
+                const trimmedDescription = form.description.trim();
+                
+                if (trimmedDescription.length > 255) {
+                    form.errors.general = 'Beschreibung darf maximal 255 Zeichen lang sein';
+                    form.isValid = false;
+                    return;
+                }
+                
+                // Validate description characters
+                const validDescPattern = /^[a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&\n\r]+$/;
+                if (!validDescPattern.test(trimmedDescription)) {
+                    form.errors.general = 'Beschreibung enthält ungültige Zeichen. Erlaubt sind: Buchstaben, Zahlen, Leerzeichen, Zeilenumbrüche und die Zeichen: - _ . , ! ? ( ) / &';
+                    form.isValid = false;
+                    return;
+                }
+            }
+            
+            form.isValid = true;
+        },
+        
+        // Create reason functionality with enhanced error handling and input sanitization
+        async createReason() {
+            if (!this.createForm.isValid || this.createForm.submitting) {
+                return;
+            }
+            
+            try {
+                this.createForm.submitting = true;
+                this.createForm.errors.general = null;
+                
+                // Sanitize inputs before submission
+                const sanitizedName = this.sanitizeReasonName(this.createForm.name);
+                const sanitizedDescription = this.sanitizeDescription(this.createForm.description);
+                
+                // Validate sanitized data
+                const requestData = {
+                    name: sanitizedName,
+                    description: sanitizedDescription || null
+                };
+                
+                // Validate data types
+                const typeErrors = this.validateDataTypes(requestData);
+                if (typeErrors.length > 0) {
+                    this.createForm.errors.general = typeErrors.join(', ');
+                    return;
+                }
+                
+                // Final validation after sanitization
+                if (!sanitizedName || sanitizedName.length < 2) {
+                    this.createForm.errors.name = 'Name ist nach der Bereinigung zu kurz oder leer';
+                    return;
+                }
+                
+                // Check if sanitization changed the input significantly
+                if (sanitizedName !== this.createForm.name.trim()) {
+                    this.createForm.errors.name = 'Name wurde bereinigt. Bitte überprüfen Sie die Eingabe.';
+                    this.createForm.name = sanitizedName;
+                    return;
+                }
+                
+                if (sanitizedDescription && sanitizedDescription !== this.createForm.description.trim()) {
+                    this.createForm.errors.general = 'Beschreibung wurde bereinigt. Bitte überprüfen Sie die Eingabe.';
+                    this.createForm.description = sanitizedDescription;
+                    return;
+                }
+                
+                const response = await fetch('/admin/block-reasons', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    // Handle specific HTTP status codes
+                    if (response.status === 400 && data.error) {
+                        if (data.error.includes('bereits') || data.error.includes('exists')) {
+                            this.createForm.errors.name = data.error;
+                        } else {
+                            this.createForm.errors.general = data.error;
+                        }
+                    } else if (response.status === 401) {
+                        this.createForm.errors.general = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
+                        setTimeout(() => window.location.href = '/login', 3000);
+                    } else if (response.status === 403) {
+                        this.createForm.errors.general = 'Sie haben keine Berechtigung für diese Aktion.';
+                    } else if (response.status === 422) {
+                        this.createForm.errors.general = 'Ungültige Eingabedaten. Bitte überprüfen Sie Ihre Eingaben.';
+                    } else if (response.status >= 500) {
+                        this.createForm.errors.general = 'Serverfehler. Bitte versuchen Sie es später erneut.';
+                    } else {
+                        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return;
+                }
+                
+                // Success - add the new reason to the list
+                if (data.reason) {
+                    // Create a complete reason object for the UI
+                    const newReason = {
+                        id: data.reason.id,
+                        name: data.reason.name,
+                        description: sanitizedDescription,
+                        color: '#007bff',
+                        is_active: data.reason.is_active,
+                        usage_count: 0,
+                        created_by: '{{ current_user.name }}',
+                        created_at: new Date().toISOString()
+                    };
+                    
+                    this.reasons.push(newReason);
+                    this.filterReasons(); // Refresh the filtered list
+                }
+                
+                // Show success message
+                this.showSuccessMessage(data.message || 'Sperrungsgrund erfolgreich erstellt');
+                
+                // Close modal and reset form
+                this.showCreateModal = false;
+                this.resetCreateForm();
+                
+            } catch (error) {
+                console.error('Error creating reason:', error);
+                
+                // Handle network errors
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    this.createForm.errors.general = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+                    this.showErrorMessage('Netzwerkfehler beim Erstellen. Bitte versuchen Sie es erneut.');
+                } else {
+                    this.createForm.errors.general = 'Fehler beim Erstellen des Grundes: ' + error.message;
+                }
+            } finally {
+                this.createForm.submitting = false;
+            }
+        },
+        
+        // Input sanitization functions to prevent XSS and injection attacks
+        sanitizeInput(input) {
+            if (!input || typeof input !== 'string') {
+                return '';
+            }
+            
+            // Remove potentially dangerous characters and patterns
+            let sanitized = input
+                // Remove HTML tags
+                .replace(/<[^>]*>/g, '')
+                // Remove script-related content
+                .replace(/javascript:/gi, '')
+                .replace(/on\w+\s*=/gi, '')
+                // Remove SQL injection patterns
+                .replace(/['";\\]/g, '')
+                // Remove other potentially dangerous characters
+                .replace(/[<>{}[\]]/g, '')
+                // Normalize whitespace
+                .replace(/\s+/g, ' ')
+                .trim();
+            
+            return sanitized;
+        },
+        
+        sanitizeReasonName(name) {
+            if (!name || typeof name !== 'string') {
+                return '';
+            }
+            
+            // Sanitize and validate the name
+            let sanitized = name
+                // Remove leading/trailing whitespace
+                .trim()
+                // Remove HTML tags
+                .replace(/<[^>]*>/g, '')
+                // Remove script-related content
+                .replace(/javascript:/gi, '')
+                .replace(/on\w+\s*=/gi, '')
+                // Remove SQL injection patterns
+                .replace(/['";\\]/g, '')
+                // Remove dangerous characters but keep allowed punctuation
+                .replace(/[<>{}[\]]/g, '')
+                // Normalize multiple spaces to single space
+                .replace(/\s+/g, ' ')
+                // Remove leading/trailing special characters
+                .replace(/^[\-_.,!?()\/&\s]+|[\-_.,!?()\/&\s]+$/g, '');
+            
+            // Ensure it only contains allowed characters
+            const allowedPattern = /^[a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&]*$/;
+            if (!allowedPattern.test(sanitized)) {
+                // Remove any remaining invalid characters
+                sanitized = sanitized.replace(/[^a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&]/g, '');
+            }
+            
+            return sanitized.trim();
+        },
+        
+        sanitizeDescription(description) {
+            if (!description || typeof description !== 'string') {
+                return '';
+            }
+            
+            // Sanitize description allowing line breaks
+            let sanitized = description
+                // Remove HTML tags
+                .replace(/<[^>]*>/g, '')
+                // Remove script-related content
+                .replace(/javascript:/gi, '')
+                .replace(/on\w+\s*=/gi, '')
+                // Remove SQL injection patterns
+                .replace(/['";\\]/g, '')
+                // Remove dangerous characters but keep allowed punctuation and line breaks
+                .replace(/[<>{}[\]]/g, '')
+                // Normalize whitespace but preserve line breaks
+                .replace(/[ \t]+/g, ' ')
+                .replace(/\n\s*\n/g, '\n')
+                .trim();
+            
+            // Ensure it only contains allowed characters
+            const allowedPattern = /^[a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&\n\r]*$/;
+            if (!allowedPattern.test(sanitized)) {
+                // Remove any remaining invalid characters
+                sanitized = sanitized.replace(/[^a-zA-ZäöüÄÖÜß0-9\s\-_.,!?()\/&\n\r]/g, '');
+            }
+            
+            return sanitized.trim();
+        },
+        
+        // Validate data types and formats
+        validateDataTypes(data) {
+            const errors = [];
+            
+            if (data.name !== undefined) {
+                if (typeof data.name !== 'string') {
+                    errors.push('Name muss ein Text sein');
+                } else if (data.name.length > 100) {
+                    errors.push('Name ist zu lang');
+                }
+            }
+            
+            if (data.description !== undefined && data.description !== null) {
+                if (typeof data.description !== 'string') {
+                    errors.push('Beschreibung muss ein Text sein');
+                } else if (data.description.length > 255) {
+                    errors.push('Beschreibung ist zu lang');
+                }
+            }
+            
+            return errors;
+        },
+        showSuccessMessage(message) {
+            showSuccessToast(message);
+            this.announceChange(`Erfolg: ${message}`);
+        },
+        
+        showErrorMessage(message) {
+            showErrorToast(message);
+            this.announceChange(`Fehler: ${message}`);
+        },
+        
+        showWarningMessage(message) {
+            showWarningToast(message);
+            this.announceChange(`Warnung: ${message}`);
+        },
+        
+        // Keyboard navigation support
+        handleKeyboardNavigation(event, reason) {
+            // Handle keyboard navigation for table rows
+            switch(event.key) {
+                case 'Enter':
+                case ' ': // Space key
+                    event.preventDefault();
+                    this.startEdit(reason);
+                    break;
+                case 'Delete':
+                case 'Backspace':
+                    if (event.ctrlKey || event.metaKey) {
+                        event.preventDefault();
+                        this.confirmDelete(reason);
+                    }
+                    break;
+                case 'Escape':
+                    if (this.editingReason?.id === reason.id) {
+                        event.preventDefault();
+                        this.cancelEdit();
+                    }
+                    break;
+            }
+        },
+        
+        // Enhanced focus management for accessibility
+        manageFocus() {
+            // Focus management for modals and dynamic content
+            this.$nextTick(() => {
+                if (this.showCreateModal) {
+                    const nameInput = document.getElementById('create-reason-name');
+                    if (nameInput) {
+                        nameInput.focus();
+                    }
+                } else if (this.showDeleteModal) {
+                    const deleteButton = document.querySelector('[data-delete-confirm]');
+                    if (deleteButton) {
+                        deleteButton.focus();
+                    }
+                } else if (this.editingReason) {
+                    const editInput = this.$refs.editInput;
+                    if (editInput) {
+                        editInput.focus();
+                        editInput.select();
+                    }
+                }
+            });
+        },
+        
+        // Announce changes to screen readers
+        announceChange(message) {
+            // Use the global live region for announcements
+            const liveRegion = document.getElementById('sr-announcements');
+            if (liveRegion) {
+                liveRegion.textContent = message;
+                
+                // Clear the message after a short delay to allow for new announcements
+                setTimeout(() => {
+                    if (liveRegion.textContent === message) {
+                        liveRegion.textContent = '';
+                    }
+                }, 1000);
+            }
+        },
+        formatDate(dateString) {
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('de-DE', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (error) {
+                return dateString;
+            }
+        }
+    };
+}
+</script>
 {% endblock %}
