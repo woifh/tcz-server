@@ -4,298 +4,75 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-components.css') }}">
-<style>
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background-color: #e5e7eb;
-    border: 1px solid #e5e7eb;
-}
-
-.calendar-day-header {
-    background-color: #f3f4f6;
-    padding: 8px;
-    text-align: center;
-    font-weight: 600;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.calendar-day {
-    background-color: white;
-    min-height: 80px;
-    padding: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.calendar-day:hover {
-    background-color: #f9fafb;
-}
-
-.calendar-day.has-blocks {
-    background-color: #fef3c7;
-}
-
-.calendar-day.has-blocks:hover {
-    background-color: #fde68a;
-}
-
-.day-number {
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.block-indicator {
-    font-size: 10px;
-    padding: 2px 4px;
-    margin-bottom: 2px;
-    border-radius: 3px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.calendar-day-empty {
-    background-color: #f9fafb;
-}
-
-.day-details-modal {
-    z-index: 1000;
-}
-
-.block-detail-item {
-    transition: all 0.2s;
-}
-
-.block-detail-item:hover {
-    background-color: #f9fafb;
-}
-
-/* Fix time input width */
-input[type="time"] {
-    min-width: 120px !important;
-}
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6">
     <h2 class="text-2xl font-bold mb-6">Administrator-Panel</h2>
-    
-    <!-- Navigation Links -->
-    <div class="border-b border-gray-200 mb-6">
-        <nav class="-mb-px flex space-x-8 overflow-x-auto">
-            <a href="{{ url_for('admin.overview') }}" class="border-b-2 border-green-600 py-4 px-1 text-sm font-medium text-green-600 whitespace-nowrap">
-                Übersicht
-            </a>
-            <button onclick="showTab('calendar')" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
-                Kalenderansicht
-            </button>
-            <a href="{{ url_for('admin.court_blocking') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
-                Platz-Sperrungen
-            </a>
-            <a href="{{ url_for('admin.recurring_series') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
-                Wiederkehrende Serien
-            </a>
-            <a href="{{ url_for('admin.templates') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
-                Vorlagen
-            </a>
-            <a href="{{ url_for('admin.reasons') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
-                Sperrungsgründe
-            </a>
-            <a href="{{ url_for('members.list_members') }}" class="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
-                Mitglieder
-            </a>
-        </nav>
-    </div>
-    
-    <!-- Overview Tab -->
-    <div id="content-overview" class="tab-content">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="border border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-semibold mb-4">Einzelne Sperrungen</h3>
-                <p class="text-gray-600 mb-4">Einzelne Plätze für bestimmte Zeiten sperren.</p>
-                <a href="{{ url_for('admin.court_blocking') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                    Sperrungen verwalten
-                </a>
-            </div>
-            
-            <div class="border border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-semibold mb-4">Wiederkehrende Serien</h3>
-                <p class="text-gray-600 mb-4">Regelmäßige Sperrungen für Kurse oder Events.</p>
-                <a href="{{ url_for('admin.recurring_series') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                    Serien verwalten
-                </a>
-            </div>
-            
-            <div class="border border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-semibold mb-4">Vorlagen</h3>
-                <p class="text-gray-600 mb-4">Wiederverwendbare Sperrungsvorlagen.</p>
-                <a href="{{ url_for('admin.templates') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                    Vorlagen verwalten
-                </a>
-            </div>
-            
-            <div class="border border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-semibold mb-4">Sperrungsgründe</h3>
-                <p class="text-gray-600 mb-4">Anpassbare Gründe für Sperrungen.</p>
-                <a href="{{ url_for('admin.reasons') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                    Gründe verwalten
-                </a>
-            </div>
-            
-            <div class="border border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-semibold mb-4">Mitgliederverwaltung</h3>
-                <p class="text-gray-600 mb-4">Mitglieder anzeigen und verwalten.</p>
-                <a href="{{ url_for('members.list_members') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                    Mitglieder anzeigen
-                </a>
-            </div>
-            
-            <div class="border border-gray-200 rounded-lg p-6">
-                <h3 class="text-xl font-semibold mb-4">Audit-Protokoll</h3>
-                <p class="text-gray-600 mb-4">Verlauf aller Sperrungsoperationen.</p>
-                <button onclick="loadAuditLog()" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                    Protokoll anzeigen
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Calendar View Tab -->
-    <div id="content-calendar" class="tab-content hidden">
-        <div class="mb-6">
-            <h3 class="text-xl font-semibold mb-4">Kalenderansicht der Sperrungen</h3>
-            <p class="text-gray-600 mb-4">Monatliche Übersicht aller Platz-Sperrungen mit farblicher Kennzeichnung nach Grund.</p>
-            
-            <!-- Calendar Container -->
-            <div id="calendar-view" class="bg-white border border-gray-200 rounded-lg p-4">
-                <!-- Calendar will be rendered here by JavaScript -->
-            </div>
-        </div>
-    </div>
-    
-    <div class="mt-8">
-        <a href="{{ url_for('dashboard.index') }}" class="text-green-600 hover:underline">← Zurück zur Übersicht</a>
-    </div>
-</div>
 
-<!-- Conflict Preview Modal -->
-<div id="conflict-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-        <h3 class="text-lg font-semibold mb-4">Konflikt-Vorschau</h3>
-        <div id="conflict-content">
-            <!-- Will be populated by JavaScript -->
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="border border-gray-200 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Einzelne Sperrungen</h3>
+            <p class="text-gray-600 mb-4">Einzelne Plätze für bestimmte Zeiten sperren.</p>
+            <a href="{{ url_for('admin.court_blocking') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                Sperrungen verwalten
+            </a>
         </div>
-        <div class="mt-4 flex gap-2">
-            <button onclick="closeConflictModal()" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"></button>
-                Schließen
-            </button>
+
+        <div class="border border-gray-200 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Wiederkehrende Serien</h3>
+            <p class="text-gray-600 mb-4">Regelmäßige Sperrungen für Kurse oder Events.</p>
+            <a href="{{ url_for('admin.recurring_series') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                Serien verwalten
+            </a>
         </div>
+
+        <div class="border border-gray-200 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Vorlagen</h3>
+            <p class="text-gray-600 mb-4">Wiederverwendbare Sperrungsvorlagen.</p>
+            <a href="{{ url_for('admin.templates') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                Vorlagen verwalten
+            </a>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Sperrungsgründe</h3>
+            <p class="text-gray-600 mb-4">Anpassbare Gründe für Sperrungen.</p>
+            <a href="{{ url_for('admin.reasons') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                Gründe verwalten
+            </a>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Kalenderansicht</h3>
+            <p class="text-gray-600 mb-4">Monatliche Übersicht aller Sperrungen.</p>
+            <a href="{{ url_for('admin.calendar') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                Kalender öffnen
+            </a>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Mitgliederverwaltung</h3>
+            <p class="text-gray-600 mb-4">Mitglieder anzeigen und verwalten.</p>
+            <a href="{{ url_for('members.list_members') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                Mitglieder anzeigen
+            </a>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Audit-Protokoll</h3>
+            <p class="text-gray-600 mb-4">Verlauf aller Sperrungsoperationen.</p>
+            <a href="{{ url_for('admin.audit_log') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                Protokoll anzeigen
+            </a>
+        </div>
+    </div>
+
+    <div class="mt-8">
+        <a href="{{ url_for('dashboard.dashboard') }}" class="text-green-600 hover:underline">← Zurück zur Übersicht</a>
     </div>
 </div>
 
 <script type="module" src="{{ url_for('static', filename='js/components/admin/admin-main.js') }}"></script>
-<script>
-// Calendar tab switching functionality
-function showTab(tabName) {
-    if (tabName === 'calendar') {
-        // Hide overview content
-        const overviewContent = document.getElementById('content-overview');
-        if (overviewContent) {
-            overviewContent.classList.add('hidden');
-        }
-        
-        // Show calendar content
-        const calendarContent = document.getElementById('content-calendar');
-        if (calendarContent) {
-            calendarContent.classList.remove('hidden');
-        }
-        
-        // Update navigation styling
-        const navLinks = document.querySelectorAll('nav a, nav button');
-        navLinks.forEach(link => {
-            link.classList.remove('border-green-600', 'text-green-600');
-            link.classList.add('border-transparent', 'text-gray-500');
-        });
-        
-        // Activate calendar button
-        const calendarButton = document.querySelector('button[onclick="showTab(\'calendar\')"]');
-        if (calendarButton) {
-            calendarButton.classList.remove('border-transparent', 'text-gray-500');
-            calendarButton.classList.add('border-green-600', 'text-green-600');
-        }
-    }
-}
-
-// Show overview by default (reset to overview)
-function showOverview() {
-    // Show overview content
-    const overviewContent = document.getElementById('content-overview');
-    if (overviewContent) {
-        overviewContent.classList.remove('hidden');
-    }
-    
-    // Hide calendar content
-    const calendarContent = document.getElementById('content-calendar');
-    if (calendarContent) {
-        calendarContent.classList.add('hidden');
-    }
-    
-    // Update navigation styling
-    const navLinks = document.querySelectorAll('nav a, nav button');
-    navLinks.forEach(link => {
-        link.classList.remove('border-green-600', 'text-green-600');
-        link.classList.add('border-transparent', 'text-gray-500');
-    });
-    
-    // Activate overview link
-    const overviewLink = document.querySelector('nav a[href*="overview"]');
-    if (overviewLink) {
-        overviewLink.classList.remove('border-transparent', 'text-gray-500');
-        overviewLink.classList.add('border-green-600', 'text-green-600');
-    }
-}
-
-// Initialize overview on page load
-document.addEventListener('DOMContentLoaded', function() {
-    showOverview();
-});
-
-// Toggle recurrence days visibility
-function toggleRecurrenceDays() {
-    const pattern = document.getElementById('series-pattern');
-    const container = document.getElementById('recurrence-days-container');
-    
-    if (pattern && container) {
-        if (pattern.value === 'weekly') {
-            container.classList.remove('hidden');
-        } else {
-            container.classList.add('hidden');
-        }
-    }
-}
-
-// Close conflict modal
-function closeConflictModal() {
-    const modal = document.getElementById('conflict-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-}
-
-// Legacy function for audit log
-function loadAuditLog() {
-    if (window.blocksAPI) {
-        window.blocksAPI.loadAuditLog().then(result => {
-            if (result.success) {
-                console.log('Audit log:', result.logs);
-                // TODO: Show audit log in modal or navigate to dedicated page
-                alert('Audit-Log Funktion noch nicht implementiert');
-            }
-        });
-    }
-}
-</script>
 {% endblock %}

@@ -97,7 +97,7 @@ def edit_single_block(block_id):
 @admin_required
 def calendar():
     """Admin calendar view."""
-    return render_template('admin.html')
+    return render_template('admin/calendar.html')
 
 
 @bp.route('/recurring-series')
@@ -105,7 +105,7 @@ def calendar():
 @admin_required
 def recurring_series():
     """Recurring series management page."""
-    return render_template('admin.html')
+    return render_template('admin/recurring_series.html')
 
 
 @bp.route('/templates')
@@ -113,7 +113,15 @@ def recurring_series():
 @admin_required
 def templates():
     """Block templates management page."""
-    return render_template('admin.html')
+    return render_template('admin/templates.html')
+
+
+@bp.route('/audit-log')
+@login_required
+@admin_required
+def audit_log():
+    """Audit log viewing page."""
+    return render_template('admin/audit_log.html')
 
 
 @bp.route('/reasons')

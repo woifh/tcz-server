@@ -36,53 +36,204 @@
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-green-700 text-white p-4">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-bold flex items-center gap-2">
-                <span class="material-icons">sports_tennis</span>
-                Tennisclub Zellerndorf
-            </h1>
-            <div class="flex gap-4 items-center">
-                {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('dashboard.dashboard') }}" class="hover:underline flex items-center gap-1">
-                        <span class="material-icons text-sm">dashboard</span>
-                        Übersicht
-                    </a>
-                    <a href="{{ url_for('reservations.list_reservations') }}" class="hover:underline flex items-center gap-1">
-                        <span class="material-icons text-sm">event</span>
-                        Meine Buchungen
-                    </a>
-                    <a href="{{ url_for('members.favourites_page') }}" class="hover:underline flex items-center gap-1">
-                        <span class="material-icons text-sm">favorite</span>
-                        Favoriten
-                    </a>
-                    {% if current_user.is_admin() %}
-                    <a href="{{ url_for('admin.index') }}" class="hover:underline flex items-center gap-1">
-                        <span class="material-icons text-sm">admin_panel_settings</span>
-                        Admin-Panel
-                    </a>
-                    <a href="{{ url_for('members.list_members') }}" class="hover:underline flex items-center gap-1">
-                        <span class="material-icons text-sm">people</span>
-                        Mitglieder
-                    </a>
+<body class="bg-gray-100" x-data="{ mobileMenuOpen: false }">
+    <nav class="bg-green-700 text-white p-4" id="main-navigation">
+        <div class="container mx-auto">
+            <!-- Desktop/Tablet Navigation -->
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <span class="material-icons">sports_tennis</span>
+                    <span class="hidden sm:inline">Tennisclub Zellerndorf</span>
+                    <span class="sm:hidden">TC Zellerndorf</span>
+                </h1>
+
+                <!-- Desktop Menu (hidden on mobile) -->
+                <div class="hidden lg:flex gap-4 items-center">
+                    {% if current_user.is_authenticated %}
+                        <!-- Dashboard Link -->
+                        <a href="{{ url_for('dashboard.dashboard') }}" class="hover:bg-green-600 px-3 py-2 rounded transition-colors flex items-center gap-1">
+                            <span class="material-icons text-sm">home</span>
+                            <span>Dashboard</span>
+                        </a>
+
+                        <!-- My Account Dropdown -->
+                        <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                            <button class="hover:bg-green-600 px-3 py-2 rounded transition-colors flex items-center gap-1" aria-haspopup="true" :aria-expanded="open">
+                                <span class="material-icons text-sm">account_circle</span>
+                                <span>Mein Konto</span>
+                                <span class="material-icons text-sm" :class="{ 'rotate-180': open }" style="transition: transform 0.2s">expand_more</span>
+                            </button>
+                            <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50">
+                                <div class="py-1">
+                                    <a href="{{ url_for('reservations.list_reservations') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">event</span>
+                                        <span>Meine Reservierungen</span>
+                                    </a>
+                                    <a href="{{ url_for('members.favourites_page') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">star</span>
+                                        <span>Favoriten</span>
+                                    </a>
+                                    <hr class="my-1">
+                                    <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">logout</span>
+                                        <span>Abmelden</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Panel Dropdown (only for admins) -->
+                        {% if current_user.is_admin() %}
+                        <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                            <button class="hover:bg-green-600 px-3 py-2 rounded transition-colors flex items-center gap-1" aria-haspopup="true" :aria-expanded="open">
+                                <span class="material-icons text-sm">admin_panel_settings</span>
+                                <span>Admin</span>
+                                <span class="material-icons text-sm" :class="{ 'rotate-180': open }" style="transition: transform 0.2s">expand_more</span>
+                            </button>
+                            <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-50">
+                                <div class="py-1">
+                                    <a href="{{ url_for('admin.overview') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">dashboard</span>
+                                        <span>Übersicht</span>
+                                    </a>
+                                    <a href="{{ url_for('admin.court_blocking') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">block</span>
+                                        <span>Platz-Sperrungen</span>
+                                    </a>
+                                    <a href="{{ url_for('admin.recurring_series') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">repeat</span>
+                                        <span>Wiederkehrende Serien</span>
+                                    </a>
+                                    <a href="{{ url_for('admin.templates') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">content_copy</span>
+                                        <span>Vorlagen</span>
+                                    </a>
+                                    <a href="{{ url_for('admin.reasons') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">list_alt</span>
+                                        <span>Sperrungsgründe</span>
+                                    </a>
+                                    <a href="{{ url_for('admin.calendar') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">calendar_month</span>
+                                        <span>Kalenderansicht</span>
+                                    </a>
+                                    <a href="{{ url_for('members.list_members') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">people</span>
+                                        <span>Mitglieder</span>
+                                    </a>
+                                    <a href="{{ url_for('admin.audit_log') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <span class="material-icons text-sm">history</span>
+                                        <span>Audit-Protokoll</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ url_for('dashboard.anonymous_overview') }}" class="hover:bg-green-600 px-3 py-2 rounded transition-colors flex items-center gap-1">
+                            <span class="material-icons text-sm">visibility</span>
+                            <span>Platzübersicht</span>
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="hover:bg-green-600 px-3 py-2 rounded transition-colors flex items-center gap-1">
+                            <span class="material-icons text-sm">login</span>
+                            <span>Anmelden</span>
+                        </a>
                     {% endif %}
-                    <span class="flex items-center gap-1">
-                        <span class="material-icons text-sm">account_circle</span>
-                        {{ current_user.name }}
-                    </span>
-                    <a href="{{ url_for('auth.logout') }}" class="hover:underline flex items-center gap-1">
-                        <span class="material-icons text-sm">logout</span>
-                        Abmelden
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button class="lg:hidden text-white" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Menü öffnen">
+                    <span class="material-icons">menu</span>
+                </button>
+            </div>
+
+            <!-- Mobile Menu (shown when hamburger is clicked) -->
+            <div x-show="mobileMenuOpen" x-cloak @click.away="mobileMenuOpen = false" class="lg:hidden mt-4 pb-4">
+                {% if current_user.is_authenticated %}
+                    <!-- Dashboard -->
+                    <a href="{{ url_for('dashboard.dashboard') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded">
+                        <span class="material-icons text-sm">home</span>
+                        <span>Dashboard</span>
                     </a>
+
+                    <!-- My Account Section -->
+                    <div x-data="{ accountOpen: false }">
+                        <button @click="accountOpen = !accountOpen" class="w-full flex items-center justify-between px-3 py-2 hover:bg-green-600 rounded">
+                            <div class="flex items-center gap-2">
+                                <span class="material-icons text-sm">account_circle</span>
+                                <span>Mein Konto</span>
+                            </div>
+                            <span class="material-icons text-sm" :class="{ 'rotate-180': accountOpen }" style="transition: transform 0.2s">expand_more</span>
+                        </button>
+                        <div x-show="accountOpen" x-cloak class="pl-6 mt-1 space-y-1">
+                            <a href="{{ url_for('reservations.list_reservations') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">event</span>
+                                <span>Meine Reservierungen</span>
+                            </a>
+                            <a href="{{ url_for('members.favourites_page') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">star</span>
+                                <span>Favoriten</span>
+                            </a>
+                            <a href="{{ url_for('auth.logout') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">logout</span>
+                                <span>Abmelden</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Admin Panel Section (only for admins) -->
+                    {% if current_user.is_admin() %}
+                    <div x-data="{ adminOpen: false }" class="mt-2">
+                        <button @click="adminOpen = !adminOpen" class="w-full flex items-center justify-between px-3 py-2 hover:bg-green-600 rounded">
+                            <div class="flex items-center gap-2">
+                                <span class="material-icons text-sm">admin_panel_settings</span>
+                                <span>Admin</span>
+                            </div>
+                            <span class="material-icons text-sm" :class="{ 'rotate-180': adminOpen }" style="transition: transform 0.2s">expand_more</span>
+                        </button>
+                        <div x-show="adminOpen" x-cloak class="pl-6 mt-1 space-y-1">
+                            <a href="{{ url_for('admin.overview') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">dashboard</span>
+                                <span>Übersicht</span>
+                            </a>
+                            <a href="{{ url_for('admin.court_blocking') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">block</span>
+                                <span>Platz-Sperrungen</span>
+                            </a>
+                            <a href="{{ url_for('admin.recurring_series') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">repeat</span>
+                                <span>Wiederkehrende Serien</span>
+                            </a>
+                            <a href="{{ url_for('admin.templates') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">content_copy</span>
+                                <span>Vorlagen</span>
+                            </a>
+                            <a href="{{ url_for('admin.reasons') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">list_alt</span>
+                                <span>Sperrungsgründe</span>
+                            </a>
+                            <a href="{{ url_for('admin.calendar') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">calendar_month</span>
+                                <span>Kalenderansicht</span>
+                            </a>
+                            <a href="{{ url_for('members.list_members') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">people</span>
+                                <span>Mitglieder</span>
+                            </a>
+                            <a href="{{ url_for('admin.audit_log') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded text-sm">
+                                <span class="material-icons text-sm">history</span>
+                                <span>Audit-Protokoll</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
                 {% else %}
-                    <a href="{{ url_for('dashboard.anonymous_overview') }}" class="hover:underline flex items-center gap-1">
+                    <a href="{{ url_for('dashboard.anonymous_overview') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded">
                         <span class="material-icons text-sm">visibility</span>
-                        Platzübersicht
+                        <span>Platzübersicht</span>
                     </a>
-                    <a href="{{ url_for('auth.login') }}" class="hover:underline flex items-center gap-1">
+                    <a href="{{ url_for('auth.login') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-green-600 rounded">
                         <span class="material-icons text-sm">login</span>
-                        Anmelden
+                        <span>Anmelden</span>
                     </a>
                 {% endif %}
             </div>
