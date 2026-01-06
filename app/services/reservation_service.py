@@ -108,43 +108,63 @@ class ReservationService:
     def is_short_notice_booking(date, start_time, current_time=None):
         """
         Check if a booking would be classified as short notice.
-        
+
+        A booking is short notice if:
+        - Current time is within the booking slot (ongoing), OR
+        - Current time is within 15 minutes before the slot start
+
         Args:
             date: Reservation date (assumed to be in Europe/Berlin timezone)
             start_time: Reservation start time (assumed to be in Europe/Berlin timezone)
             current_time: Current datetime (defaults to Europe/Berlin now)
-            
+
         Returns:
-            bool: True if booking is within 15 minutes of start time
+            bool: True if booking is short notice (ongoing or within 15 minutes of start)
         """
         try:
             # Ensure consistent Europe/Berlin timezone handling
             berlin_time = ensure_berlin_timezone(current_time)
             log_timezone_operation("is_short_notice_booking", current_time, berlin_time)
-            
+
             # Ensure we're comparing like with like - both should be naive datetimes
             # representing the same timezone (Europe/Berlin)
-            reservation_datetime = datetime.combine(date, start_time)
-            
-            time_until_start = reservation_datetime - berlin_time
-            
+            reservation_start = datetime.combine(date, start_time)
+
+            # Calculate end time (slots are 1 hour long)
+            end_hour = start_time.hour + 1
+            end_time = time(end_hour if end_hour < 24 else 0, start_time.minute)
+            reservation_end = datetime.combine(date, end_time)
+            # Handle midnight crossing
+            if end_hour >= 24:
+                reservation_end = reservation_end + timedelta(days=1)
+
+            time_until_start = reservation_start - berlin_time
+            time_until_end = reservation_end - berlin_time
+
             # Debug logging
             logger.debug(f"Short Notice Check:")
-            logger.debug(f"  Reservation datetime: {reservation_datetime}")
+            logger.debug(f"  Reservation start: {reservation_start}")
+            logger.debug(f"  Reservation end: {reservation_end}")
             logger.debug(f"  Current time (Berlin): {berlin_time}")
             logger.debug(f"  Time until start: {time_until_start}")
-            
-            # If reservation is in the past, it's not short notice (it's invalid)
-            if time_until_start < timedelta(0):
-                logger.debug(f"  Reservation is in the past, not short notice")
+            logger.debug(f"  Time until end: {time_until_end}")
+
+            # If the slot has already ended, it's not short notice (it's invalid/past)
+            if time_until_end < timedelta(0):
+                logger.debug(f"  Slot has ended, not short notice")
                 return False
-            
-            # If reservation starts in 15 minutes or less, it's short notice
+
+            # If we're currently within the slot (ongoing), it's short notice
+            if time_until_start < timedelta(0) and time_until_end > timedelta(0):
+                logger.debug(f"  Currently within the slot (ongoing), IS short notice")
+                return True
+
+            # If slot starts within 15 minutes or less, it's short notice
             is_short_notice = time_until_start <= timedelta(minutes=15)
-            logger.debug(f"  Is short notice: {is_short_notice}")
-            
+            logger.debug(f"  Within 15 minutes of start: {is_short_notice}")
+
             return is_short_notice
-            
+
         except Exception as e:
             logger.error(f"Error in is_short_notice_booking: {e}")
             # Fallback: assume not short notice to be safe
