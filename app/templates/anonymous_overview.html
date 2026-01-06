@@ -28,28 +28,27 @@
     </div>
 
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold flex items-center gap-2">
+        <h2 class="hidden lg:flex text-2xl font-bold items-center gap-2">
             <span class="material-icons">calendar_today</span>
             Platzübersicht
         </h2>
-        <div class="flex items-center gap-3">
-            <label for="date-selector" class="font-semibold">Datum:</label>
+        <div class="flex items-center gap-3 ml-auto">
             <button @click="changeDate(-1)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded transition-colors flex items-center" title="Vorheriger Tag">
                 <span class="material-icons">chevron_left</span>
             </button>
-            <input type="date" id="date-selector" x-model="selectedDate" @change="loadAvailability()" class="border border-gray-300 rounded px-3 py-2" value="{{ today }}">
+            <input type="date" id="date-selector" x-model="selectedDate" @change="loadAvailability()" class="border border-gray-300 rounded px-3 py-2 w-full lg:w-auto" style="max-width: 300px;" value="{{ today }}">
             <button @click="changeDate(1)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded transition-colors flex items-center" title="Nächster Tag">
                 <span class="material-icons">chevron_right</span>
             </button>
             <button @click="goToToday()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded ml-2 transition-colors flex items-center gap-2" title="Zu heute springen">
                 <span class="material-icons">today</span>
-                Heute
+                <span class="hidden lg:inline">Heute</span>
             </button>
         </div>
     </div>
 
     <!-- Legend -->
-    <div class="flex gap-6 mb-4 text-sm">
+    <div class="hidden lg:flex gap-6 mb-4 text-sm">
         <div class="flex items-center gap-2">
             <div class="w-4 h-4 bg-green-500 rounded"></div>
             <span>Verfügbar</span>
