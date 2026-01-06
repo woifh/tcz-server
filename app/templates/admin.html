@@ -13,26 +13,10 @@
     <!-- Overview Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div class="border border-gray-200 rounded-lg p-6">
-            <h3 class="text-xl font-semibold mb-4">Einzelne Sperrungen</h3>
+            <h3 class="text-xl font-semibold mb-4">Platz-Sperrungen</h3>
             <p class="text-gray-600 mb-4">Einzelne Plätze für bestimmte Zeiten sperren.</p>
             <a href="{{ url_for('admin.court_blocking') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
                 Sperrungen verwalten
-            </a>
-        </div>
-
-        <div class="border border-gray-200 rounded-lg p-6">
-            <h3 class="text-xl font-semibold mb-4">Wiederkehrende Serien</h3>
-            <p class="text-gray-600 mb-4">Regelmäßige Sperrungen für Kurse oder Events.</p>
-            <a href="{{ url_for('admin.recurring_series') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                Serien verwalten
-            </a>
-        </div>
-
-        <div class="border border-gray-200 rounded-lg p-6">
-            <h3 class="text-xl font-semibold mb-4">Vorlagen</h3>
-            <p class="text-gray-600 mb-4">Wiederverwendbare Sperrungsvorlagen.</p>
-            <a href="{{ url_for('admin.templates') }}" class="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
-                Vorlagen verwalten
             </a>
         </div>
 

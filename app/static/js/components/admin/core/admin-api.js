@@ -3,67 +3,6 @@
  * All API calls for admin panel functionality
  */
 
-// Block Templates API
-export const blockTemplatesAPI = {
-    async load() {
-        try {
-            const response = await fetch('/admin/block-templates');
-            const data = await response.json();
-            
-            if (response.ok) {
-                return { success: true, templates: data.templates };
-            } else {
-                return { success: false, error: data.error || 'Fehler beim Laden der Vorlagen' };
-            }
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Laden der Vorlagen' };
-        }
-    },
-
-    async create(templateData) {
-        try {
-            const response = await fetch('/admin/block-templates', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(templateData)
-            });
-            
-            const data = await response.json();
-            return { success: response.ok, data, error: response.ok ? null : data.error };
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Erstellen der Vorlage' };
-        }
-    },
-
-    async delete(templateId) {
-        try {
-            const response = await fetch(`/admin/block-templates/${templateId}`, {
-                method: 'DELETE'
-            });
-            
-            const data = await response.json();
-            return { success: response.ok, data, error: response.ok ? null : data.error };
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Löschen der Vorlage' };
-        }
-    },
-
-    async apply(templateId, applyData) {
-        try {
-            const response = await fetch(`/admin/block-templates/${templateId}/apply`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(applyData)
-            });
-            
-            const data = await response.json();
-            return { success: response.ok, data, error: response.ok ? null : data.error };
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Anwenden der Vorlage' };
-        }
-    }
-};
-
 // Block Reasons API
 export const blockReasonsAPI = {
     async load() {

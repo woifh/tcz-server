@@ -5,18 +5,12 @@
 
 // Core imports
 import { stateManager } from './core/admin-state.js';
-import { blockReasonsAPI, blockTemplatesAPI, blocksAPI } from './core/admin-api.js';
+import { blockReasonsAPI, blocksAPI } from './core/admin-api.js';
 import { showToast, dateUtils } from './core/admin-utils.js';
 
 // Form imports
 import { blockForm } from './forms/block-form.js';
-import { seriesForm, seriesManager } from './forms/series-form.js';
-import { templateForm } from './forms/template-form.js';
 import { reasonForm } from './forms/reason-form.js';
-
-// Bulk operations imports
-import { bulkDeleteManager } from './bulk-operations/bulk-delete.js';
-import { bulkEditManager } from './bulk-operations/bulk-edit.js';
 
 // Filtering imports
 import { blockFilters } from './filtering/block-filters.js';
@@ -76,12 +70,6 @@ export class AdminPanel {
             console.error('Failed to load block reasons:', reasonsResult.error);
             showToast('Fehler beim Laden der Gründe', 'error');
         }
-
-        // Load block templates
-        const templatesResult = await blockTemplatesAPI.load();
-        if (templatesResult.success) {
-            stateManager.setBlockTemplates(templatesResult.templates);
-        }
     }
 
     initializeComponents() {
@@ -97,40 +85,11 @@ export class AdminPanel {
     }
 
     setupGlobalEventListeners() {
-        // Block selection checkboxes
-        document.addEventListener('change', (e) => {
-            if (e.target.matches('input[name="selected-blocks"]')) {
-                bulkDeleteManager.updateSelectedBlocks();
-                bulkDeleteManager.updateBulkActionButtons();
-            }
-        });
-
-        // Global keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            // Ctrl/Cmd + A to select all blocks
-            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                const selectAllCheckbox = document.getElementById('select-all-blocks');
-                if (selectAllCheckbox) {
-                    selectAllCheckbox.checked = true;
-                    selectAllCheckbox.dispatchEvent(new Event('change'));
-                }
-            }
-            
-            // Escape to clear selection
-            if (e.key === 'Escape') {
-                const selectAllCheckbox = document.getElementById('select-all-blocks');
-                if (selectAllCheckbox && selectAllCheckbox.checked) {
-                    selectAllCheckbox.checked = false;
-                    selectAllCheckbox.dispatchEvent(new Event('change'));
-                }
-            }
-        });
+        // Global event listeners can be added here if needed
     }
 
     initializeForms() {
         blockForm.initializeForm();
-        seriesForm.initializeForm();
     }
 
     async loadUpcomingBlocks() {
@@ -263,31 +222,49 @@ export class AdminPanel {
     // Global functions that need to be accessible from HTML
     setupGlobalFunctions() {
         // Make functions available globally for onclick handlers
-        window.deleteBatch = (batchId) => bulkDeleteManager.deleteBatch(batchId);
+        window.deleteBatch = (batchId) => this.deleteBatch(batchId);
         window.loadUpcomingBlocks = () => this.loadUpcomingBlocks();
         window.renderBlocksList = (blocks) => this.renderBlocksList(blocks);
-        
+
         // Form functions
         window.blockForm = blockForm;
-        window.seriesForm = seriesForm;
-        window.seriesManager = seriesManager;
-        window.templateForm = templateForm;
         window.reasonForm = reasonForm;
-        
-        // Bulk operation functions
-        window.bulkDeleteManager = bulkDeleteManager;
-        window.bulkEditManager = bulkEditManager;
-        
+
         // Filter functions
         window.blockFilters = blockFilters;
-        
+
         // Calendar functions
         window.calendarView = calendarView;
-        
+
         // Legacy function names for backward compatibility
         window.loadBlockReasons = () => reasonForm.loadReasons();
-        window.loadBlockTemplates = () => templateForm.loadTemplates();
-        window.loadSeriesList = () => seriesManager.loadSeriesList();
+    }
+
+    async deleteBatch(batchId) {
+        if (!confirm('Möchten Sie diese Sperrung wirklich löschen?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/blocks/batch/${batchId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Sperrung erfolgreich gelöscht', 'success');
+                await this.loadUpcomingBlocks();
+            } else {
+                showToast(result.error || 'Fehler beim Löschen', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting batch:', error);
+            showToast('Fehler beim Löschen der Sperrung', 'error');
+        }
     }
 }
 

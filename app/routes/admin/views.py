@@ -100,22 +100,6 @@ def calendar():
     return render_template('admin/calendar.html')
 
 
-@bp.route('/recurring-series')
-@login_required
-@admin_required
-def recurring_series():
-    """Recurring series management page."""
-    return render_template('admin/recurring_series.html')
-
-
-@bp.route('/templates')
-@login_required
-@admin_required
-def templates():
-    """Block templates management page."""
-    return render_template('admin/templates.html')
-
-
 @bp.route('/audit-log')
 @login_required
 @admin_required

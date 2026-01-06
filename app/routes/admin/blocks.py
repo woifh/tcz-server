@@ -99,25 +99,25 @@ def create_block():
     """Create a single block."""
     try:
         data = request.get_json() if request.is_json else request.form
-        
+
         court_id = int(data['court_id'])
         date_str = data['date']
         start_time_str = data['start_time']
         end_time_str = data['end_time']
         reason_id = int(data['reason_id'])
         details = data.get('details', '').strip() or None
-        
+
         # Parse date and times
         block_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         start_time = datetime.strptime(start_time_str, '%H:%M').time()
         end_time = datetime.strptime(end_time_str, '%H:%M').time()
-        
+
         # Validate that the date is not in the past
         from app.utils.timezone_utils import get_berlin_date_today
         today = get_berlin_date_today()
         if block_date < today:
             return jsonify({'error': 'Sperrungen können nicht für vergangene Tage erstellt werden'}), 400
-        
+
         # Create block
         block, error = BlockService.create_block(
             court_id=court_id,
@@ -128,16 +128,72 @@ def create_block():
             details=details,
             admin_id=current_user.id
         )
-        
+
         if error:
             return jsonify({'error': error}), 400
-        
+
         return jsonify({
             'message': 'Sperrung erfolgreich erstellt',
             'block_id': block.id,
             'batch_id': block.batch_id
         }), 201
-        
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/blocks/multi-court', methods=['POST'])
+@login_required
+@admin_required
+def create_multi_court_blocks():
+    """Create blocks for multiple courts simultaneously."""
+    try:
+        data = request.get_json() if request.is_json else request.form
+
+        court_ids = data.getlist('court_ids') if hasattr(data, 'getlist') else data.get('court_ids', [])
+        if isinstance(court_ids, str):
+            court_ids = [int(x) for x in court_ids.split(',')]
+        else:
+            court_ids = [int(x) for x in court_ids]
+
+        date_str = data['date']
+        start_time_str = data['start_time']
+        end_time_str = data['end_time']
+        reason_id = int(data['reason_id'])
+        details = data.get('details', '').strip() or None
+
+        # Parse date and times
+        block_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        start_time = datetime.strptime(start_time_str, '%H:%M').time()
+        end_time = datetime.strptime(end_time_str, '%H:%M').time()
+
+        # Validate that the date is not in the past
+        from app.utils.timezone_utils import get_berlin_date_today
+        today = get_berlin_date_today()
+        if block_date < today:
+            return jsonify({'error': 'Sperrungen können nicht für vergangene Tage erstellt werden'}), 400
+
+        # Create blocks
+        blocks, error = BlockService.create_multi_court_blocks(
+            court_ids=court_ids,
+            date=block_date,
+            start_time=start_time,
+            end_time=end_time,
+            reason_id=reason_id,
+            details=details,
+            admin_id=current_user.id
+        )
+
+        if error:
+            return jsonify({'error': error}), 400
+
+        return jsonify({
+            'message': f'{len(blocks)} Sperrungen erfolgreich erstellt',
+            'block_count': len(blocks),
+            'batch_id': blocks[0].batch_id if blocks else None
+        }), 201
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -197,7 +253,7 @@ def delete_block(id):
     """Delete a single block."""
     try:
         block = Block.query.get_or_404(id)
-        
+
         # Log the operation before deletion
         BlockService.log_block_operation(
             operation='delete',
@@ -212,12 +268,145 @@ def delete_block(id):
             },
             admin_id=current_user.id
         )
-        
+
         db.session.delete(block)
         db.session.commit()
-        
+
         return jsonify({'message': 'Sperrung erfolgreich gelöscht'}), 200
-        
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/blocks/batch/<batch_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def delete_batch(batch_id):
+    """Delete all blocks in a batch."""
+    try:
+        success, error = BlockService.delete_batch(batch_id, current_user.id)
+
+        if success:
+            return jsonify({'success': True, 'message': 'Batch erfolgreich gelöscht'}), 200
+        else:
+            return jsonify({'success': False, 'error': error}), 400
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@bp.route('/blocks/batch/<batch_id>', methods=['PUT'])
+@login_required
+@admin_required
+def update_batch(batch_id):
+    """Update all blocks in a batch, including court changes."""
+    try:
+        data = request.get_json() if request.is_json else request.form
+
+        # Parse new data
+        new_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        new_start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+        new_end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+        new_reason_id = int(data['reason_id'])
+        new_details = data.get('details', '').strip() or None
+
+        # Get new court IDs
+        new_court_ids = data.get('court_ids', [])
+        if isinstance(new_court_ids, str):
+            new_court_ids = [int(x) for x in new_court_ids.split(',')]
+        else:
+            new_court_ids = [int(x) for x in new_court_ids]
+
+        # Validate that the date is not in the past
+        from app.utils.timezone_utils import get_berlin_date_today
+        today = get_berlin_date_today()
+        if new_date < today:
+            return jsonify({'error': 'Sperrungen können nicht für vergangene Tage bearbeitet werden'}), 400
+
+        # Validate time range
+        if new_start_time >= new_end_time:
+            return jsonify({'error': 'Endzeit muss nach Startzeit liegen'}), 400
+
+        # Get all existing blocks in the batch
+        existing_blocks = Block.query.filter_by(batch_id=batch_id).all()
+
+        if not existing_blocks:
+            return jsonify({'error': 'Batch nicht gefunden'}), 404
+
+        # Get existing court IDs
+        existing_court_ids = [block.court_id for block in existing_blocks]
+
+        # Determine which courts to keep, delete, and add
+        courts_to_keep = set(existing_court_ids) & set(new_court_ids)
+        courts_to_delete = set(existing_court_ids) - set(new_court_ids)
+        courts_to_add = set(new_court_ids) - set(existing_court_ids)
+
+        # Delete blocks for courts that are no longer selected
+        for block in existing_blocks:
+            if block.court_id in courts_to_delete:
+                db.session.delete(block)
+
+        # Update blocks for courts that remain selected
+        for block in existing_blocks:
+            if block.court_id in courts_to_keep:
+                success, error = BlockService.update_single_instance(
+                    block_id=block.id,
+                    date=new_date,
+                    start_time=new_start_time,
+                    end_time=new_end_time,
+                    reason_id=new_reason_id,
+                    details=new_details,
+                    admin_id=current_user.id
+                )
+
+                if error:
+                    db.session.rollback()
+                    return jsonify({'error': f'Fehler beim Aktualisieren von Block {block.id}: {error}'}), 400
+
+        # Create new blocks for newly selected courts
+        for court_id in courts_to_add:
+            new_block = Block(
+                court_id=court_id,
+                date=new_date,
+                start_time=new_start_time,
+                end_time=new_end_time,
+                reason_id=new_reason_id,
+                details=new_details,
+                created_by_id=current_user.id,
+                batch_id=batch_id  # Use the same batch_id
+            )
+            db.session.add(new_block)
+            db.session.flush()
+
+            # Cancel conflicting reservations for new blocks
+            BlockService.cancel_conflicting_reservations(new_block)
+
+        # Commit all changes
+        db.session.commit()
+
+        # Log the operation
+        BlockService.log_block_operation(
+            operation='update',
+            block_data={
+                'batch_id': batch_id,
+                'new_court_ids': new_court_ids,
+                'existing_court_ids': existing_court_ids,
+                'courts_kept': list(courts_to_keep),
+                'courts_deleted': list(courts_to_delete),
+                'courts_added': list(courts_to_add),
+                'date': new_date.isoformat(),
+                'start_time': new_start_time.isoformat(),
+                'end_time': new_end_time.isoformat(),
+                'reason_id': new_reason_id,
+                'details': new_details
+            },
+            admin_id=current_user.id
+        )
+
+        total_blocks = len(courts_to_keep) + len(courts_to_add)
+        return jsonify({'message': f'{total_blocks} Sperrungen erfolgreich aktualisiert'}), 200
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

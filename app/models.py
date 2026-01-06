@@ -162,49 +162,10 @@ class BlockReason(db.Model):
     # Relationships
     created_by = db.relationship('Member', backref='block_reasons_created')
     blocks = db.relationship('Block', backref='reason_obj', lazy='dynamic')
-    templates = db.relationship('BlockTemplate', backref='reason_obj', lazy='dynamic')
     details_templates = db.relationship('DetailsTemplate', backref='reason_obj', lazy='dynamic')
     
     def __repr__(self):
         return f'<BlockReason {self.name}>'
-
-
-class BlockSeries(db.Model):
-    """BlockSeries model for recurring block patterns."""
-    
-    __tablename__ = 'block_series'
-    __table_args__ = (
-        db.Index('idx_block_series_dates', 'start_date', 'end_date'),
-        db.Index('idx_block_series_reason', 'reason_id'),
-    )
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
-    start_time = db.Column(db.Time, nullable=False)
-    end_time = db.Column(db.Time, nullable=False)
-    recurrence_pattern = db.Column(db.String(20), nullable=False)  # 'daily', 'weekly', 'monthly'
-    recurrence_days = db.Column(db.JSON, nullable=True)  # JSON array for weekly pattern
-    reason_id = db.Column(db.Integer, db.ForeignKey('block_reason.id'), nullable=False)
-    details = db.Column(db.String(255), nullable=True)
-    created_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
-    # Relationships
-    blocks = db.relationship('Block', backref='series', lazy='dynamic')
-    reason = db.relationship('BlockReason', backref='series_list')
-    created_by = db.relationship('Member', backref='block_series_created')
-    
-    def __init__(self, **kwargs):
-        """Initialize block series with validation."""
-        super(BlockSeries, self).__init__(**kwargs)
-        valid_patterns = ['daily', 'weekly', 'monthly']
-        if self.recurrence_pattern and self.recurrence_pattern not in valid_patterns:
-            raise ValueError(f"Recurrence pattern must be one of: {', '.join(valid_patterns)}")
-    
-    def __repr__(self):
-        return f'<BlockSeries {self.name} ({self.recurrence_pattern})>'
 
 
 class DetailsTemplate(db.Model):
@@ -228,42 +189,6 @@ class DetailsTemplate(db.Model):
         return f'<DetailsTemplate {self.template_name}>'
 
 
-class BlockTemplate(db.Model):
-    """BlockTemplate model for reusable block configurations."""
-    
-    __tablename__ = 'block_template'
-    __table_args__ = (
-        db.Index('idx_block_template_name', 'name'),
-        db.Index('idx_block_template_reason', 'reason_id'),
-    )
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
-    court_selection = db.Column(db.JSON, nullable=False)  # JSON array of court IDs
-    start_time = db.Column(db.Time, nullable=False)
-    end_time = db.Column(db.Time, nullable=False)
-    reason_id = db.Column(db.Integer, db.ForeignKey('block_reason.id'), nullable=False)
-    details = db.Column(db.String(255), nullable=True)
-    recurrence_pattern = db.Column(db.String(20), nullable=True)  # 'daily', 'weekly', 'monthly', or null
-    recurrence_days = db.Column(db.JSON, nullable=True)  # JSON array for weekly pattern
-    created_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
-    # Relationships
-    created_by = db.relationship('Member', backref='block_templates_created')
-    
-    def __init__(self, **kwargs):
-        """Initialize block template with validation."""
-        super(BlockTemplate, self).__init__(**kwargs)
-        if self.recurrence_pattern:
-            valid_patterns = ['daily', 'weekly', 'monthly']
-            if self.recurrence_pattern not in valid_patterns:
-                raise ValueError(f"Recurrence pattern must be one of: {', '.join(valid_patterns)}")
-    
-    def __repr__(self):
-        return f'<BlockTemplate {self.name}>'
-
-
 class BlockAuditLog(db.Model):
     """BlockAuditLog model for tracking block operations."""
     
@@ -277,7 +202,6 @@ class BlockAuditLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     operation = db.Column(db.String(20), nullable=False)  # 'create', 'update', 'delete', 'bulk_delete'
     block_id = db.Column(db.Integer, nullable=True)  # for single block operations
-    series_id = db.Column(db.Integer, nullable=True)  # for series operations
     operation_data = db.Column(db.JSON, nullable=True)  # JSON data about the operation
     admin_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -303,7 +227,6 @@ class Block(db.Model):
     __table_args__ = (
         db.Index('idx_block_date', 'date'),
         db.Index('idx_block_court_date', 'court_id', 'date'),
-        db.Index('idx_block_series', 'series_id'),
         db.Index('idx_block_reason', 'reason_id'),
         db.Index('idx_block_batch', 'batch_id'),
     )
@@ -315,7 +238,6 @@ class Block(db.Model):
     end_time = db.Column(db.Time, nullable=False)
     reason_id = db.Column(db.Integer, db.ForeignKey('block_reason.id'), nullable=False)
     details = db.Column(db.String(255), nullable=True)
-    series_id = db.Column(db.Integer, db.ForeignKey('block_series.id', ondelete='CASCADE'), nullable=True)
     batch_id = db.Column(db.String(36), nullable=True, index=True)  # UUID for grouping multi-court blocks
     is_modified = db.Column(db.Boolean, nullable=False, default=False)
     created_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
