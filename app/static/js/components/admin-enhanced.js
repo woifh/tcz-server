@@ -353,15 +353,15 @@ async function handleMultiCourtSubmit(e) {
         let response;
         
         if (isEditMode) {
-            // Update existing block group
-            response = await fetch(`/admin/blocks/batch/${blockId}`, {
+            // Update existing block batch
+            response = await fetch(`/admin/blocks/${blockId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(blockData)
             });
         } else {
-            // Create new block
-            response = await fetch('/admin/blocks/multi-court', {
+            // Create new block(s)
+            response = await fetch('/admin/blocks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(blockData)
@@ -1048,12 +1048,12 @@ function closeBatchDeleteConfirmation() {
 // Confirm and execute batch delete
 async function confirmBatchDelete(batchId) {
     closeBatchDeleteConfirmation();
-    
+
     try {
-        const response = await fetch(`/admin/blocks/batch/${batchId}`, {
+        const response = await fetch(`/admin/blocks/${batchId}`, {
             method: 'DELETE'
         });
-        
+
         const data = await response.json();
         
         if (response.ok) {
@@ -1197,7 +1197,7 @@ async function confirmDelete(blockId) {
     closeDeleteConfirmation();
     
     try {
-        const response = await fetch(`/admin/blocks/batch/${blockId}`, {
+        const response = await fetch(`/admin/blocks/${blockId}`, {
             method: 'DELETE'
         });
 

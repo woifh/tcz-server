@@ -9,7 +9,7 @@ from flask import request, jsonify
 from flask_login import login_required, current_user
 
 from app import db
-from app.decorators import admin_required, teamster_or_admin_required, block_owner_or_admin_required
+from app.decorators import admin_required, teamster_or_admin_required
 from app.models import Block, Court, BlockReason, Reservation
 from app.services.block_service import BlockService
 from app.services.reservation_service import ReservationService
@@ -95,67 +95,24 @@ def get_blocks():
 @bp.route('/blocks', methods=['POST'])
 @login_required
 @teamster_or_admin_required
-def create_block():
-    """Create a single block."""
+def create_blocks():
+    """Create block(s) in a batch - handles single or multiple courts."""
     try:
         data = request.get_json() if request.is_json else request.form
 
-        court_id = int(data['court_id'])
-        date_str = data['date']
-        start_time_str = data['start_time']
-        end_time_str = data['end_time']
-        reason_id = int(data['reason_id'])
-        details = data.get('details', '').strip() or None
-
-        # Parse date and times
-        block_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        start_time = datetime.strptime(start_time_str, '%H:%M').time()
-        end_time = datetime.strptime(end_time_str, '%H:%M').time()
-
-        # Validate that the date is not in the past
-        from app.utils.timezone_utils import get_berlin_date_today
-        today = get_berlin_date_today()
-        if block_date < today:
-            return jsonify({'error': 'Sperrungen können nicht für vergangene Tage erstellt werden'}), 400
-
-        # Create block
-        block, error = BlockService.create_block(
-            court_id=court_id,
-            date=block_date,
-            start_time=start_time,
-            end_time=end_time,
-            reason_id=reason_id,
-            details=details,
-            admin_id=current_user.id
-        )
-
-        if error:
-            return jsonify({'error': error}), 400
-
-        return jsonify({
-            'message': 'Sperrung erfolgreich erstellt',
-            'block_id': block.id,
-            'batch_id': block.batch_id
-        }), 201
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/blocks/multi-court', methods=['POST'])
-@login_required
-@teamster_or_admin_required
-def create_multi_court_blocks():
-    """Create blocks for multiple courts simultaneously."""
-    try:
-        data = request.get_json() if request.is_json else request.form
-
-        court_ids = data.getlist('court_ids') if hasattr(data, 'getlist') else data.get('court_ids', [])
-        if isinstance(court_ids, str):
-            court_ids = [int(x) for x in court_ids.split(',')]
+        # Get court_ids (supports both single court_id and multiple court_ids)
+        court_ids = None
+        if 'court_ids' in data:
+            court_ids = data.getlist('court_ids') if hasattr(data, 'getlist') else data.get('court_ids', [])
+            if isinstance(court_ids, str):
+                court_ids = [int(x) for x in court_ids.split(',')]
+            else:
+                court_ids = [int(x) for x in court_ids]
+        elif 'court_id' in data:
+            # Single court - convert to list for unified handling
+            court_ids = [int(data['court_id'])]
         else:
-            court_ids = [int(x) for x in court_ids]
+            return jsonify({'error': 'court_id oder court_ids erforderlich'}), 400
 
         date_str = data['date']
         start_time_str = data['start_time']
@@ -174,7 +131,7 @@ def create_multi_court_blocks():
         if block_date < today:
             return jsonify({'error': 'Sperrungen können nicht für vergangene Tage erstellt werden'}), 400
 
-        # Create blocks
+        # Always use multi-court approach (works for single court too)
         blocks, error = BlockService.create_multi_court_blocks(
             court_ids=court_ids,
             date=block_date,
@@ -189,7 +146,7 @@ def create_multi_court_blocks():
             return jsonify({'error': error}), 400
 
         return jsonify({
-            'message': f'{len(blocks)} Sperrungen erfolgreich erstellt',
+            'message': f'{len(blocks)} Sperrung{"en" if len(blocks) > 1 else ""} erfolgreich erstellt',
             'block_count': len(blocks),
             'batch_id': blocks[0].batch_id if blocks else None
         }), 201
@@ -199,115 +156,7 @@ def create_multi_court_blocks():
         return jsonify({'error': str(e)}), 500
 
 
-@bp.route('/blocks/<int:id>', methods=['PUT'])
-@login_required
-@block_owner_or_admin_required
-def update_block(id):
-    """Update a single block."""
-    try:
-        block = Block.query.get_or_404(id)
-        data = request.get_json() if request.is_json else request.form
-        
-        # Parse new data
-        new_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-        new_start_time = datetime.strptime(data['start_time'], '%H:%M').time()
-        new_end_time = datetime.strptime(data['end_time'], '%H:%M').time()
-        new_reason_id = int(data['reason_id'])
-        new_details = data.get('details', '').strip() or None
-        
-        # Validate that the date is not in the past
-        from app.utils.timezone_utils import get_berlin_date_today
-        today = get_berlin_date_today()
-        if new_date < today:
-            return jsonify({'error': 'Sperrungen können nicht für vergangene Tage bearbeitet werden'}), 400
-        
-        # Validate time range
-        if new_start_time >= new_end_time:
-            return jsonify({'error': 'Endzeit muss nach Startzeit liegen'}), 400
-        
-        # Update block
-        success, error = BlockService.update_single_instance(
-            block_id=id,
-            date=new_date,
-            start_time=new_start_time,
-            end_time=new_end_time,
-            reason_id=new_reason_id,
-            details=new_details,
-            admin_id=current_user.id
-        )
-        
-        if error:
-            return jsonify({'error': error}), 400
-        
-        return jsonify({'message': 'Sperrung erfolgreich aktualisiert'}), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/blocks/<int:id>', methods=['DELETE'])
-@login_required
-@block_owner_or_admin_required
-def delete_block(id):
-    """Delete a single block."""
-    try:
-        block = Block.query.get_or_404(id)
-
-        # Log the operation before deletion
-        BlockService.log_block_operation(
-            operation='delete',
-            block_data={
-                'block_id': block.id,
-                'court_id': block.court_id,
-                'date': block.date.isoformat(),
-                'start_time': block.start_time.isoformat(),
-                'end_time': block.end_time.isoformat(),
-                'reason_id': block.reason_id,
-                'details': block.details
-            },
-            admin_id=current_user.id
-        )
-
-        db.session.delete(block)
-        db.session.commit()
-
-        return jsonify({'message': 'Sperrung erfolgreich gelöscht'}), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/blocks/batch/<batch_id>', methods=['DELETE'])
-@login_required
-@teamster_or_admin_required
-def delete_batch(batch_id):
-    """Delete all blocks in a batch."""
-    try:
-        # Get all blocks in the batch
-        blocks = Block.query.filter_by(batch_id=batch_id).all()
-
-        if not blocks:
-            return jsonify({'success': False, 'error': 'Batch nicht gefunden'}), 404
-
-        # Teamsters can only delete their own batches
-        if current_user.is_teamster():
-            if not all(block.created_by_id == current_user.id for block in blocks):
-                return jsonify({'error': 'Sie können nur Ihre eigenen Sperrungen löschen'}), 403
-
-        success, error = BlockService.delete_batch(batch_id, current_user.id)
-
-        if success:
-            return jsonify({'success': True, 'message': 'Batch erfolgreich gelöscht'}), 200
-        else:
-            return jsonify({'success': False, 'error': error}), 400
-
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@bp.route('/blocks/batch/<batch_id>', methods=['PUT'])
+@bp.route('/blocks/<batch_id>', methods=['PUT'])
 @login_required
 @teamster_or_admin_required
 def update_batch(batch_id):
@@ -428,35 +277,82 @@ def update_batch(batch_id):
         return jsonify({'error': str(e)}), 500
 
 
-@bp.route('/blocks/<int:id>', methods=['GET'])
+@bp.route('/blocks/<batch_id>', methods=['DELETE'])
 @login_required
-@admin_required
-def get_block(id):
-    """Get a single block."""
+@teamster_or_admin_required
+def delete_batch(batch_id):
+    """Delete all blocks in a batch."""
     try:
-        block = Block.query.get_or_404(id)
-        
-        # Get court and reason information
-        court = Court.query.get(block.court_id)
-        reason = BlockReason.query.get(block.reason_id)
-        
-        block_data = {
-            'id': block.id,
-            'batch_id': block.batch_id,
-            'court_id': block.court_id,
-            'court_number': court.number if court else block.court_id,
-            'date': block.date.isoformat(),
-            'start_time': block.start_time.strftime('%H:%M'),
-            'end_time': block.end_time.strftime('%H:%M'),
-            'reason_id': block.reason_id,
-            'reason_name': reason.name if reason else 'Unbekannt',
-            'details': block.details,
-            'created_at': block.created_at.isoformat() if block.created_at else None,
-            'created_by_id': block.created_by_id
-        }
-        
-        return jsonify({'block': block_data}), 200
-        
+        # Get all blocks in the batch
+        blocks = Block.query.filter_by(batch_id=batch_id).all()
+
+        if not blocks:
+            return jsonify({'success': False, 'error': 'Batch nicht gefunden'}), 404
+
+        # Teamsters can only delete their own batches
+        if current_user.is_teamster():
+            if not all(block.created_by_id == current_user.id for block in blocks):
+                return jsonify({'error': 'Sie können nur Ihre eigenen Sperrungen löschen'}), 403
+
+        success, error = BlockService.delete_batch(batch_id, current_user.id)
+
+        if success:
+            return jsonify({'success': True, 'message': 'Batch erfolgreich gelöscht'}), 200
+        else:
+            return jsonify({'success': False, 'error': error}), 400
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@bp.route('/blocks/<batch_id>', methods=['GET'])
+@login_required
+@teamster_or_admin_required
+def get_batch(batch_id):
+    """Get all blocks in a batch."""
+    try:
+        # Get all blocks in the batch
+        blocks = Block.query.filter_by(batch_id=batch_id).all()
+
+        if not blocks:
+            return jsonify({'error': 'Batch nicht gefunden'}), 404
+
+        # Format all blocks in the batch
+        blocks_data = []
+        for block in blocks:
+            court = Court.query.get(block.court_id)
+            reason = BlockReason.query.get(block.reason_id)
+
+            block_data = {
+                'id': block.id,
+                'batch_id': block.batch_id,
+                'court_id': block.court_id,
+                'court_number': court.number if court else block.court_id,
+                'date': block.date.isoformat(),
+                'start_time': block.start_time.strftime('%H:%M'),
+                'end_time': block.end_time.strftime('%H:%M'),
+                'reason_id': block.reason_id,
+                'reason_name': reason.name if reason else 'Unbekannt',
+                'details': block.details,
+                'created_at': block.created_at.isoformat() if block.created_at else None,
+                'created_by_id': block.created_by_id
+            }
+            blocks_data.append(block_data)
+
+        # Return batch info with first block's common data and all court_ids
+        first_block = blocks[0]
+        return jsonify({
+            'batch_id': batch_id,
+            'date': first_block.date.isoformat(),
+            'start_time': first_block.start_time.strftime('%H:%M'),
+            'end_time': first_block.end_time.strftime('%H:%M'),
+            'reason_id': first_block.reason_id,
+            'reason_name': BlockReason.query.get(first_block.reason_id).name if first_block.reason_id else 'Unbekannt',
+            'details': first_block.details,
+            'court_ids': [b['court_id'] for b in blocks_data],
+            'blocks': blocks_data
+        }), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

@@ -82,29 +82,14 @@ export const blocksAPI = {
         }
     },
 
-    async loadSingle(blockId) {
+    async create(blockData) {
         try {
-            const response = await fetch(`/admin/blocks/${blockId}`);
-            const data = await response.json();
-            
-            if (response.ok) {
-                return { success: true, block: data.block };
-            } else {
-                return { success: false, error: data.error || 'Fehler beim Laden der Sperrung' };
-            }
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Laden der Sperrung' };
-        }
-    },
-
-    async createMultiCourt(blockData) {
-        try {
-            const response = await fetch('/admin/blocks/multi-court', {
+            const response = await fetch('/admin/blocks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(blockData)
             });
-            
+
             const data = await response.json();
             return { success: response.ok, data, error: response.ok ? null : data.error };
         } catch (error) {
@@ -112,14 +97,14 @@ export const blocksAPI = {
         }
     },
 
-    async updateBatch(batchId, blockData) {
+    async update(batchId, blockData) {
         try {
-            const response = await fetch(`/admin/blocks/batch/${batchId}`, {
+            const response = await fetch(`/admin/blocks/${batchId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(blockData)
             });
-            
+
             const data = await response.json();
             return { success: response.ok, data, error: response.ok ? null : data.error };
         } catch (error) {
@@ -127,9 +112,9 @@ export const blocksAPI = {
         }
     },
 
-    async deleteBatch(batchId) {
+    async delete(batchId) {
         try {
-            const response = await fetch(`/admin/blocks/batch/${batchId}`, {
+            const response = await fetch(`/admin/blocks/${batchId}`, {
                 method: 'DELETE'
             });
 
@@ -137,6 +122,21 @@ export const blocksAPI = {
             return { success: response.ok, data, error: response.ok ? null : data.error };
         } catch (error) {
             return { success: false, error: 'Fehler beim Löschen der Sperrung' };
+        }
+    },
+
+    async get(batchId) {
+        try {
+            const response = await fetch(`/admin/blocks/${batchId}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                return { success: true, batch: data };
+            } else {
+                return { success: false, error: data.error || 'Fehler beim Laden der Sperrung' };
+            }
+        } catch (error) {
+            return { success: false, error: 'Fehler beim Laden der Sperrung' };
         }
     },
 

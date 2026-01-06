@@ -385,11 +385,11 @@ export class BlockForm {
             if (this.isEditMode && this.editBatchId) {
                 console.log('🔄 Using batch update (PUT) for batch:', this.editBatchId);
                 // Use batch update for editing existing blocks
-                result = await blocksAPI.updateBatch(this.editBatchId, blockData);
+                result = await blocksAPI.update(this.editBatchId, blockData);
             } else {
-                console.log('➕ Using multi-court create (POST)');
-                // Create new multi-court blocks
-                result = await blocksAPI.createMultiCourt(blockData);
+                console.log('➕ Using create (POST)');
+                // Create new block(s)
+                result = await blocksAPI.create(blockData);
                 
                 // Debug: log the full response structure
                 console.log('🔍 Full API response:', result);
@@ -469,8 +469,8 @@ export class BlockForm {
 
         try {
             // Always use POST for "Save as New Event" (create new event)
-            console.log('➕ Using multi-court create (POST) for new event');
-            const result = await blocksAPI.createMultiCourt(blockData);
+            console.log('➕ Using create (POST) for new event');
+            const result = await blocksAPI.create(blockData);
             
             // Debug: log the full response structure
             console.log('🔍 Full API response (Save as New):', result);

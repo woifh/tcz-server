@@ -263,7 +263,7 @@ export class AdminPanel {
         }
 
         try {
-            const response = await fetch(`/admin/blocks/batch/${batchId}`, {
+            const response = await fetch(`/admin/blocks/${batchId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
