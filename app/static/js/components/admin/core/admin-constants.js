@@ -12,11 +12,6 @@ export const GERMAN_TEXT = {
     ALL_FUTURE_INSTANCES: 'Alle zukünftigen Instanzen',
     DELETE_ENTIRE_SERIES: 'Gesamte Serie löschen',
     
-    // Template features
-    BLOCK_TEMPLATE: 'Sperrungsvorlage',
-    APPLY_TEMPLATE: 'Vorlage anwenden',
-    SAVE_TEMPLATE: 'Vorlage speichern',
-    
     // Reason management
     MANAGE_BLOCK_REASON: 'Sperrungsgrund verwalten',
     DETAILS: 'Details',
@@ -34,7 +29,6 @@ export const GERMAN_TEXT = {
 export const CONFIG = {
     DEBOUNCE_DELAY: 300,
     DEFAULT_DATE_RANGE_DAYS: 7,
-    MAX_BULK_OPERATIONS: 100,
     STORAGE_KEYS: {
         FILTERS: 'adminBlockFilters',
         PREFERENCES: 'adminPreferences'

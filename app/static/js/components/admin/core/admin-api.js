@@ -61,49 +61,6 @@ export const blockReasonsAPI = {
         } catch (error) {
             return { success: false, error: 'Fehler beim Löschen des Grundes' };
         }
-    },
-
-    async loadDetailsTemplates(reasonId) {
-        try {
-            const response = await fetch(`/admin/block-reasons/${reasonId}/details-templates`);
-            const data = await response.json();
-            
-            if (response.ok) {
-                return { success: true, templates: data.templates };
-            } else {
-                return { success: false, error: data.error || 'Fehler beim Laden der Details-Vorlagen' };
-            }
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Laden der Details-Vorlagen' };
-        }
-    },
-
-    async createDetailsTemplate(reasonId, templateData) {
-        try {
-            const response = await fetch(`/admin/block-reasons/${reasonId}/details-templates`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(templateData)
-            });
-            
-            const data = await response.json();
-            return { success: response.ok, data, error: response.ok ? null : data.error };
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Erstellen der Details-Vorlage' };
-        }
-    },
-
-    async deleteDetailsTemplate(templateId) {
-        try {
-            const response = await fetch(`/admin/details-templates/${templateId}`, {
-                method: 'DELETE'
-            });
-            
-            const data = await response.json();
-            return { success: response.ok, data, error: response.ok ? null : data.error };
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Löschen der Details-Vorlage' };
-        }
     }
 };
 
@@ -208,36 +165,6 @@ export const blocksAPI = {
             return { success: response.ok, data, error: response.ok ? null : data.error };
         } catch (error) {
             return { success: false, error: 'Fehler beim Löschen der Sperrung' };
-        }
-    },
-
-    async bulkDelete(blockIds) {
-        try {
-            const response = await fetch('/admin/blocks/bulk-delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ block_ids: blockIds })
-            });
-            
-            const data = await response.json();
-            return { success: response.ok, data, error: response.ok ? null : data.error };
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Löschen der Sperrungen' };
-        }
-    },
-
-    async bulkEdit(blockIds, editData) {
-        try {
-            const response = await fetch('/admin/blocks/bulk-edit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ block_ids: blockIds, ...editData })
-            });
-            
-            const data = await response.json();
-            return { success: response.ok, data, error: response.ok ? null : data.error };
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Bearbeiten der Sperrungen' };
         }
     },
 

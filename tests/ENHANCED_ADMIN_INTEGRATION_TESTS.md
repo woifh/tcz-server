@@ -44,9 +44,9 @@ This document describes the comprehensive integration tests implemented for the 
   - Complete series deletion
   - Verifies proper cleanup and series record management
 
-### 2. Multi-Court and Bulk Operations (`TestMultiCourtAndBulkOperations`)
+### 2. Multi-Court Operations (`TestMultiCourtOperations`)
 
-**Requirements Validated:** 19.10, 19.14, 19.18
+**Requirements Validated:** 19.10, 19.14
 
 #### Tests Implemented:
 
@@ -55,45 +55,10 @@ This document describes the comprehensive integration tests implemented for the 
   - Verifies identical properties across all blocks
   - Ensures each court gets exactly one block
 
-- **`test_bulk_deletion_of_selected_blocks`**: Tests bulk deletion functionality
-  - Creates multiple blocks across different courts
-  - Selects subset for deletion
-  - Verifies only selected blocks are deleted
-
 - **`test_conflict_preview_functionality`**: Tests reservation conflict preview
   - Creates reservations that will conflict with proposed blocks
   - Tests conflict detection accuracy
   - Verifies partial overlap detection
-
-- **`test_transaction_handling_in_bulk_operations`**: Tests transaction integrity
-  - Tests rollback behavior on errors
-  - Verifies atomic operations
-  - Ensures data consistency
-
-### 3. Template Management (`TestTemplateManagement`)
-
-**Requirements Validated:** 19.11, 19.12
-
-#### Tests Implemented:
-
-- **`test_template_creation_and_storage`**: Tests template creation
-  - Creates template with all configuration options
-  - Verifies proper storage of template data
-  - Tests recurring pattern storage
-
-- **`test_template_application_and_form_prefilling`**: Tests template application
-  - Applies template with date overrides
-  - Verifies form data pre-filling
-  - Tests template data retrieval
-
-- **`test_template_editing_and_deletion`**: Tests template lifecycle
-  - Creates, deletes templates
-  - Verifies proper cleanup
-
-- **`test_template_listing`**: Tests template retrieval
-  - Creates multiple templates
-  - Verifies all templates are retrievable
-  - Tests template name uniqueness
 
 ### 4. Reason Management (`TestReasonManagement`)
 
@@ -115,11 +80,6 @@ This document describes the comprehensive integration tests implemented for the 
   - Creates past and future blocks with same reason
   - Deletes reason
   - Verifies past blocks preserved, future blocks deleted
-
-- **`test_details_template_management`**: Tests details templates
-  - Creates multiple details templates
-  - Tests template retrieval and deletion
-  - Verifies proper reason association
 
 - **`test_reason_usage_count_tracking`**: Tests usage tracking
   - Creates blocks using specific reason
@@ -214,7 +174,7 @@ This document describes the comprehensive integration tests implemented for the 
 The integration tests validate the following requirements:
 
 - **19.1-19.19**: Advanced block management features
-- **20.1-20.15**: Customizable block reasons and templates
+- **20.1-20.15**: Customizable block reasons
 - **9.1-9.5**: Responsive design considerations
 - **10.1-10.5**: German language support
 
@@ -239,7 +199,7 @@ These integration tests provide:
 
 The test suite can be extended with:
 
-1. **Performance tests**: For bulk operations with large datasets
+1. **Performance tests**: For large datasets
 2. **Concurrent access tests**: For multi-admin scenarios
 3. **UI integration tests**: For frontend calendar and form interactions
 4. **API endpoint tests**: For REST API validation

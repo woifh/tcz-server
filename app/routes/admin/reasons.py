@@ -9,7 +9,7 @@ from flask_login import login_required, current_user
 
 from app import db
 from app.decorators import admin_required
-from app.models import BlockReason, DetailsTemplate
+from app.models import BlockReason
 from app.services.block_reason_service import BlockReasonService
 from . import bp
 
@@ -144,80 +144,4 @@ def get_reason_usage(reason_id):
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/block-reasons/<int:reason_id>/details-templates', methods=['GET'])
-@login_required
-@admin_required
-def list_details_templates(reason_id):
-    """List details templates for a block reason (admin only)."""
-    try:
-        templates = BlockReasonService.get_details_templates(reason_id)
-        
-        return jsonify({
-            'reason_id': reason_id,
-            'templates': [
-                {
-                    'id': template.id,
-                    'template_name': template.template_name,
-                    'created_by': template.created_by.name,
-                    'created_at': template.created_at.isoformat()
-                }
-                for template in templates
-            ]
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/block-reasons/<int:reason_id>/details-templates', methods=['POST'])
-@login_required
-@admin_required
-def create_details_template(reason_id):
-    """Create details template (admin only)."""
-    try:
-        data = request.get_json() if request.is_json else request.form
-        
-        template_name = data.get('template_name', '').strip() if data.get('template_name') else ''
-        
-        if not template_name:
-            return jsonify({'error': 'Vorlagenname ist erforderlich'}), 400
-        
-        template, error = BlockReasonService.create_details_template(reason_id, template_name, current_user.id)
-        
-        if error:
-            return jsonify({'error': error}), 400
-        
-        return jsonify({
-            'id': template.id,
-            'message': 'Details-Vorlage erfolgreich erstellt',
-            'template': {
-                'id': template.id,
-                'template_name': template.template_name,
-                'reason_id': template.reason_id
-            }
-        }), 201
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/details-templates/<int:template_id>', methods=['DELETE'])
-@login_required
-@admin_required
-def delete_details_template(template_id):
-    """Delete details template (admin only)."""
-    try:
-        success, error = BlockReasonService.delete_details_template(template_id, current_user.id)
-        
-        if error:
-            return jsonify({'error': error}), 400
-        
-        return jsonify({'message': 'Details-Vorlage erfolgreich gelöscht'}), 200
-        
-    except Exception as e:
-        db.session.rollback()
         return jsonify({'error': str(e)}), 500

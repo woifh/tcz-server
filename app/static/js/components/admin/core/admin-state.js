@@ -6,7 +6,6 @@
 // Global state variables
 export const state = {
     blockReasons: [],
-    blockTemplates: [],
     selectedBlocks: [],
     currentCalendarDate: new Date(),
     calendarBlocks: [],
@@ -23,15 +22,6 @@ export const stateManager = {
     
     getBlockReasons() {
         return state.blockReasons;
-    },
-    
-    // Block templates
-    setBlockTemplates(templates) {
-        state.blockTemplates = templates;
-    },
-    
-    getBlockTemplates() {
-        return state.blockTemplates;
     },
     
     // Selected blocks

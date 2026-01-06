@@ -162,32 +162,9 @@ class BlockReason(db.Model):
     # Relationships
     created_by = db.relationship('Member', backref='block_reasons_created')
     blocks = db.relationship('Block', backref='reason_obj', lazy='dynamic')
-    details_templates = db.relationship('DetailsTemplate', backref='reason_obj', lazy='dynamic')
     
     def __repr__(self):
         return f'<BlockReason {self.name}>'
-
-
-class DetailsTemplate(db.Model):
-    """DetailsTemplate model for predefined details options."""
-    
-    __tablename__ = 'details_template'
-    __table_args__ = (
-        db.Index('idx_details_template_reason', 'reason_id'),
-    )
-    
-    id = db.Column(db.Integer, primary_key=True)
-    reason_id = db.Column(db.Integer, db.ForeignKey('block_reason.id', ondelete='CASCADE'), nullable=False)
-    template_name = db.Column(db.String(100), nullable=False)
-    created_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
-    # Relationships
-    created_by = db.relationship('Member', backref='details_templates_created')
-    
-    def __repr__(self):
-        return f'<DetailsTemplate {self.template_name}>'
-
 
 class BlockAuditLog(db.Model):
     """BlockAuditLog model for tracking block operations."""
@@ -200,7 +177,7 @@ class BlockAuditLog(db.Model):
     )
     
     id = db.Column(db.Integer, primary_key=True)
-    operation = db.Column(db.String(20), nullable=False)  # 'create', 'update', 'delete', 'bulk_delete'
+    operation = db.Column(db.String(20), nullable=False)  # 'create', 'update', 'delete'
     block_id = db.Column(db.Integer, nullable=True)  # for single block operations
     operation_data = db.Column(db.JSON, nullable=True)  # JSON data about the operation
     admin_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
@@ -212,7 +189,7 @@ class BlockAuditLog(db.Model):
     def __init__(self, **kwargs):
         """Initialize audit log with validation."""
         super(BlockAuditLog, self).__init__(**kwargs)
-        valid_operations = ['create', 'update', 'delete', 'bulk_delete']
+        valid_operations = ['create', 'update', 'delete']
         if self.operation and self.operation not in valid_operations:
             raise ValueError(f"Operation must be one of: {', '.join(valid_operations)}")
     

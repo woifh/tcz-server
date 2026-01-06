@@ -5,18 +5,6 @@
 
 // German text constants for enhanced admin features
 const GERMAN_TEXT = {
-    // Recurring block features
-    RECURRING_BLOCK: 'Wiederkehrende Sperrung',
-    EDIT_SERIES: 'Serie bearbeiten',
-    EDIT_SINGLE_INSTANCE: 'Einzelne Instanz bearbeiten',
-    ALL_FUTURE_INSTANCES: 'Alle zukünftigen Instanzen',
-    DELETE_ENTIRE_SERIES: 'Gesamte Serie löschen',
-    
-    // Template features
-    BLOCK_TEMPLATE: 'Sperrungsvorlage',
-    APPLY_TEMPLATE: 'Vorlage anwenden',
-    SAVE_TEMPLATE: 'Vorlage speichern',
-    
     // Reason management
     MANAGE_BLOCK_REASON: 'Sperrungsgrund verwalten',
     DETAILS: 'Details',
@@ -31,8 +19,6 @@ const GERMAN_TEXT = {
 };
 
 let blockReasons = [];
-let blockTemplates = [];
-let selectedBlocks = [];
 let currentCalendarDate = new Date();
 let calendarBlocks = [];
 let currentFilters = {};
@@ -41,7 +27,6 @@ let filterUpdateTimeout = null;
 // Initialize admin panel
 function initializeAdminPanel() {
     loadBlockReasons();
-    loadBlockTemplates();
     setupEventListeners();
     
     // Set default dates
@@ -60,17 +45,6 @@ function initializeAdminPanel() {
         endTimeInput.disabled = false;
     }
     
-    // Set default dates for other forms if they exist
-    const seriesStartDate = document.getElementById('series-start-date');
-    if (seriesStartDate) {
-        seriesStartDate.value = today;
-    }
-    
-    const seriesEndDate = document.getElementById('series-end-date');
-    if (seriesEndDate) {
-        seriesEndDate.value = nextWeek;
-    }
-    
     // Initialize calendar view
     initializeCalendarView();
     
@@ -80,22 +54,6 @@ function initializeAdminPanel() {
     // Handle edit mode if edit block data is available
     if (window.editBlockData) {
         populateEditForm(window.editBlockData);
-    }
-}
-
-// Load block templates
-async function loadBlockTemplates() {
-    try {
-        const response = await fetch('/admin/block-templates');
-        const data = await response.json();
-        
-        if (response.ok) {
-            blockTemplates = data.templates;
-        } else {
-            showToast(data.error || 'Fehler beim Laden der Vorlagen', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Laden der Vorlagen', 'error');
     }
 }
 
@@ -111,18 +69,6 @@ function setupEventListeners() {
     const multiCourtForm = document.getElementById('multi-court-form');
     if (multiCourtForm) {
         multiCourtForm.addEventListener('submit', handleMultiCourtSubmit);
-    }
-    
-    // Series form
-    const seriesForm = document.getElementById('series-form');
-    if (seriesForm) {
-        seriesForm.addEventListener('submit', handleSeriesSubmit);
-    }
-    
-    // Template form
-    const templateForm = document.getElementById('template-form');
-    if (templateForm) {
-        templateForm.addEventListener('submit', handleTemplateSubmit);
     }
     
     // Reason form
@@ -279,10 +225,6 @@ function showTab(tabName) {
     // Load content for specific tabs
     if (tabName === 'calendar') {
         renderCalendarView();
-    } else if (tabName === 'recurring') {
-        loadSeriesList();
-    } else if (tabName === 'templates') {
-        loadTemplateList();
     } else if (tabName === 'reasons') {
         loadReasonList();
     }
@@ -349,10 +291,7 @@ async function loadBlockReasons() {
 
 // Populate reason select elements
 function populateReasonSelects() {
-    const selects = [
-        'block-reason', 'multi-reason', 'series-reason', 
-        'template-reason', 'filter-reasons'
-    ];
+    const selects = ['block-reason', 'multi-reason', 'filter-reasons'];
     
     selects.forEach(selectId => {
         const select = document.getElementById(selectId);
@@ -470,98 +409,6 @@ async function handleMultiCourtSubmit(e) {
     }
 }
 
-// Handle series form submission
-async function handleSeriesSubmit(e) {
-    e.preventDefault();
-    
-    const selectedCourts = Array.from(document.querySelectorAll('input[name="series-courts"]:checked'))
-        .map(cb => parseInt(cb.value));
-    
-    if (selectedCourts.length === 0) {
-        showToast('Bitte mindestens einen Platz auswählen', 'error');
-        return;
-    }
-    
-    const seriesName = document.getElementById('series-name').value.trim();
-    if (!seriesName) {
-        showToast('Bitte einen Seriennamen eingeben', 'error');
-        return;
-    }
-    
-    const startDate = document.getElementById('series-start-date').value;
-    const endDate = document.getElementById('series-end-date').value;
-    
-    if (new Date(startDate) >= new Date(endDate)) {
-        showToast('Enddatum muss nach dem Startdatum liegen', 'error');
-        return;
-    }
-    
-    const recurrencePattern = document.getElementById('series-pattern').value;
-    let recurrenceDays = [];
-    
-    if (recurrencePattern === 'weekly') {
-        recurrenceDays = Array.from(document.querySelectorAll('input[name="recurrence-days"]:checked'))
-            .map(cb => parseInt(cb.value));
-        
-        if (recurrenceDays.length === 0) {
-            showToast('Bitte mindestens einen Wochentag auswählen', 'error');
-            return;
-        }
-    }
-    
-    const seriesData = {
-        series_name: seriesName,
-        court_ids: selectedCourts,
-        start_date: startDate,
-        end_date: endDate,
-        start_time: document.getElementById('series-start-time').value,
-        end_time: document.getElementById('series-end-time').value,
-        recurrence_pattern: recurrencePattern,
-        recurrence_days: recurrenceDays,
-        reason_id: parseInt(document.getElementById('series-reason').value),
-        details: document.getElementById('series-details').value
-    };
-    
-    // Show loading state
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-    submitButton.textContent = 'Erstelle Serie...';
-    submitButton.disabled = true;
-    
-    try {
-        const response = await fetch('/admin/blocks/series', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(seriesData)
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            e.target.reset();
-            document.getElementById('recurrence-days-container').classList.add('hidden');
-            loadSeriesList(); // Refresh the series list
-        } else {
-            showToast(data.error || 'Unbekannter Fehler', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Erstellen der Serie', 'error');
-    } finally {
-        // Restore button state
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
-    }
-}
-
-// Handle template form submission
-async function handleTemplateSubmit(e) {
-    e.preventDefault();
-    
-    // Use preview functionality instead of direct submission
-    createTemplateWithPreview();
-}
-
 // Handle reason form submission
 async function handleReasonSubmit(e) {
     e.preventDefault();
@@ -589,18 +436,6 @@ async function handleReasonSubmit(e) {
         }
     } catch (error) {
         showToast('Fehler beim Erstellen des Sperrungsgrundes', 'error');
-    }
-}
-
-// Toggle recurrence days visibility
-function toggleRecurrenceDays() {
-    const pattern = document.getElementById('series-pattern').value;
-    const container = document.getElementById('recurrence-days-container');
-    
-    if (pattern === 'weekly') {
-        container.classList.remove('hidden');
-    } else {
-        container.classList.add('hidden');
     }
 }
 
@@ -670,8 +505,7 @@ async function applyFilters() {
         date_range_start: document.getElementById('filter-date-start').value,
         date_range_end: document.getElementById('filter-date-end').value,
         court_ids: Array.from(document.getElementById('filter-courts').selectedOptions).map(o => o.value),
-        reason_ids: Array.from(document.getElementById('filter-reasons').selectedOptions).map(o => o.value),
-        block_types: getSelectedBlockTypes()
+        reason_ids: Array.from(document.getElementById('filter-reasons').selectedOptions).map(o => o.value)
     };
     
     // Store current filters
@@ -709,18 +543,6 @@ async function applyFilters() {
     }
 }
 
-// Get selected block types
-function getSelectedBlockTypes() {
-    const blockTypes = [];
-    if (document.getElementById('filter-single-blocks')?.checked) {
-        blockTypes.push('single');
-    }
-    if (document.getElementById('filter-series-blocks')?.checked) {
-        blockTypes.push('series');
-    }
-    return blockTypes;
-}
-
 // Update filter summary
 function updateFilterSummary(count, filters) {
     const summaryContainer = document.getElementById('filter-summary');
@@ -741,12 +563,6 @@ function updateFilterSummary(count, filters) {
             return reason ? reason.name : id;
         });
         activeFilters.push(`Gründe: ${reasonNames.join(', ')}`);
-    }
-    if (filters.block_types.length > 0) {
-        const typeNames = filters.block_types.map(type => 
-            type === 'single' ? 'Einzeln' : 'Serie'
-        );
-        activeFilters.push(`Typen: ${typeNames.join(', ')}`);
     }
     
     if (activeFilters.length > 0) {
@@ -772,11 +588,6 @@ function setupDynamicFiltering() {
         }
     });
     
-    // Setup block type checkboxes if they exist
-    const blockTypeCheckboxes = document.querySelectorAll('input[name="block-types"]');
-    blockTypeCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', debounceFilterUpdate);
-    });
 }
 
 // Debounced filter update
@@ -892,25 +703,14 @@ function showAdvancedFilters() {
                         </div>
                     </div>
                     
-                    <!-- Reasons and Types -->
+                    <!-- Reasons -->
                     <div class="space-y-4">
-                        <h4 class="font-semibold">Gründe & Typen</h4>
+                        <h4 class="font-semibold">Gründe</h4>
                         <div>
                             <label class="block text-sm font-medium mb-1">Sperrungsgründe</label>
                             <select id="adv-filter-reasons" multiple class="w-full border border-gray-300 rounded px-3 py-2" size="4">
                                 <!-- Will be populated by JavaScript -->
                             </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Sperrungstypen</label>
-                            <div class="space-y-1">
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="adv-block-types" value="single" class="mr-2"> Einzelsperrungen
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="adv-block-types" value="series" class="mr-2"> Seriensperrungen
-                                </label>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1005,12 +805,6 @@ function loadCurrentFiltersToAdvanced() {
             option.selected = currentFilters.reason_ids.includes(option.value);
         });
     }
-    if (currentFilters.block_types) {
-        currentFilters.block_types.forEach(type => {
-            const checkbox = document.querySelector(`input[name="adv-block-types"][value="${type}"]`);
-            if (checkbox) checkbox.checked = true;
-        });
-    }
 }
 
 // Apply advanced filters
@@ -1020,8 +814,7 @@ function applyAdvancedFilters() {
         date_range_start: document.getElementById('adv-filter-date-start').value,
         date_range_end: document.getElementById('adv-filter-date-end').value,
         court_ids: Array.from(document.querySelectorAll('input[name="adv-courts"]:checked')).map(cb => cb.value),
-        reason_ids: Array.from(document.getElementById('adv-filter-reasons').selectedOptions).map(o => o.value),
-        block_types: Array.from(document.querySelectorAll('input[name="adv-block-types"]:checked')).map(cb => cb.value)
+        reason_ids: Array.from(document.getElementById('adv-filter-reasons').selectedOptions).map(o => o.value)
     };
     
     // Update main filter form
@@ -1049,66 +842,34 @@ function resetAdvancedFilters() {
     document.getElementById('adv-filter-date-end').value = '';
     document.querySelectorAll('input[name="adv-courts"]').forEach(cb => cb.checked = false);
     document.getElementById('adv-filter-reasons').selectedIndex = -1;
-    document.querySelectorAll('input[name="adv-block-types"]').forEach(cb => cb.checked = false);
 }
 
 // Display block list
 function displayBlockList(blocks) {
     const container = document.getElementById('blocks-list');
     
+    if (!container) return;
+
     if (blocks.length === 0) {
         container.innerHTML = '<p class="text-gray-600">Keine Sperrungen für die ausgewählten Filter gefunden.</p>';
         return;
     }
     
-    let html = `
-        <div class="mb-4 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <label class="flex items-center">
-                    <input type="checkbox" id="select-all-blocks" onchange="toggleAllBlocks()" class="mr-2">
-                    Alle auswählen (${blocks.length})
-                </label>
-                <span id="selection-count" class="text-sm text-gray-600">0 ausgewählt</span>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="bulkDeleteSelected()" id="bulk-delete-btn" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 disabled:opacity-50" disabled>
-                    Ausgewählte löschen
-                </button>
-                <button onclick="bulkExportSelected()" id="bulk-export-btn" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50" disabled>
-                    Exportieren
-                </button>
-                <button onclick="showBulkEditModal()" id="bulk-edit-btn" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 disabled:opacity-50" disabled>
-                    Massenbearbeitung
-                </button>
-            </div>
-        </div>
-        <div class="space-y-2">
-    `;
-    
-    blocks.forEach(block => {
-        const seriesInfo = block.series_id ? ` (Serie ${block.series_id}${block.is_modified ? ', modifiziert' : ''})` : '';
+    const listItems = blocks.map(block => {
         const reasonColor = getReasonColor(block.reason_name);
-        
-        html += `
+
+        return `
             <div class="border border-gray-200 rounded p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <input type="checkbox" class="block-checkbox mr-3" value="${block.id}" onchange="updateSelectedBlocks()" data-block='${JSON.stringify(block)}'>
-                        <div class="flex items-center gap-3">
-                            <div class="w-4 h-4 rounded" style="background-color: ${reasonColor};" title="${block.reason_name}"></div>
-                            <div>
-                                <p class="font-semibold">Platz ${block.court_number} - ${block.date} ${block.start_time}-${block.end_time}</p>
-                                <p class="text-gray-600">${block.reason_name}${block.details ? ' - ' + block.details : ''}${seriesInfo}</p>
-                                <p class="text-sm text-gray-500">Erstellt von ${block.created_by} am ${new Date(block.created_at).toLocaleDateString('de-DE')}</p>
-                            </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 rounded" style="background-color: ${reasonColor};" title="${block.reason_name}"></div>
+                        <div>
+                            <p class="font-semibold">Platz ${block.court_number} - ${block.date} ${block.start_time}-${block.end_time}</p>
+                            <p class="text-gray-600">${block.reason_name}${block.details ? ' - ' + block.details : ''}</p>
+                            <p class="text-sm text-gray-500">Erstellt von ${block.created_by} am ${new Date(block.created_at).toLocaleDateString('de-DE')}</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        ${block.series_id ? `
-                            <button onclick="editSeries(${block.series_id})" class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700" title="Serie bearbeiten">
-                                Serie
-                            </button>
-                        ` : ''}
                         <button onclick="editBatch('${block.batch_id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700" title="Bearbeiten">
                             ✏️
                         </button>
@@ -1122,14 +883,9 @@ function displayBlockList(blocks) {
                 </div>
             </div>
         `;
-    });
-    
-    html += '</div>';
-    container.innerHTML = html;
-    
-    // Reset selection
-    selectedBlocks = [];
-    updateBulkActionButtons();
+    }).join('');
+
+    container.innerHTML = `<div class="space-y-2">${listItems}</div>`;
 }
 
 // Clear filters
@@ -1138,10 +894,6 @@ function clearFilters() {
     document.getElementById('filter-date-end').value = '';
     document.getElementById('filter-courts').selectedIndex = -1;
     document.getElementById('filter-reasons').selectedIndex = -1;
-    
-    // Clear block type filters if they exist
-    document.querySelectorAll('input[name="block-types"]').forEach(cb => cb.checked = false);
-    
     // Clear stored filters
     currentFilters = {};
     try {
@@ -1160,426 +912,32 @@ function clearFilters() {
     }
 }
 
-// Toggle all blocks selection
-function toggleAllBlocks() {
-    const selectAll = document.getElementById('select-all-blocks');
-    const checkboxes = document.querySelectorAll('.block-checkbox');
-    
-    checkboxes.forEach(cb => {
-        cb.checked = selectAll.checked;
-    });
-    
-    updateSelectedBlocks();
-}
-
-// Update selected blocks array and UI
-function updateSelectedBlocks() {
-    const checkboxes = document.querySelectorAll('.block-checkbox:checked');
-    selectedBlocks = Array.from(checkboxes).map(cb => {
-        return {
-            id: parseInt(cb.value),
-            data: JSON.parse(cb.dataset.block)
-        };
-    });
-    
-    // Update selection count
-    const countElement = document.getElementById('selection-count');
-    if (countElement) {
-        countElement.textContent = `${selectedBlocks.length} ausgewählt`;
-    }
-    
-    // Update select all checkbox
-    const selectAllCheckbox = document.getElementById('select-all-blocks');
-    const allCheckboxes = document.querySelectorAll('.block-checkbox');
-    if (selectAllCheckbox && allCheckboxes.length > 0) {
-        selectAllCheckbox.indeterminate = selectedBlocks.length > 0 && selectedBlocks.length < allCheckboxes.length;
-        selectAllCheckbox.checked = selectedBlocks.length === allCheckboxes.length;
-    }
-    
-    updateBulkActionButtons();
-}
-
-// Update bulk action button states
-function updateBulkActionButtons() {
-    const hasSelection = selectedBlocks.length > 0;
-    
-    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
-    const bulkExportBtn = document.getElementById('bulk-export-btn');
-    const bulkEditBtn = document.getElementById('bulk-edit-btn');
-    
-    if (bulkDeleteBtn) bulkDeleteBtn.disabled = !hasSelection;
-    if (bulkExportBtn) bulkExportBtn.disabled = !hasSelection;
-    if (bulkEditBtn) bulkEditBtn.disabled = !hasSelection;
-}
-
-// Enhanced bulk delete with conflict preview
-async function bulkDeleteSelected() {
-    if (selectedBlocks.length === 0) {
-        showToast('Keine Sperrungen ausgewählt', 'error');
-        return;
-    }
-    
-    // Show confirmation modal with details
-    showBulkDeleteConfirmation();
-}
-
-// Show bulk delete confirmation modal
-function showBulkDeleteConfirmation() {
-    const blockIds = selectedBlocks.map(b => b.id);
-    const seriesBlocks = selectedBlocks.filter(b => b.data.series_id);
-    const singleBlocks = selectedBlocks.filter(b => !b.data.series_id);
-    
-    let html = `
-        <div id="bulk-delete-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-red-600">Massenlöschung bestätigen</h3>
-                    <button onclick="closeBulkDeleteModal()" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="space-y-4">
-                    <div class="bg-red-50 p-4 rounded-lg">
-                        <p class="text-red-800 font-semibold">Sie sind dabei, ${selectedBlocks.length} Sperrung(en) zu löschen:</p>
-                        <ul class="mt-2 text-sm text-red-700">
-                            <li>• ${singleBlocks.length} Einzelsperrung(en)</li>
-                            <li>• ${seriesBlocks.length} Seriensperrung(en)</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="max-h-40 overflow-y-auto border border-gray-200 rounded p-3">
-                        <h4 class="font-semibold mb-2">Ausgewählte Sperrungen:</h4>
-                        <div class="space-y-1 text-sm">
-    `;
-    
-    selectedBlocks.forEach(block => {
-        const data = block.data;
-        const seriesInfo = data.series_id ? ' (Serie)' : '';
-        html += `
-            <div class="flex items-center justify-between py-1 border-b border-gray-100">
-                <span>Platz ${data.court_number} - ${data.date} ${data.start_time}-${data.end_time}${seriesInfo}</span>
-                <span class="text-gray-500">${data.reason_name}</span>
-            </div>
-        `;
-    });
-    
-    html += `
-                        </div>
-                    </div>
-                    
-                    <div class="bg-yellow-50 p-3 rounded">
-                        <p class="text-yellow-800 text-sm">
-                            <strong>Hinweis:</strong> Diese Aktion kann nicht rückgängig gemacht werden. 
-                            Betroffene Buchungen werden automatisch storniert und die Mitglieder benachrichtigt.
-                        </p>
-                    </div>
-                    
-                    <div class="flex gap-2">
-                        <button onclick="confirmBulkDelete()" class="bg-red-600 text-white py-2 px-6 rounded hover:bg-red-700">
-                            ${selectedBlocks.length} Sperrung(en) löschen
-                        </button>
-                        <button onclick="closeBulkDeleteModal()" class="bg-gray-600 text-white py-2 px-6 rounded hover:bg-gray-700">
-                            Abbrechen
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', html);
-}
-
-// Close bulk delete modal
-function closeBulkDeleteModal() {
-    const modal = document.getElementById('bulk-delete-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-// Confirm bulk delete
-async function confirmBulkDelete() {
-    const blockIds = selectedBlocks.map(b => b.id);
-    
-    try {
-        const response = await fetch('/admin/blocks/bulk-delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ block_ids: blockIds })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            closeBulkDeleteModal();
-            applyFilters(); // Refresh the list
-            selectedBlocks = [];
-        } else {
-            showToast(data.error || 'Fehler beim Löschen', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Löschen der Sperrungen', 'error');
-    }
-}
-
-// Bulk export functionality
-function bulkExportSelected() {
-    if (selectedBlocks.length === 0) {
-        showToast('Keine Sperrungen ausgewählt', 'error');
-        return;
-    }
-    
-    // Create CSV content
-    const csvContent = createCSVFromBlocks(selectedBlocks.map(b => b.data));
-    
-    // Download CSV file
-    downloadCSV(csvContent, `sperrungen_export_${new Date().toISOString().split('T')[0]}.csv`);
-    
-    showToast(`${selectedBlocks.length} Sperrung(en) exportiert`);
-}
-
-// Create CSV from blocks
-function createCSVFromBlocks(blocks) {
-    const headers = ['Datum', 'Platz', 'Von', 'Bis', 'Grund', 'Details', 'Serie', 'Erstellt von', 'Erstellt am'];
-    const rows = blocks.map(block => [
-        block.date,
-        `Platz ${block.court_number}`,
-        block.start_time,
-        block.end_time,
-        block.reason_name,
-        block.details || '',
-        block.series_id ? `Serie ${block.series_id}` : '',
-        block.created_by,
-        new Date(block.created_at).toLocaleDateString('de-DE')
-    ]);
-    
-    const csvContent = [headers, ...rows]
-        .map(row => row.map(field => `"${field}"`).join(','))
-        .join('\n');
-    
-    return csvContent;
-}
-
-// Download CSV file
-function downloadCSV(content, filename) {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-}
-
 // Duplicate block
-function duplicateBlock(blockId) {
-    const blockData = selectedBlocks.find(b => b.id === blockId)?.data || 
-                     document.querySelector(`input[value="${blockId}"]`)?.dataset.block;
-    
-    if (!blockData) {
-        showToast('Block-Daten nicht gefunden', 'error');
-        return;
-    }
-    
-    const block = typeof blockData === 'string' ? JSON.parse(blockData) : blockData;
-    
-    // Pre-fill form with block data
-    document.getElementById('block-court').value = block.court_id;
-    document.getElementById('block-date').value = block.date;
-    document.getElementById('block-start').value = block.start_time;
-    document.getElementById('block-end').value = block.end_time;
-    document.getElementById('block-reason').value = block.reason_id;
-    document.getElementById('block-details').value = block.details || '';
-    
-    // Switch to blocks tab and scroll to form
-    showTab('blocks');
-    document.getElementById('block-form').scrollIntoView({ behavior: 'smooth' });
-    
-    showToast('Block-Daten in Formular geladen', 'info');
-}
-
-// Show bulk edit modal
-function showBulkEditModal() {
-    if (selectedBlocks.length === 0) {
-        showToast('Keine Sperrungen ausgewählt', 'error');
-        return;
-    }
-    
-    let html = `
-        <div id="bulk-edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold">Massenbearbeitung</h3>
-                    <button onclick="closeBulkEditModal()" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="space-y-4">
-                    <div class="bg-blue-50 p-3 rounded">
-                        <p class="text-blue-800 text-sm">
-                            ${selectedBlocks.length} Sperrung(en) ausgewählt. Nur ausgefüllte Felder werden geändert.
-                        </p>
-                    </div>
-                    
-                    <form id="bulk-edit-form">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">
-                                    <input type="checkbox" id="change-reason" class="mr-2"> Grund ändern
-                                </label>
-                                <select id="bulk-edit-reason" class="w-full border border-gray-300 rounded px-3 py-2" disabled>
-                                    <!-- Will be populated by JavaScript -->
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">
-                                    <input type="checkbox" id="change-details" class="mr-2"> Details ändern
-                                </label>
-                                <input type="text" id="bulk-edit-details" class="w-full border border-gray-300 rounded px-3 py-2" disabled>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">
-                                    <input type="checkbox" id="change-time" class="mr-2"> Uhrzeit ändern
-                                </label>
-                                <div class="flex gap-2">
-                                    <input type="time" id="bulk-edit-start-time" class="flex-1 border border-gray-300 rounded px-3 py-2" disabled>
-                                    <input type="time" id="bulk-edit-end-time" class="flex-1 border border-gray-300 rounded px-3 py-2" disabled>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">
-                                    <input type="checkbox" id="change-date" class="mr-2"> Datum verschieben
-                                </label>
-                                <input type="number" id="bulk-edit-date-offset" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Tage (+ oder -)" disabled>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-6 flex gap-2">
-                            <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded hover:bg-green-700">
-                                Änderungen anwenden
-                            </button>
-                            <button type="button" onclick="closeBulkEditModal()" class="bg-gray-600 text-white py-2 px-6 rounded hover:bg-gray-700">
-                                Abbrechen
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', html);
-    
-    // Populate reason select
-    const reasonSelect = document.getElementById('bulk-edit-reason');
-    blockReasons.forEach(reason => {
-        const option = document.createElement('option');
-        option.value = reason.id;
-        option.textContent = reason.name;
-        reasonSelect.appendChild(option);
-    });
-    
-    // Setup checkbox handlers
-    setupBulkEditCheckboxes();
-    
-    // Setup form submission
-    document.getElementById('bulk-edit-form').addEventListener('submit', handleBulkEditSubmit);
-}
-
-// Setup bulk edit checkboxes
-function setupBulkEditCheckboxes() {
-    const checkboxes = [
-        { checkbox: 'change-reason', field: 'bulk-edit-reason' },
-        { checkbox: 'change-details', field: 'bulk-edit-details' },
-        { checkbox: 'change-time', fields: ['bulk-edit-start-time', 'bulk-edit-end-time'] },
-        { checkbox: 'change-date', field: 'bulk-edit-date-offset' }
-    ];
-    
-    checkboxes.forEach(({ checkbox, field, fields }) => {
-        const cb = document.getElementById(checkbox);
-        const targetFields = fields || [field];
-        
-        cb.addEventListener('change', function() {
-            targetFields.forEach(fieldId => {
-                const fieldElement = document.getElementById(fieldId);
-                if (fieldElement) {
-                    fieldElement.disabled = !this.checked;
-                }
-            });
-        });
-    });
-}
-
-// Close bulk edit modal
-function closeBulkEditModal() {
-    const modal = document.getElementById('bulk-edit-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-// Handle bulk edit form submission
-async function handleBulkEditSubmit(e) {
-    e.preventDefault();
-    
-    const changes = {};
-    
-    if (document.getElementById('change-reason').checked) {
-        changes.reason_id = parseInt(document.getElementById('bulk-edit-reason').value);
-    }
-    
-    if (document.getElementById('change-details').checked) {
-        changes.details = document.getElementById('bulk-edit-details').value;
-    }
-    
-    if (document.getElementById('change-time').checked) {
-        changes.start_time = document.getElementById('bulk-edit-start-time').value;
-        changes.end_time = document.getElementById('bulk-edit-end-time').value;
-    }
-    
-    if (document.getElementById('change-date').checked) {
-        changes.date_offset = parseInt(document.getElementById('bulk-edit-date-offset').value);
-    }
-    
-    if (Object.keys(changes).length === 0) {
-        showToast('Keine Änderungen ausgewählt', 'error');
-        return;
-    }
-    
-    const blockIds = selectedBlocks.map(b => b.id);
-    
+async function duplicateBlock(blockId) {
     try {
-        const response = await fetch('/admin/blocks/bulk-edit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ block_ids: blockIds, changes: changes })
-        });
-        
+        const response = await fetch(`/admin/blocks/${blockId}`);
         const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            closeBulkEditModal();
-            applyFilters(); // Refresh the list
-            selectedBlocks = [];
-        } else {
-            showToast(data.error || 'Fehler bei der Massenbearbeitung', 'error');
+
+        if (!response.ok || !data.block) {
+            showToast(data.error || 'Block-Daten nicht gefunden', 'error');
+            return;
         }
+
+        const block = data.block;
+
+        document.getElementById('block-court').value = block.court_id;
+        document.getElementById('block-date').value = block.date;
+        document.getElementById('block-start').value = block.start_time;
+        document.getElementById('block-end').value = block.end_time;
+        document.getElementById('block-reason').value = block.reason_id;
+        document.getElementById('block-details').value = block.details || '';
+
+        showTab('blocks');
+        document.getElementById('block-form').scrollIntoView({ behavior: 'smooth' });
+
+        showToast('Block-Daten in Formular geladen', 'info');
     } catch (error) {
-        showToast('Fehler bei der Massenbearbeitung', 'error');
+        showToast('Fehler beim Laden der Sperrung', 'error');
     }
 }
 
@@ -1872,470 +1230,6 @@ function formatGermanDate(dateString) {
     return date.toLocaleDateString('de-DE');
 }
 
-// Load series list
-async function loadSeriesList() {
-    try {
-        const response = await fetch('/admin/blocks/series');
-        const data = await response.json();
-        
-        if (response.ok) {
-            displaySeriesList(data.series);
-        } else {
-            document.getElementById('series-list').innerHTML = '<p class="text-gray-600">Fehler beim Laden der Serien.</p>';
-        }
-    } catch (error) {
-        document.getElementById('series-list').innerHTML = '<p class="text-gray-600">Fehler beim Laden der Serien.</p>';
-    }
-}
-
-// Display series list
-function displaySeriesList(series) {
-    const container = document.getElementById('series-list');
-    
-    if (series.length === 0) {
-        container.innerHTML = '<p class="text-gray-600">Keine wiederkehrenden Serien vorhanden.</p>';
-        return;
-    }
-    
-    let html = '<div class="space-y-4">';
-    
-    series.forEach(serie => {
-        const recurrenceText = getRecurrenceText(serie.recurrence_pattern, serie.recurrence_days);
-        const statusBadge = serie.is_active ? 
-            '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Aktiv</span>' :
-            '<span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">Inaktiv</span>';
-        
-        html += `
-            <div class="border border-gray-200 rounded p-4 bg-gray-50">
-                <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-2">
-                            <h4 class="font-semibold text-lg">${serie.name}</h4>
-                            ${statusBadge}
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                            <div>
-                                <p><strong>Zeitraum:</strong> ${formatGermanDate(serie.start_date)} - ${formatGermanDate(serie.end_date)}</p>
-                                <p><strong>Uhrzeit:</strong> ${serie.start_time} - ${serie.end_time}</p>
-                                <p><strong>Wiederholung:</strong> ${recurrenceText}</p>
-                            </div>
-                            <div>
-                                <p><strong>Plätze:</strong> ${serie.court_selection.join(', ')}</p>
-                                <p><strong>Grund:</strong> ${serie.reason_name}${serie.details ? ' - ' + serie.details : ''}</p>
-                                <p><strong>Instanzen:</strong> ${serie.total_instances} (${serie.active_instances} aktiv)</p>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">Erstellt von ${serie.created_by} am ${new Date(serie.created_at).toLocaleDateString('de-DE')}</p>
-                    </div>
-                    <div class="flex flex-col gap-2 ml-4">
-                        <button onclick="editSeriesModal(${serie.id})" 
-                                class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700">
-                            Serie bearbeiten
-                        </button>
-                        <button onclick="viewSeriesInstances(${serie.id})" 
-                                class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
-                            Instanzen anzeigen
-                        </button>
-                        <button onclick="deleteSeriesModal(${serie.id})" 
-                                class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
-                            Serie löschen
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-// Get recurrence text in German
-function getRecurrenceText(pattern, days) {
-    switch (pattern) {
-        case 'daily':
-            return 'Täglich';
-        case 'weekly':
-            if (days && days.length > 0) {
-                const dayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
-                const selectedDays = days.map(day => dayNames[day]).join(', ');
-                return `Wöchentlich (${selectedDays})`;
-            }
-            return 'Wöchentlich';
-        case 'monthly':
-            return 'Monatlich';
-        default:
-            return pattern;
-    }
-}
-
-// Edit series modal
-function editSeriesModal(seriesId) {
-    // Create modal for editing series
-    let html = `
-        <div id="edit-series-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold">Serie bearbeiten</h3>
-                    <button onclick="closeEditSeriesModal()" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="space-y-4">
-                    <div class="bg-blue-50 p-4 rounded-lg">
-                        <h4 class="font-semibold mb-2">Bearbeitungsoptionen:</h4>
-                        <div class="space-y-2">
-                            <label class="flex items-center">
-                                <input type="radio" name="edit-option" value="entire" class="mr-2" checked>
-                                Gesamte Serie bearbeiten (alle Instanzen)
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="edit-option" value="future" class="mr-2">
-                                Nur zukünftige Instanzen bearbeiten
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div id="future-date-container" class="hidden">
-                        <label class="block text-gray-700 font-semibold mb-2">Ab Datum:</label>
-                        <input type="date" id="edit-from-date" class="w-full border border-gray-300 rounded px-3 py-2">
-                    </div>
-                    
-                    <form id="edit-series-form">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Von (Uhrzeit)</label>
-                                <input type="time" id="edit-series-start-time" class="w-full border border-gray-300 rounded px-3 py-2">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Bis (Uhrzeit)</label>
-                                <input type="time" id="edit-series-end-time" class="w-full border border-gray-300 rounded px-3 py-2">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Grund</label>
-                                <select id="edit-series-reason" class="w-full border border-gray-300 rounded px-3 py-2">
-                                    <!-- Will be populated by JavaScript -->
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Details</label>
-                                <input type="text" id="edit-series-details" class="w-full border border-gray-300 rounded px-3 py-2">
-                            </div>
-                        </div>
-                        
-                        <div class="mt-6 flex gap-2">
-                            <button type="submit" class="bg-purple-600 text-white py-2 px-6 rounded hover:bg-purple-700">
-                                Änderungen speichern
-                            </button>
-                            <button type="button" onclick="closeEditSeriesModal()" class="bg-gray-600 text-white py-2 px-6 rounded hover:bg-gray-700">
-                                Abbrechen
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', html);
-    
-    // Populate reason select
-    const reasonSelect = document.getElementById('edit-series-reason');
-    blockReasons.forEach(reason => {
-        const option = document.createElement('option');
-        option.value = reason.id;
-        option.textContent = reason.name;
-        reasonSelect.appendChild(option);
-    });
-    
-    // Setup event listeners
-    document.querySelectorAll('input[name="edit-option"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const futureContainer = document.getElementById('future-date-container');
-            if (this.value === 'future') {
-                futureContainer.classList.remove('hidden');
-                document.getElementById('edit-from-date').value = new Date().toISOString().split('T')[0];
-            } else {
-                futureContainer.classList.add('hidden');
-            }
-        });
-    });
-    
-    document.getElementById('edit-series-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        handleEditSeriesSubmit(seriesId);
-    });
-}
-
-// Close edit series modal
-function closeEditSeriesModal() {
-    const modal = document.getElementById('edit-series-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-// Handle edit series form submission
-async function handleEditSeriesSubmit(seriesId) {
-    const editOption = document.querySelector('input[name="edit-option"]:checked').value;
-    const fromDate = document.getElementById('edit-from-date').value;
-    
-    const updateData = {
-        start_time: document.getElementById('edit-series-start-time').value,
-        end_time: document.getElementById('edit-series-end-time').value,
-        reason_id: parseInt(document.getElementById('edit-series-reason').value),
-        details: document.getElementById('edit-series-details').value
-    };
-    
-    let url = `/admin/blocks/series/${seriesId}`;
-    if (editOption === 'future') {
-        url += `/future?from_date=${fromDate}`;
-        updateData.from_date = fromDate;
-    }
-    
-    try {
-        const response = await fetch(url, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updateData)
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            closeEditSeriesModal();
-            loadSeriesList(); // Refresh the list
-        } else {
-            showToast(data.error || 'Fehler beim Bearbeiten der Serie', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Bearbeiten der Serie', 'error');
-    }
-}
-
-// View series instances
-function viewSeriesInstances(seriesId) {
-    // This would show all instances of the series
-    showToast(`Serie ${seriesId} Instanzen anzeigen - Funktion wird implementiert`, 'info');
-}
-
-// Delete series modal
-function deleteSeriesModal(seriesId) {
-    let html = `
-        <div id="delete-series-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-red-600">Serie löschen</h3>
-                    <button onclick="closeDeleteSeriesModal()" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="space-y-4">
-                    <p class="text-gray-600">Wie möchten Sie die Serie löschen?</p>
-                    
-                    <div class="space-y-2">
-                        <label class="flex items-center">
-                            <input type="radio" name="delete-option" value="all" class="mr-2" checked>
-                            Gesamte Serie löschen (alle Instanzen)
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="delete-option" value="future" class="mr-2">
-                            Nur zukünftige Instanzen löschen
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="delete-option" value="single" class="mr-2">
-                            Nur eine bestimmte Instanz löschen
-                        </label>
-                    </div>
-                    
-                    <div id="delete-date-container" class="hidden">
-                        <label class="block text-gray-700 font-semibold mb-2">Ab/An Datum:</label>
-                        <input type="date" id="delete-from-date" class="w-full border border-gray-300 rounded px-3 py-2">
-                    </div>
-                    
-                    <div class="bg-red-50 p-3 rounded">
-                        <p class="text-red-800 text-sm">
-                            <strong>Warnung:</strong> Diese Aktion kann nicht rückgängig gemacht werden.
-                        </p>
-                    </div>
-                    
-                    <div class="flex gap-2">
-                        <button onclick="confirmDeleteSeries(${seriesId})" class="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
-                            Löschen bestätigen
-                        </button>
-                        <button onclick="closeDeleteSeriesModal()" class="bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700">
-                            Abbrechen
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', html);
-    
-    // Setup event listeners
-    document.querySelectorAll('input[name="delete-option"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const dateContainer = document.getElementById('delete-date-container');
-            if (this.value === 'future' || this.value === 'single') {
-                dateContainer.classList.remove('hidden');
-                document.getElementById('delete-from-date').value = new Date().toISOString().split('T')[0];
-            } else {
-                dateContainer.classList.add('hidden');
-            }
-        });
-    });
-}
-
-// Close delete series modal
-function closeDeleteSeriesModal() {
-    const modal = document.getElementById('delete-series-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-// Confirm delete series
-async function confirmDeleteSeries(seriesId) {
-    const deleteOption = document.querySelector('input[name="delete-option"]:checked').value;
-    const fromDate = document.getElementById('delete-from-date').value;
-    
-    const deleteData = { option: deleteOption };
-    if (deleteOption === 'future' || deleteOption === 'single') {
-        deleteData.from_date = fromDate;
-    }
-    
-    try {
-        const response = await fetch(`/admin/blocks/series/${seriesId}`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(deleteData)
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            closeDeleteSeriesModal();
-            loadSeriesList(); // Refresh the list
-        } else {
-            showToast(data.error || 'Fehler beim Löschen der Serie', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Löschen der Serie', 'error');
-    }
-}
-
-// Load template list
-async function loadTemplateList() {
-    try {
-        const response = await fetch('/admin/block-templates');
-        const data = await response.json();
-        
-        if (response.ok) {
-            displayTemplateList(data.templates);
-        } else {
-            showToast(data.error || 'Fehler beim Laden der Vorlagen', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Laden der Vorlagen', 'error');
-    }
-}
-
-// Display template list
-function displayTemplateList(templates) {
-    const container = document.getElementById('template-list');
-    
-    if (templates.length === 0) {
-        container.innerHTML = '<p class="text-gray-600">Keine Vorlagen vorhanden.</p>';
-        return;
-    }
-    
-    let html = '<div class="space-y-4">';
-    
-    templates.forEach(template => {
-        const courtList = template.court_selection.join(', ');
-        const recurrenceText = template.recurrence_pattern ? 
-            ` | ${getRecurrenceText(template.recurrence_pattern, template.recurrence_days)}` : '';
-        
-        html += `
-            <div class="border border-gray-200 rounded p-4 bg-gray-50">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                        <h4 class="font-semibold text-lg mb-2">${template.name}</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                            <div>
-                                <p><strong>Plätze:</strong> ${courtList}</p>
-                                <p><strong>Uhrzeit:</strong> ${template.start_time}-${template.end_time}${recurrenceText}</p>
-                            </div>
-                            <div>
-                                <p><strong>Grund:</strong> ${template.reason_name}${template.details ? ' - ' + template.details : ''}</p>
-                                <p class="text-xs text-gray-500">Erstellt von ${template.created_by}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 ml-4">
-                        <button onclick="applyTemplate(${template.id})" 
-                                class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-                                title="Vorlage anwenden">
-                            ${GERMAN_TEXT.APPLY_TEMPLATE}
-                        </button>
-                        <button onclick="editTemplate(${template.id})" 
-                                class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                                title="Vorlage bearbeiten">
-                            ✏️
-                        </button>
-                        <button onclick="duplicateTemplate(${template.id})" 
-                                class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
-                                title="Vorlage duplizieren">
-                            📋
-                        </button>
-                        <button onclick="deleteTemplate(${template.id})" 
-                                class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                                title="Vorlage löschen">
-                            🗑️
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-// Duplicate template
-function duplicateTemplate(templateId) {
-    const template = blockTemplates.find(t => t.id === templateId);
-    if (!template) return;
-    
-    // Pre-fill form with template data but with new name
-    document.getElementById('template-name').value = template.name + ' (Kopie)';
-    document.getElementById('template-start-time').value = template.start_time;
-    document.getElementById('template-end-time').value = template.end_time;
-    document.getElementById('template-reason').value = template.reason_id;
-    document.getElementById('template-details').value = template.details || '';
-    
-    // Select courts
-    document.querySelectorAll('input[name="template-courts"]').forEach(cb => {
-        cb.checked = template.court_selection.includes(parseInt(cb.value));
-    });
-    
-    // Scroll to form
-    document.getElementById('template-form').scrollIntoView({ behavior: 'smooth' });
-    
-    showToast(`Vorlage "${template.name}" dupliziert`, 'info');
-}
-
 // Load reason list
 async function loadReasonList() {
     try {
@@ -2386,10 +1280,6 @@ function displayReasonList(reasons) {
                                 ${usageWarning}
                             </div>
                             <p>Erstellt von ${reason.created_by} am ${new Date(reason.created_at).toLocaleDateString('de-DE')}</p>
-                            ${reason.details_templates && reason.details_templates.length > 0 ? 
-                                `<p class="text-blue-600">📋 ${reason.details_templates.length} Details-Vorlage(n)</p>` : 
-                                '<p class="text-gray-500">Keine Details-Vorlagen</p>'
-                            }
                         </div>
                     </div>
                     <div class="flex flex-col gap-2 ml-4">
@@ -2397,11 +1287,6 @@ function displayReasonList(reasons) {
                                 class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700" 
                                 title="Grund bearbeiten">
                             ✏️ Bearbeiten
-                        </button>
-                        <button onclick="manageDetailsTemplates(${reason.id}, '${reason.name}')" 
-                                class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700" 
-                                title="Details-Vorlagen verwalten">
-                            📋 Vorlagen
                         </button>
                         <button onclick="deleteReasonWithWarning(${reason.id}, ${reason.usage_count})" 
                                 class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700" 
@@ -2416,255 +1301,6 @@ function displayReasonList(reasons) {
     
     html += '</div>';
     container.innerHTML = html;
-}
-
-// Apply template
-async function applyTemplate(templateId) {
-    const today = new Date().toISOString().split('T')[0];
-    
-    try {
-        const response = await fetch(`/admin/block-templates/${templateId}/apply`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ start_date: today })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            // Pre-fill form with template data
-            applyTemplateToForm(data.form_data);
-            // Switch to blocks tab
-            showTab('blocks');
-        } else {
-            showToast(data.error || 'Fehler beim Anwenden der Vorlage', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Anwenden der Vorlage', 'error');
-    }
-}
-
-// Apply template data to form
-function applyTemplateToForm(formData) {
-    if (!formData) return;
-    
-    // Fill single block form
-    if (formData.court_selection && formData.court_selection.length === 1) {
-        document.getElementById('block-court').value = formData.court_selection[0];
-    }
-    
-    if (formData.start_time) {
-        document.getElementById('block-start').value = formData.start_time;
-    }
-    
-    if (formData.end_time) {
-        document.getElementById('block-end').value = formData.end_time;
-    }
-    
-    if (formData.reason_id) {
-        document.getElementById('block-reason').value = formData.reason_id;
-    }
-    
-    if (formData.details) {
-        document.getElementById('block-details').value = formData.details;
-    }
-    
-    // Fill multi-court form if multiple courts
-    if (formData.court_selection && formData.court_selection.length > 1) {
-        // Clear existing selections
-        document.querySelectorAll('input[name="multi-courts"]').forEach(cb => cb.checked = false);
-        
-        // Select courts from template
-        formData.court_selection.forEach(courtId => {
-            const checkbox = document.querySelector(`input[name="multi-courts"][value="${courtId}"]`);
-            if (checkbox) checkbox.checked = true;
-        });
-        
-        // Fill other multi-court fields
-        if (formData.start_time) {
-            document.getElementById('multi-start').value = formData.start_time;
-        }
-        
-        if (formData.end_time) {
-            document.getElementById('multi-end').value = formData.end_time;
-        }
-        
-        if (formData.reason_id) {
-            document.getElementById('multi-reason').value = formData.reason_id;
-        }
-        
-        if (formData.details) {
-            document.getElementById('multi-details').value = formData.details;
-        }
-    }
-}
-
-// Enhanced template creation with preview
-function createTemplateWithPreview() {
-    const templateName = document.getElementById('template-name').value.trim();
-    if (!templateName) {
-        showToast('Bitte einen Vorlagennamen eingeben', 'error');
-        return;
-    }
-    
-    const selectedCourts = Array.from(document.querySelectorAll('input[name="template-courts"]:checked'))
-        .map(cb => parseInt(cb.value));
-    
-    if (selectedCourts.length === 0) {
-        showToast('Bitte mindestens einen Platz auswählen', 'error');
-        return;
-    }
-    
-    const templateData = {
-        name: templateName,
-        court_selection: selectedCourts,
-        start_time: document.getElementById('template-start-time').value,
-        end_time: document.getElementById('template-end-time').value,
-        reason_id: parseInt(document.getElementById('template-reason').value),
-        details: document.getElementById('template-details').value
-    };
-    
-    // Show preview modal
-    showTemplatePreview(templateData);
-}
-
-// Show template preview modal
-function showTemplatePreview(templateData) {
-    const reasonName = blockReasons.find(r => r.id === templateData.reason_id)?.name || 'Unbekannt';
-    
-    let html = `
-        <div id="template-preview-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold">Vorlagen-Vorschau</h3>
-                    <button onclick="closeTemplatePreview()" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="space-y-4">
-                    <div class="bg-blue-50 p-4 rounded-lg">
-                        <h4 class="font-semibold mb-2">${templateData.name}</h4>
-                        <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <p><strong>Plätze:</strong> ${templateData.court_selection.join(', ')}</p>
-                                <p><strong>Uhrzeit:</strong> ${templateData.start_time} - ${templateData.end_time}</p>
-                            </div>
-                            <div>
-                                <p><strong>Grund:</strong> ${reasonName}</p>
-                                ${templateData.details ? `<p><strong>Details:</strong> ${templateData.details}</p>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-yellow-50 p-3 rounded">
-                        <p class="text-yellow-800 text-sm">
-                            Diese Vorlage kann später verwendet werden, um schnell Sperrungen mit diesen Einstellungen zu erstellen.
-                        </p>
-                    </div>
-                    
-                    <div class="flex gap-2">
-                        <button onclick="confirmCreateTemplate()" class="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700">
-                            Vorlage erstellen
-                        </button>
-                        <button onclick="closeTemplatePreview()" class="bg-gray-600 text-white py-2 px-6 rounded hover:bg-gray-700">
-                            Abbrechen
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', html);
-    
-    // Store template data for confirmation
-    window.pendingTemplateData = templateData;
-}
-
-// Close template preview
-function closeTemplatePreview() {
-    const modal = document.getElementById('template-preview-modal');
-    if (modal) {
-        modal.remove();
-    }
-    window.pendingTemplateData = null;
-}
-
-// Confirm create template
-async function confirmCreateTemplate() {
-    if (!window.pendingTemplateData) return;
-    
-    try {
-        const response = await fetch('/admin/block-templates', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(window.pendingTemplateData)
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            closeTemplatePreview();
-            document.getElementById('template-form').reset();
-            loadTemplateList(); // Refresh the template list
-        } else {
-            showToast(data.error || 'Fehler beim Erstellen der Vorlage', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Erstellen der Vorlage', 'error');
-    }
-}
-
-// Edit template
-function editTemplate(templateId) {
-    const template = blockTemplates.find(t => t.id === templateId);
-    if (!template) return;
-    
-    // Pre-fill form with template data
-    document.getElementById('template-name').value = template.name;
-    document.getElementById('template-start-time').value = template.start_time;
-    document.getElementById('template-end-time').value = template.end_time;
-    document.getElementById('template-reason').value = template.reason_id;
-    document.getElementById('template-details').value = template.details || '';
-    
-    // Select courts
-    document.querySelectorAll('input[name="template-courts"]').forEach(cb => {
-        cb.checked = template.court_selection.includes(parseInt(cb.value));
-    });
-    
-    // Scroll to form
-    document.getElementById('template-form').scrollIntoView({ behavior: 'smooth' });
-    
-    showToast(`Vorlage "${template.name}" in Formular geladen`, 'info');
-}
-
-// Delete template
-async function deleteTemplate(templateId) {
-    if (!confirm('Möchten Sie diese Vorlage wirklich löschen?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/admin/block-templates/${templateId}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            loadTemplateList(); // Refresh the list
-        } else {
-            showToast(data.error || 'Fehler beim Löschen der Vorlage', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Löschen der Vorlage', 'error');
-    }
 }
 
 // Enhanced reason editing modal
@@ -2833,184 +1469,6 @@ async function deleteReasonEnhanced(reasonId) {
         }
     } catch (error) {
         showToast('Fehler beim Löschen des Sperrungsgrundes', 'error');
-    }
-}
-
-// Details template management
-function manageDetailsTemplates(reasonId, reasonName) {
-    let html = `
-        <div id="details-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold">Details-Vorlagen für "${reasonName}"</h3>
-                    <button onclick="closeDetailsModal()" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Create new template -->
-                    <div class="space-y-4">
-                        <h4 class="font-semibold text-blue-600">Neue Vorlage erstellen</h4>
-                        <form id="details-template-form" class="space-y-3">
-                            <div>
-                                <label class="block text-gray-700 font-medium mb-1">Vorlagenname</label>
-                                <input type="text" id="details-template-name" 
-                                       class="w-full border border-gray-300 rounded px-3 py-2" 
-                                       placeholder="z.B. Platzpflege, Turniervorbereitung" required>
-                            </div>
-                            <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
-                                Vorlage hinzufügen
-                            </button>
-                        </form>
-                        
-                        <div class="bg-blue-50 p-3 rounded text-sm text-blue-700">
-                            <p><strong>Hinweis:</strong> Details-Vorlagen helfen bei der schnellen Auswahl häufig verwendeter Zusatzinformationen.</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Existing templates -->
-                    <div class="space-y-4">
-                        <h4 class="font-semibold text-green-600">Vorhandene Vorlagen</h4>
-                        <div id="details-templates-list">
-                            <div class="text-center py-4">
-                                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
-                                <p class="mt-2 text-gray-600">Lade Vorlagen...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', html);
-    
-    // Load existing templates
-    loadDetailsTemplates(reasonId);
-    
-    // Setup form submission
-    document.getElementById('details-template-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        createDetailsTemplate(reasonId);
-    });
-}
-
-// Close details modal
-function closeDetailsModal() {
-    const modal = document.getElementById('details-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-// Load details templates
-async function loadDetailsTemplates(reasonId) {
-    try {
-        const response = await fetch(`/admin/block-reasons/${reasonId}/details-templates`);
-        const data = await response.json();
-        
-        if (response.ok) {
-            displayDetailsTemplates(data.templates);
-        } else {
-            document.getElementById('details-templates-list').innerHTML = 
-                '<p class="text-red-600">Fehler beim Laden der Vorlagen</p>';
-        }
-    } catch (error) {
-        document.getElementById('details-templates-list').innerHTML = 
-            '<p class="text-red-600">Fehler beim Laden der Vorlagen</p>';
-    }
-}
-
-// Display details templates
-function displayDetailsTemplates(templates) {
-    const container = document.getElementById('details-templates-list');
-    
-    if (templates.length === 0) {
-        container.innerHTML = '<p class="text-gray-600">Keine Vorlagen vorhanden.</p>';
-        return;
-    }
-    
-    let html = '<div class="space-y-2">';
-    
-    templates.forEach(template => {
-        html += `
-            <div class="flex items-center justify-between p-3 border border-gray-200 rounded bg-gray-50">
-                <div>
-                    <p class="font-medium">${template.template_name}</p>
-                    <p class="text-sm text-gray-500">Erstellt am ${new Date(template.created_at).toLocaleDateString('de-DE')}</p>
-                </div>
-                <button onclick="deleteDetailsTemplate(${template.id})" 
-                        class="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700" 
-                        title="Vorlage löschen">
-                    🗑️
-                </button>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-// Create details template
-async function createDetailsTemplate(reasonId) {
-    const templateName = document.getElementById('details-template-name').value.trim();
-    
-    if (!templateName) {
-        showToast('Bitte einen Vorlagennamen eingeben', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/admin/block-reasons/${reasonId}/details-templates`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ template_name: templateName })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            document.getElementById('details-template-name').value = '';
-            loadDetailsTemplates(reasonId); // Refresh the list
-        } else {
-            showToast(data.error || 'Fehler beim Erstellen der Vorlage', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Erstellen der Vorlage', 'error');
-    }
-}
-
-// Delete details template
-async function deleteDetailsTemplate(templateId) {
-    if (!confirm('Möchten Sie diese Details-Vorlage wirklich löschen?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/admin/details-templates/${templateId}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showToast(data.message);
-            // Find the reason ID to reload templates
-            const modal = document.getElementById('details-modal');
-            if (modal) {
-                // Extract reason ID from the modal context or reload all templates
-                location.reload(); // Simple approach - reload page
-            }
-        } else {
-            showToast(data.error || 'Fehler beim Löschen der Vorlage', 'error');
-        }
-    } catch (error) {
-        showToast('Fehler beim Löschen der Vorlage', 'error');
     }
 }
 
@@ -3220,24 +1678,16 @@ function showDayDetails(dateStr) {
     
     dayBlocks.forEach(block => {
         const color = getReasonColor(block.reason_name);
-        const seriesInfo = block.series_id ? ` (Serie ${block.series_id}${block.is_modified ? ', modifiziert' : ''})` : '';
         
         html += `
             <div class="block-detail-item border rounded p-3" style="border-left: 4px solid ${color};">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="font-semibold">Platz ${block.court_number} - ${block.start_time}-${block.end_time}</p>
-                        <p class="text-gray-600">${block.reason_name}${block.details ? ' - ' + block.details : ''}${seriesInfo}</p>
+                        <p class="text-gray-600">${block.reason_name}${block.details ? ' - ' + block.details : ''}</p>
                         <p class="text-sm text-gray-500">Erstellt von ${block.created_by}</p>
                     </div>
                     <div class="flex gap-2">
-                        ${block.series_id ? `
-                            <button onclick="editSeries(${block.series_id})" 
-                                    class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
-                                    title="Serie bearbeiten">
-                                Serie
-                            </button>
-                        ` : ''}
                         <button onclick="editBatch('${block.batch_id}')" 
                                 class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
                                 title="Bearbeiten">
@@ -3480,4 +1930,3 @@ function groupBlocksByBatch(blocks) {
         return dateA - dateB;
     });
 }
-

@@ -40,10 +40,6 @@ class ErrorMessages:
     BLOCK_REASON_NAME_EMPTY = "Sperrungsgrund-Name darf nicht leer sein"
     BLOCK_REASON_NOT_FOUND = "Sperrungsgrund nicht gefunden"
 
-    # Details template errors
-    DETAILS_TEMPLATE_NAME_EMPTY = "Details-Vorlage-Name darf nicht leer sein"
-
-
 class SuccessMessages:
     """Success messages used throughout the application."""
 

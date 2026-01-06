@@ -1,4 +1,5 @@
 """Block service for court blocking."""
+from datetime import date, datetime, time
 from app import db
 from app.models import Block, Reservation, BlockReason, BlockAuditLog
 from app.services.email_service import EmailService
@@ -11,6 +12,17 @@ logger = logging.getLogger(__name__)
 
 class BlockService:
     """Service for managing court blocks."""
+    
+    @staticmethod
+    def _serialize_for_json(value):
+        """Convert date/time objects (including nested structures) to JSON-safe strings."""
+        if isinstance(value, (datetime, date, time)):
+            return value.isoformat()
+        if isinstance(value, dict):
+            return {k: BlockService._serialize_for_json(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [BlockService._serialize_for_json(v) for v in value]
+        return value
     
     @staticmethod
     def create_block(court_id, date, start_time, end_time, reason_id, details, admin_id):
@@ -322,52 +334,6 @@ class BlockService:
             return False, f"Fehler beim Löschen der Batch-Sperrung: {str(e)}"
     
     @staticmethod
-    def bulk_delete_blocks(block_ids, admin_id):
-        """
-        Delete multiple blocks in a single transaction.
-        
-        Args:
-            block_ids: List of block IDs to delete
-            admin_id: ID of administrator performing the deletion
-            
-        Returns:
-            tuple: (success boolean, error message or None)
-        """
-        try:
-            if not block_ids:
-                return False, "No blocks specified for deletion"
-            
-            # Get all blocks to delete
-            blocks_to_delete = Block.query.filter(Block.id.in_(block_ids)).all()
-            
-            if len(blocks_to_delete) != len(block_ids):
-                return False, "Some blocks not found"
-            
-            # Delete all blocks
-            for block in blocks_to_delete:
-                db.session.delete(block)
-            
-            db.session.commit()
-            
-            # Log the operation
-            BlockService.log_block_operation(
-                operation='bulk_delete',
-                block_data={
-                    'block_ids': block_ids,
-                    'blocks_deleted': len(blocks_to_delete)
-                },
-                admin_id=admin_id
-            )
-            
-            logger.info(f"Bulk deleted {len(blocks_to_delete)} blocks by admin {admin_id}")
-            
-            return True, None
-            
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Failed to bulk delete blocks: {str(e)}")
-            return False, f"Fehler beim Löschen der Sperren: {str(e)}"
-    @staticmethod
     def filter_blocks(date_range=None, court_ids=None, reason_ids=None, block_types=None):
         """
         Filter blocks based on multiple criteria.
@@ -434,7 +400,7 @@ class BlockService:
         Log a block operation for audit purposes.
         
         Args:
-            operation: Type of operation ('create', 'update', 'delete', 'bulk_delete')
+            operation: Type of operation ('create', 'update', 'delete')
             block_data: Dictionary containing operation details
             admin_id: ID of administrator performing the operation
         """
@@ -446,10 +412,12 @@ class BlockService:
                 logger.warning("admin_id is None for block operation logging, skipping audit log")
                 return
             
+            safe_operation_data = BlockService._serialize_for_json(block_data) if block_data else None
+            
             audit_log = BlockAuditLog(
                 operation=operation,
                 block_id=block_data.get('block_id'),
-                operation_data=block_data,
+                operation_data=safe_operation_data,
                 admin_id=admin_id
             )
             

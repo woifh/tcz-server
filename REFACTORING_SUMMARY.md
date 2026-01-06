@@ -8,18 +8,14 @@ Successfully refactored the monolithic `admin-enhanced.js` file (3,483 lines) in
 ### Core Modules (`app/static/js/components/admin/core/`)
 - **admin-constants.js** - German text constants and configuration
 - **admin-state.js** - Centralized state management with getters/setters
-- **admin-api.js** - All API calls organized by functionality (blocks, templates, reasons, series)
+- **admin-api.js** - All API calls organized by functionality (blocks, reasons, series)
 - **admin-utils.js** - Common utility functions (toast, date, form, DOM, data, storage, events)
 
 ### Form Modules (`app/static/js/components/admin/forms/`)
 - **block-form.js** - Multi-court block creation and editing
 - **series-form.js** - Recurring block series management
-- **template-form.js** - Block template creation and application
 - **reason-form.js** - Block reason management with edit modal
 
-### Bulk Operations (`app/static/js/components/admin/bulk-operations/`)
-- **bulk-delete.js** - Batch deletion with confirmation modals
-- **bulk-edit.js** - Bulk editing with field validation
 
 ### Filtering (`app/static/js/components/admin/filtering/`)
 - **block-filters.js** - Advanced filtering system with URL params, presets, and persistence
@@ -106,10 +102,7 @@ Successfully refactored the monolithic `admin-enhanced.js` file (3,483 lines) in
 - `app/static/js/components/admin/core/admin-utils.js`
 - `app/static/js/components/admin/forms/block-form.js`
 - `app/static/js/components/admin/forms/series-form.js`
-- `app/static/js/components/admin/forms/template-form.js`
 - `app/static/js/components/admin/forms/reason-form.js`
-- `app/static/js/components/admin/bulk-operations/bulk-delete.js`
-- `app/static/js/components/admin/bulk-operations/bulk-edit.js`
 - `app/static/js/components/admin/filtering/block-filters.js`
 - `app/static/js/components/admin/calendar/calendar-view.js`
 - `app/static/js/components/admin/admin-main.js`
@@ -125,8 +118,7 @@ Successfully refactored the monolithic `admin-enhanced.js` file (3,483 lines) in
 ## Testing Recommendations
 
 1. **Functionality Testing**
-   - Test all form submissions (blocks, series, templates, reasons)
-   - Test bulk operations (delete, edit)
+   - Test all form submissions (blocks, series, reasons)
    - Test filtering and search functionality
    - Test calendar navigation and interactions
 
