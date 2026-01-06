@@ -7,6 +7,8 @@
 import { stateManager } from './core/admin-state.js';
 import { blockReasonsAPI, blocksAPI } from './core/admin-api.js';
 import { showToast, dateUtils } from './core/admin-utils.js';
+import { blocksManager } from './core/blocks-manager.js';
+import { showTab, modalUtils, getReasonColor, loadingUtils } from './core/ui-helpers.js';
 
 // Form imports
 import { blockForm } from './forms/block-form.js';
@@ -93,26 +95,8 @@ export class AdminPanel {
     }
 
     async loadUpcomingBlocks() {
-        try {
-            const filters = stateManager.getCurrentFilters();
-            
-            // If no date filters are set, default to upcoming blocks
-            if (!filters.date_range_start && !filters.date_range_end) {
-                filters.date_range_start = dateUtils.getTodayString();
-                filters.date_range_end = dateUtils.getDatePlusDays(30);
-            }
-
-            const result = await blocksAPI.load(filters);
-            
-            if (result.success) {
-                this.renderBlocksList(result.blocks);
-            } else {
-                showToast(result.error || 'Fehler beim Laden der Sperrungen', 'error');
-            }
-        } catch (error) {
-            console.error('Error loading blocks:', error);
-            showToast('Fehler beim Laden der Sperrungen', 'error');
-        }
+        // Delegate to blocksManager
+        await blocksManager.loadUpcomingBlocks();
     }
 
     renderBlocksList(blocks) {
@@ -239,9 +223,12 @@ export class AdminPanel {
     // Global functions that need to be accessible from HTML
     setupGlobalFunctions() {
         // Make functions available globally for onclick handlers
-        window.deleteBatch = (batchId) => this.deleteBatch(batchId);
-        window.loadUpcomingBlocks = () => this.loadUpcomingBlocks();
+        window.deleteBatch = (batchId) => blocksManager.deleteBatch(batchId);
+        window.loadUpcomingBlocks = () => blocksManager.loadUpcomingBlocks();
         window.renderBlocksList = (blocks) => this.renderBlocksList(blocks);
+
+        // Block manager functions
+        window.blocksManager = blocksManager;
 
         // Form functions
         window.blockForm = blockForm;
@@ -252,6 +239,12 @@ export class AdminPanel {
 
         // Calendar functions
         window.calendarView = calendarView;
+
+        // UI helper functions
+        window.showTab = showTab;
+        window.modalUtils = modalUtils;
+        window.getReasonColor = getReasonColor;
+        window.loadingUtils = loadingUtils;
 
         // Legacy function names for backward compatibility
         window.loadBlockReasons = () => reasonForm.loadReasons();
