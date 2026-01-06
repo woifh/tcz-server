@@ -133,40 +133,36 @@ def debug_short_notice():
 def version():
     """Version endpoint for deployment verification."""
     try:
-        # Try to read deployment info file first
+        from app.version import get_version_info
+
+        # Get version info from the new version module
+        info = get_version_info()
+
+        # Try to read deployment info file as well
         deployment_info = {}
         deployment_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'deployment_info.json')
-        
+
         if os.path.exists(deployment_file):
             import json
             with open(deployment_file, 'r') as f:
                 deployment_info = json.load(f)
-        
-        # Get current git info as fallback
-        git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'], 
-                                         cwd=os.path.dirname(os.path.dirname(__file__)),
-                                         universal_newlines=True).strip()[:8]
-        
-        git_message = subprocess.check_output(['git', 'log', '-1', '--pretty=%s'], 
-                                            cwd=os.path.dirname(os.path.dirname(__file__)),
-                                            universal_newlines=True).strip()
-        
-        git_date = subprocess.check_output(['git', 'log', '-1', '--pretty=%ci'], 
-                                         cwd=os.path.dirname(os.path.dirname(__file__)),
-                                         universal_newlines=True).strip()
-        
+
         response = {
+            'success': True,
             'status': 'ok',
-            'current_git_hash': git_hash,
-            'current_git_message': git_message,
-            'current_git_date': git_date,
+            'version': info['version'],
+            'commit_hash': info['commit_hash'],
+            'branch': info['branch'],
+            'last_commit_date': info['last_commit_date'],
+            'deployment_time': info['deployment_time'],
             'deployment_check': 'success'
         }
-        
+
         # Add deployment info if available
         if deployment_info:
             response['deployment_info'] = deployment_info
-            response['deployment_time'] = deployment_info.get('deployment_time')
+            if 'deployment_time' in deployment_info:
+                response['deployment_time'] = deployment_info.get('deployment_time')
             response['deployed_git_hash'] = deployment_info.get('git_hash_short')
         
         return jsonify(response)
