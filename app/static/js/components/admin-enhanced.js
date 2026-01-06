@@ -353,8 +353,8 @@ async function handleMultiCourtSubmit(e) {
         let response;
         
         if (isEditMode) {
-            // Update existing block group - use a special endpoint for multi-court updates
-            response = await fetch(`/admin/blocks/multi-court-update/${blockId}`, {
+            // Update existing block group
+            response = await fetch(`/admin/blocks/batch/${blockId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(blockData)
@@ -1197,10 +1197,10 @@ async function confirmDelete(blockId) {
     closeDeleteConfirmation();
     
     try {
-        const response = await fetch(`/admin/blocks/multi-court-delete/${blockId}`, {
+        const response = await fetch(`/admin/blocks/batch/${blockId}`, {
             method: 'DELETE'
         });
-        
+
         const data = await response.json();
         
         if (response.ok) {

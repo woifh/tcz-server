@@ -112,21 +112,6 @@ export const blocksAPI = {
         }
     },
 
-    async updateMultiCourt(blockId, blockData) {
-        try {
-            const response = await fetch(`/admin/blocks/multi-court-update/${blockId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(blockData)
-            });
-            
-            const data = await response.json();
-            return { success: response.ok, data, error: response.ok ? null : data.error };
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Aktualisieren der Sperrung' };
-        }
-    },
-
     async updateBatch(batchId, blockData) {
         try {
             const response = await fetch(`/admin/blocks/batch/${batchId}`, {
@@ -147,20 +132,7 @@ export const blocksAPI = {
             const response = await fetch(`/admin/blocks/batch/${batchId}`, {
                 method: 'DELETE'
             });
-            
-            const data = await response.json();
-            return { success: response.ok, data, error: response.ok ? null : data.error };
-        } catch (error) {
-            return { success: false, error: 'Fehler beim Löschen der Sperrung' };
-        }
-    },
 
-    async deleteMultiCourt(blockId) {
-        try {
-            const response = await fetch(`/admin/blocks/multi-court-delete/${blockId}`, {
-                method: 'DELETE'
-            });
-            
             const data = await response.json();
             return { success: response.ok, data, error: response.ok ? null : data.error };
         } catch (error) {
