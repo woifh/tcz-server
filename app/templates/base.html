@@ -47,12 +47,7 @@
                     <span class="sm:hidden">TC Zellerndorf</span>
                 </h1>
 
-                <!-- Club Logo (top right) -->
                 <div class="flex items-center gap-4">
-                    <img src="{{ url_for('static', filename='images/logo.jpg') }}" 
-                         alt="Tennisclub Zellerndorf Logo" 
-                         class="h-8 w-auto object-contain hidden sm:block">
-                    
                     <!-- Desktop Menu (hidden on mobile) -->
                     <!-- Desktop Menu (hidden on mobile) -->
                     <div class="hidden lg:flex gap-4 items-center">
@@ -155,16 +150,9 @@
                     </div>
 
                     <!-- Mobile Menu Button -->
-                    <div class="flex items-center gap-2">
-                        <!-- Mobile Logo -->
-                        <img src="{{ url_for('static', filename='images/logo.jpg') }}" 
-                             alt="Tennisclub Zellerndorf Logo" 
-                             class="h-6 w-auto object-contain sm:hidden">
-                        
-                        <button class="lg:hidden text-white" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Menü öffnen">
-                            <span class="material-icons">menu</span>
-                        </button>
-                    </div>
+                    <button class="lg:hidden text-white" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Menü öffnen">
+                        <span class="material-icons">menu</span>
+                    </button>
                 </div>
 
             <!-- Mobile Menu (shown when hamburger is clicked) -->
