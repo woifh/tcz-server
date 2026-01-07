@@ -94,13 +94,13 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">
                                 <button @click="sortBy('name')" class="flex items-center gap-1 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded p-1" aria-label="Nach Grund sortieren">
                                     Grund
-                                    <span class="material-icons text-sm" aria-hidden="true">sort</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
                                 </button>
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">
                                 <button @click="sortBy('usage_count')" class="flex items-center gap-1 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded p-1" aria-label="Nach Verwendungen sortieren">
                                     Verwendungen
-                                    <span class="material-icons text-sm" aria-hidden="true">sort</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
                                 </button>
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">
@@ -112,7 +112,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">
                                 <button @click="sortBy('created_at')" class="flex items-center gap-1 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded p-1" aria-label="Nach Erstellungsdatum sortieren">
                                     Erstellt am
-                                    <span class="material-icons text-sm" aria-hidden="true">sort</span>
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
                                 </button>
                             </th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 tracking-wider">
@@ -218,7 +218,9 @@
                                             title="Bearbeiten"
                                             :aria-label="`${reason.name} bearbeiten`"
                                         >
-                                            <span class="material-icons text-sm" aria-hidden="true">edit</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
                                         </button>
                                         <button
                                             x-show="editingReason?.id !== reason.id"
@@ -228,7 +230,9 @@
                                             title="Löschen"
                                             :aria-label="`${reason.name} löschen`"
                                         >
-                                            <span class="material-icons text-sm" aria-hidden="true">delete</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
                                         </button>
                                         <!-- Edit Mode Actions -->
                                         <button
@@ -239,8 +243,10 @@
                                             title="Speichern (Enter)"
                                             aria-label="Änderungen speichern"
                                         >
-                                            <span x-show="!editForm.submitting" class="material-icons text-sm" aria-hidden="true">check</span>
-                                            <div x-show="editForm.submitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600" aria-hidden="true"></div>
+                                            <svg x-show="!editForm.submitting" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            <div x-show="editForm.submitting" class="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600" aria-hidden="true"></div>
                                         </button>
                                         <button
                                             x-show="editingReason?.id === reason.id"
@@ -250,7 +256,9 @@
                                             title="Abbrechen (Escape)"
                                             aria-label="Bearbeitung abbrechen"
                                         >
-                                            <span class="material-icons text-sm" aria-hidden="true">close</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
                                         </button>
                                     </div>
                                 </td>
@@ -333,7 +341,9 @@
                                                     class="flex-1 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 disabled: transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center justify-center gap-2"
                                                     aria-label="Änderungen speichern"
                                                 >
-                                                    <span x-show="!editForm.submitting" class="material-icons text-sm" aria-hidden="true">check</span>
+                                                    <svg x-show="!editForm.submitting" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                    </svg>
                                                     <div x-show="editForm.submitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white" aria-hidden="true"></div>
                                                     <span x-text="editForm.submitting ? 'Speichere...' : 'Speichern'"></span>
                                                 </button>
@@ -361,16 +371,20 @@
                                         title="Bearbeiten"
                                         :aria-label="`${reason.name} bearbeiten`"
                                     >
-                                        <span class="material-icons text-lg" aria-hidden="true">edit</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
                                     </button>
-                                    <button 
+                                    <button
                                         @click="confirmDelete(reason)"
                                         :disabled="loading"
                                         class="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled: focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
                                         title="Löschen"
                                         :aria-label="`${reason.name} löschen`"
                                     >
-                                        <span class="material-icons text-lg" aria-hidden="true">delete</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
                                     </button>
                                 </div>
                             </div>
