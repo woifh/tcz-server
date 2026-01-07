@@ -237,8 +237,67 @@
                         <option :value="fav.id" x-text="fav.name"></option>
                     </template>
                 </select>
+
+                <!-- Toggle member search -->
+                <button type="button"
+                        @click="toggleSearch()"
+                        class="mt-2 text-sm text-green-600 hover:text-green-800 flex items-center gap-1">
+                    <span class="material-icons text-sm">search</span>
+                    <span x-text="showSearch ? 'Suche schließen' : 'Anderes Mitglied suchen'"></span>
+                </button>
+
+                <!-- Member search panel -->
+                <div x-show="showSearch" x-cloak class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <!-- Search input -->
+                    <div class="relative">
+                        <input type="text"
+                               id="booking-member-search"
+                               x-model="searchQuery"
+                               @input.debounce.300ms="searchMembers()"
+                               @keydown.arrow-down.prevent="searchHighlightNext()"
+                               @keydown.arrow-up.prevent="searchHighlightPrevious()"
+                               @keydown.enter.prevent="searchSelectHighlighted()"
+                               class="w-full border border-gray-300 rounded px-3 py-2 pr-10 text-sm"
+                               placeholder="Name oder E-Mail eingeben..."
+                               autocomplete="off">
+                        <!-- Loading spinner -->
+                        <div x-show="searchLoading" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <svg class="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Search error -->
+                    <div x-show="searchError" x-text="searchError" class="mt-2 text-sm text-red-600"></div>
+
+                    <!-- Search results -->
+                    <div x-show="searchResults.length > 0" class="mt-2 max-h-40 overflow-y-auto">
+                        <template x-for="(member, index) in searchResults" :key="member.id">
+                            <button type="button"
+                                    @click="selectSearchResult(member)"
+                                    :class="{ 'bg-green-100': index === searchHighlightIndex }"
+                                    class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex justify-between items-center">
+                                <span x-text="member.name"></span>
+                                <span class="text-xs text-gray-500" x-text="member.email"></span>
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- No results message -->
+                    <div x-show="searchQuery.trim() && !searchLoading && searchResults.length === 0 && !searchError"
+                         class="mt-2 text-sm text-gray-500 text-center py-2">
+                        Keine Mitglieder gefunden
+                    </div>
+
+                    <!-- Help text -->
+                    <p class="mt-2 text-xs text-gray-500">
+                        Ausgewählte Mitglieder werden automatisch zu Ihren Favoriten hinzugefügt.
+                    </p>
+                </div>
             </div>
-            
+
             <div x-show="error" x-text="error" class="mb-4 p-3 bg-red-100 text-red-800 rounded"></div>
             
             <div class="flex gap-4">

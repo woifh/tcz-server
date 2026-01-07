@@ -15,6 +15,14 @@ export function bookingModal() {
         favourites: [], // Initialize as empty array
         submitting: false,
         error: null,
+
+        // Member search state
+        showSearch: false,
+        searchQuery: '',
+        searchResults: [],
+        searchLoading: false,
+        searchError: null,
+        searchHighlightIndex: -1,
         
         // Lifecycle
         init() {
@@ -57,6 +65,119 @@ export function bookingModal() {
             this.courtName = '';
             this.time = '';
             this.date = '';
+            this.resetSearch();
+        },
+
+        // Member search methods
+        toggleSearch() {
+            this.showSearch = !this.showSearch;
+            if (this.showSearch) {
+                this.$nextTick(() => {
+                    const searchInput = document.getElementById('booking-member-search');
+                    if (searchInput) searchInput.focus();
+                });
+            } else {
+                this.resetSearch();
+            }
+        },
+
+        resetSearch() {
+            this.showSearch = false;
+            this.searchQuery = '';
+            this.searchResults = [];
+            this.searchLoading = false;
+            this.searchError = null;
+            this.searchHighlightIndex = -1;
+        },
+
+        async searchMembers() {
+            const query = this.searchQuery.trim();
+            if (!query) {
+                this.searchResults = [];
+                this.searchError = null;
+                this.searchHighlightIndex = -1;
+                return;
+            }
+
+            this.searchLoading = true;
+            this.searchError = null;
+            this.searchHighlightIndex = -1;
+
+            try {
+                const response = await fetch(`/members/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    this.searchResults = data.results || [];
+                } else {
+                    this.searchError = data.error || 'Fehler bei der Suche';
+                    this.searchResults = [];
+                }
+            } catch (err) {
+                console.error('Member search error:', err);
+                this.searchError = 'Netzwerkfehler bei der Suche';
+                this.searchResults = [];
+            } finally {
+                this.searchLoading = false;
+            }
+        },
+
+        searchHighlightNext() {
+            if (this.searchResults.length === 0) return;
+            this.searchHighlightIndex = Math.min(this.searchHighlightIndex + 1, this.searchResults.length - 1);
+        },
+
+        searchHighlightPrevious() {
+            if (this.searchResults.length === 0) return;
+            this.searchHighlightIndex = Math.max(this.searchHighlightIndex - 1, 0);
+        },
+
+        searchSelectHighlighted() {
+            if (this.searchHighlightIndex >= 0 && this.searchHighlightIndex < this.searchResults.length) {
+                this.selectSearchResult(this.searchResults[this.searchHighlightIndex]);
+            }
+        },
+
+        async selectSearchResult(member) {
+            // Get current user ID
+            const bookingForSelect = document.getElementById('booking-for');
+            const firstOption = bookingForSelect ? bookingForSelect.querySelector('option') : null;
+            const currentUserId = firstOption ? firstOption.value : null;
+
+            if (!currentUserId) {
+                this.searchError = 'Benutzer-ID nicht gefunden';
+                return;
+            }
+
+            try {
+                // Add member to favourites
+                const response = await fetch(`/members/${currentUserId}/favourites`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ favourite_id: member.id })
+                });
+
+                if (response.ok) {
+                    // Add to local favourites array
+                    this.favourites.push({
+                        id: member.id,
+                        name: member.name,
+                        email: member.email
+                    });
+
+                    // Select this member for booking
+                    this.bookedFor = member.id;
+
+                    // Close search UI
+                    this.resetSearch();
+                } else {
+                    const data = await response.json();
+                    this.searchError = data.error || 'Fehler beim Hinzufügen zu Favoriten';
+                }
+            } catch (err) {
+                console.error('Error adding to favourites:', err);
+                this.searchError = 'Netzwerkfehler beim Hinzufügen';
+            }
         },
         
         async submit() {
