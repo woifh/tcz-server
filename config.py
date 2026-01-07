@@ -60,6 +60,9 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'noreply@tennisclub.de'
+
+    # Development email redirect - all emails in dev mode go to this address
+    DEV_EMAIL_RECIPIENT = os.environ.get('DEV_EMAIL_RECIPIENT')
     
     # Application settings
     COURTS_COUNT = 6

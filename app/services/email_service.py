@@ -76,12 +76,15 @@ Ihr Tennisclub-Team'''
     def _send_email(recipient_email, subject, body):
         """
         Send an email with error handling.
-        
+
+        In development mode, all emails are redirected to DEV_EMAIL_RECIPIENT
+        with a header showing the original recipient.
+
         Args:
             recipient_email: Email address of recipient
             subject: Email subject
             body: Email body text
-            
+
         Returns:
             bool: True if sent successfully, False otherwise
         """
@@ -90,19 +93,30 @@ Ihr Tennisclub-Team'''
         if not mail_username or mail_username == 'disabled@example.com':
             logger.info(f"Email sending disabled, skipping email to {recipient_email}")
             return False
-            
+
+        # In development mode, redirect all emails to a single address
+        dev_recipient = current_app.config.get('DEV_EMAIL_RECIPIENT')
+        actual_recipient = recipient_email
+
+        if dev_recipient and current_app.debug:
+            logger.info(f"DEV MODE: Redirecting email from {recipient_email} to {dev_recipient}")
+            actual_recipient = dev_recipient
+            # Add header to body showing original recipient
+            body = f"[DEV MODE - Original recipient: {recipient_email}]\n\n" + body
+
         try:
             msg = Message(
                 subject=subject,
-                recipients=[recipient_email],
+                recipients=[actual_recipient],
                 body=body,
                 sender=current_app.config.get('MAIL_DEFAULT_SENDER')
             )
             mail.send(msg)
+            logger.info(f"Email sent successfully to {actual_recipient}")
             return True
         except Exception as e:
             # Log error but don't fail the operation
-            logger.error(f"Failed to send email to {recipient_email}: {str(e)}")
+            logger.error(f"Failed to send email to {actual_recipient}: {str(e)}")
             return False
     
     @staticmethod
