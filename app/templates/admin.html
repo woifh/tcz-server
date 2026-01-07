@@ -94,7 +94,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const versionInfo = document.getElementById('version-info');
         if (data.success) {
             versionInfo.innerHTML = `
-                <div>Version ${data.version || 'N/A'} | Commit ${data.commit_hash || 'N/A'} | ${data.last_commit_date || 'N/A'}</div>
+                <a href="{{ url_for('admin.changelog') }}" class="hover:text-green-600 transition-colors" title="Versionshistorie anzeigen">
+                    <span>Version ${data.version || 'N/A'} | Commit ${data.commit_hash || 'N/A'} | ${data.last_commit_date || 'N/A'}</span>
+                    <span class="material-icons text-xs ml-1 align-middle">open_in_new</span>
+                </a>
             `;
         } else {
             versionInfo.innerHTML = '<div>Version nicht verfügbar</div>';

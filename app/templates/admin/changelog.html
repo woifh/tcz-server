@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Versionshistorie - Admin - Tennisclub{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">Versionshistorie</h2>
+        <a href="{{ url_for('admin.overview') }}" class="text-green-600 hover:text-green-700 flex items-center gap-1">
+            <span class="material-icons text-sm">arrow_back</span>
+            <span>Zum Admin-Panel</span>
+        </a>
+    </div>
+
+    <p class="text-gray-600 mb-6">Alle Versionen und Änderungen im Überblick.</p>
+
+    <!-- Changelog Container -->
+    <div id="changelog-container" class="space-y-6">
+        <div class="p-8 text-center text-gray-500">
+            <p>Versionshistorie wird geladen...</p>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const response = await fetch('/admin/api/changelog');
+        const data = await response.json();
+
+        const container = document.getElementById('changelog-container');
+
+        if (data.success && data.entries && data.entries.length > 0) {
+            container.innerHTML = data.entries.map((entry, index) => `
+                <div class="border border-gray-200 rounded-lg overflow-hidden ${index === 0 ? 'ring-2 ring-green-500' : ''}">
+                    <div class="bg-gray-50 px-6 py-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                                v${entry.version}
+                            </span>
+                            ${index === 0 ? '<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium">Aktuell</span>' : ''}
+                        </div>
+                        <span class="text-sm text-gray-500">${formatDate(entry.date)}</span>
+                    </div>
+                    <div class="px-6 py-4">
+                        ${Object.entries(entry.changes).map(([category, items]) => `
+                            <div class="mb-4 last:mb-0">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                                    <span class="material-icons text-sm ${getCategoryIcon(category).color}">${getCategoryIcon(category).icon}</span>
+                                    ${escapeHtml(category)}
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-600 text-sm space-y-1 ml-6">
+                                    ${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = `
+                <div class="p-8 text-center text-gray-500 border border-gray-200 rounded-lg">
+                    <span class="material-icons text-4xl mb-2">history</span>
+                    <p>Keine Einträge in der Versionshistorie gefunden.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading changelog:', error);
+        document.getElementById('changelog-container').innerHTML = `
+            <div class="p-8 text-center text-red-500 border border-red-200 rounded-lg bg-red-50">
+                <span class="material-icons text-4xl mb-2">error</span>
+                <p>Fehler beim Laden der Versionshistorie.</p>
+            </div>
+        `;
+    }
+});
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}
+
+function getCategoryIcon(category) {
+    const icons = {
+        'Hinzugefügt': { icon: 'add_circle', color: 'text-green-600' },
+        'Geändert': { icon: 'edit', color: 'text-blue-600' },
+        'Behoben': { icon: 'bug_report', color: 'text-orange-600' },
+        'Entfernt': { icon: 'remove_circle', color: 'text-red-600' },
+        'Sicherheit': { icon: 'security', color: 'text-purple-600' }
+    };
+    return icons[category] || { icon: 'info', color: 'text-gray-600' };
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}
