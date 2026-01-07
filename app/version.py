@@ -461,32 +461,77 @@ def get_fallback_version_with_hash() -> str:
         logger.info("Using basic fallback version: 0.0.0-dev")
         return "0.0.0-dev"
 
+def get_tag_for_current_commit() -> Optional[str]:
+    """Get the version tag pointing to the current HEAD commit, if any.
+
+    Returns:
+        The version tag at HEAD, or None if no version tag points to HEAD
+    """
+    try:
+        if not is_git_available() or not is_git_repository():
+            return None
+
+        # Get all tags pointing to HEAD
+        result = subprocess.check_output(
+            ['git', 'tag', '--points-at', 'HEAD'],
+            stderr=subprocess.DEVNULL,
+            cwd=get_repo_root()
+        ).decode('utf-8').strip()
+
+        if not result:
+            return None
+
+        tags = [tag.strip() for tag in result.split('\n') if tag.strip()]
+
+        # Filter to valid version tags and return the first one
+        version_tags = [tag for tag in tags if is_valid_version_tag(tag)]
+
+        if version_tags:
+            # Sort by version and return the highest
+            version_tags.sort(key=lambda t: parse_semantic_version(parse_version_tag(t)), reverse=True)
+            logger.info(f"Found version tag at HEAD: {version_tags[0]}")
+            return version_tags[0]
+
+        return None
+
+    except Exception as e:
+        logger.debug(f"Error checking tags at HEAD: {e}")
+        return None
+
+
 def calculate_version_from_git() -> str:
     """Calculate version using Git tags and commit count.
-    
+
     Returns:
         Calculated version string based on Git history
-        
+
     Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4
     """
     # Check if Git is available on the system
     if not is_git_available():
         logger.warning("Git is not available on the system, using fallback version")
         return get_fallback_version_with_hash()
-    
+
     # Check if we're in a Git repository
     if not is_git_repository():
         logger.warning("Not in a Git repository, using fallback version")
         return get_fallback_version_with_hash()
-    
+
     try:
+        # First, check if current commit has a version tag
+        tag_at_head = get_tag_for_current_commit()
+        if tag_at_head:
+            version = parse_version_tag(tag_at_head)
+            logger.info(f"Using version from tag at HEAD: {version}")
+            return version
+
         # Get base version from latest tag
         latest_tag = get_latest_version_tag()
-        
+
         if latest_tag:
             base_version = parse_version_tag(latest_tag)
             commit_count = count_commits_since_tag(latest_tag)
-            
+
             if commit_count > 0:
                 # Increment minor version by commit count
                 calculated_version = increment_minor_version(base_version, commit_count)
@@ -507,7 +552,7 @@ def calculate_version_from_git() -> str:
                 # No commits found either, use basic fallback
                 logger.warning("No tags or commits found, using basic fallback version")
                 return get_fallback_version_with_hash()
-            
+
     except Exception as e:
         logger.error(f"Error calculating version from Git: {e}")
         logger.info("Falling back to version with commit hash")
