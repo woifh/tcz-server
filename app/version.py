@@ -104,7 +104,7 @@ def get_last_commit_date():
             cwd=get_repo_root()
         ).decode('utf-8').strip()
         
-        formatted_date = datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d %H:%M:%S')
+        formatted_date = datetime.fromtimestamp(int(timestamp), tz=ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
         logger.debug(f"Retrieved last commit date: {formatted_date}")
         return formatted_date
         
