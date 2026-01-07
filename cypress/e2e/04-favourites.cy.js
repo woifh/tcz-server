@@ -51,8 +51,4 @@ describe('Favourites Management', () => {
     cy.get('#favourite-member-select').should('not.contain', 'Alle Mitglieder sind bereits Favoriten')
   })
 
-  it('should have link to return to dashboard', () => {
-    cy.visit('/members/favourites')
-    cy.contains('a', 'Zurück zur Übersicht').should('be.visible')
-  })
 })

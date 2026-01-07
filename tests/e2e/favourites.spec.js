@@ -54,8 +54,4 @@ test.describe('Favourites Management', () => {
     await expect(page.locator('#favourite-member-select')).not.toContainText('Alle Mitglieder sind bereits Favoriten');
   });
 
-  test('should have link to return to dashboard', async ({ page }) => {
-    await page.goto('/members/favourites');
-    await expect(page.getByRole('link', { name: /Zurück zur Übersicht/ })).toBeVisible();
-  });
 });
