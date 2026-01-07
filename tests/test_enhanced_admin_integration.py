@@ -38,8 +38,8 @@ class TestReasonManagement:
             )
             assert error is None
             
-            block, block_error = BlockService.create_block(
-                court_id=court.id,
+            blocks, block_error = BlockService.create_multi_court_blocks(
+                court_ids=[court.id],
                 date=date.today() + timedelta(days=1),
                 start_time=time(10, 0),
                 end_time=time(11, 0),
@@ -48,6 +48,7 @@ class TestReasonManagement:
                 admin_id=test_admin.id
             )
             assert block_error is None
+            block = blocks[0]
             
             success, message = BlockReasonService.delete_block_reason(
                 reason.id, test_admin.id
@@ -73,8 +74,8 @@ class TestReasonManagement:
             )
             assert error is None
             
-            past_block, block_error = BlockService.create_block(
-                court_id=court.id,
+            past_blocks, block_error = BlockService.create_multi_court_blocks(
+                court_ids=[court.id],
                 date=date.today() - timedelta(days=1),
                 start_time=time(9, 0),
                 end_time=time(10, 0),
@@ -83,9 +84,10 @@ class TestReasonManagement:
                 admin_id=test_admin.id
             )
             assert block_error is None
-            
-            future_block, future_error = BlockService.create_block(
-                court_id=court.id,
+            past_block = past_blocks[0]
+
+            future_blocks, future_error = BlockService.create_multi_court_blocks(
+                court_ids=[court.id],
                 date=date.today() + timedelta(days=1),
                 start_time=time(9, 0),
                 end_time=time(10, 0),
@@ -94,7 +96,8 @@ class TestReasonManagement:
                 admin_id=test_admin.id
             )
             assert future_error is None
-            
+            future_block = future_blocks[0]
+
             success, _ = BlockReasonService.delete_block_reason(
                 reason.id, test_admin.id
             )
@@ -120,8 +123,8 @@ class TestReasonManagement:
             assert usage_count == 0
             
             for i, court in enumerate(courts):
-                block, block_error = BlockService.create_block(
-                    court_id=court.id,
+                blocks, block_error = BlockService.create_multi_court_blocks(
+                    court_ids=[court.id],
                     date=date.today() + timedelta(days=i + 1),
                     start_time=time(10, 0),
                     end_time=time(11, 0),
@@ -130,7 +133,8 @@ class TestReasonManagement:
                     admin_id=test_admin.id
                 )
                 assert block_error is None
-            
+                block = blocks[0]
+
             usage_count = BlockReasonService.get_reason_usage_count(reason.id)
             assert usage_count == len(courts)
             combined_filtered = BlockService.filter_blocks(
@@ -166,8 +170,8 @@ class TestReasonManagement:
             details_list = ['Team Alpha vs Beta', 'Court Resurfacing', 'Finals Tournament']
             
             for i, (reason, details) in enumerate(zip(created_reasons, details_list)):
-                block, error = BlockService.create_block(
-                    court_id=court.id,
+                block_list, error = BlockService.create_multi_court_blocks(
+                    court_ids=[court.id],
                     date=date.today() + timedelta(days=i+1),
                     start_time=time(10, 0),
                     end_time=time(11, 0),
@@ -176,7 +180,8 @@ class TestReasonManagement:
                     admin_id=test_admin.id
                 )
                 assert error is None
-            
+                block = block_list[0]
+
             # Test filtering by reason name (simulated search)
             maintenance_reason = next(r for r in created_reasons if 'Maintenance' in r.name)
             maintenance_blocks = BlockService.filter_blocks(reason_ids=[maintenance_reason.id])
@@ -195,8 +200,8 @@ class TestReasonManagement:
             
             for court in courts:
                 for day_offset in range(1, 4):  # Days 1, 2, 3
-                    block, error = BlockService.create_block(
-                        court_id=court.id,
+                    block_list, error = BlockService.create_multi_court_blocks(
+                        court_ids=[court.id],
                         date=date.today() + timedelta(days=day_offset),
                         start_time=time(12, 0),
                         end_time=time(13, 0),
@@ -205,7 +210,8 @@ class TestReasonManagement:
                         admin_id=test_admin.id
                     )
                     assert error is None
-            
+                    block = block_list[0]
+
             # Apply same filter multiple times
             filter_criteria = {
                 'date_range': test_date_range,
@@ -236,8 +242,8 @@ class TestAuditLogging:
             reason = BlockReason.query.filter_by(name='Maintenance').first()
             
             # Create block (should log)
-            block, error = BlockService.create_block(
-                court_id=court.id,
+            block_list, error = BlockService.create_multi_court_blocks(
+                court_ids=[court.id],
                 date=date.today() + timedelta(days=1),
                 start_time=time(10, 0),
                 end_time=time(11, 0),
@@ -246,7 +252,8 @@ class TestAuditLogging:
                 admin_id=test_admin.id
             )
             assert error is None
-            
+            block = block_list[0]
+
             # Check audit log for creation
             create_logs = BlockService.get_audit_log({'operation': 'create'})
             assert len(create_logs) > 0
@@ -300,8 +307,8 @@ class TestAuditLogging:
             operations_data = []
             
             for i in range(3):
-                block, error = BlockService.create_block(
-                    court_id=court.id,
+                block_list, error = BlockService.create_multi_court_blocks(
+                    court_ids=[court.id],
                     date=date.today() + timedelta(days=i+1),
                     start_time=time(11, 0),
                     end_time=time(12, 0),
@@ -310,6 +317,7 @@ class TestAuditLogging:
                     admin_id=test_admin.id
                 )
                 assert error is None
+                block = block_list[0]
                 operations_data.append(('create', block.id))
                 
                 # Update each block
@@ -416,8 +424,8 @@ class TestCalendarViewFunctionality:
             test_blocks = []
             for i, (court, reason) in enumerate(zip(courts, reasons[:2])):
                 for day_offset in range(1, 4):  # 3 days
-                    block, error = BlockService.create_block(
-                        court_id=court.id,
+                    block_list, error = BlockService.create_multi_court_blocks(
+                        court_ids=[court.id],
                         date=date.today() + timedelta(days=day_offset),
                         start_time=time(10 + i, 0),  # Different times
                         end_time=time(11 + i, 0),
@@ -426,8 +434,9 @@ class TestCalendarViewFunctionality:
                         admin_id=test_admin.id
                     )
                     assert error is None
+                    block = block_list[0]
                     test_blocks.append(block)
-            
+
             # Create a recurring series for calendar display
                 court_ids=[courts[0].id],
                 start_date=date.today() + timedelta(days=5),
@@ -474,8 +483,8 @@ class TestCalendarViewFunctionality:
             reason = BlockReason.query.filter_by(name='Championship').first()
             
             # Create single block with detailed information
-            single_block, error = BlockService.create_block(
-                court_id=court.id,
+            single_blocks, error = BlockService.create_multi_court_blocks(
+                court_ids=[court.id],
                 date=date.today() + timedelta(days=1),
                 start_time=time(16, 0),
                 end_time=time(18, 0),
@@ -484,7 +493,8 @@ class TestCalendarViewFunctionality:
                 admin_id=test_admin.id
             )
             assert error is None
-            
+            single_block = single_blocks[0]
+
             # Create series block with modification
                 court_ids=[court.id],
                 start_date=date.today() + timedelta(days=3),
@@ -563,9 +573,9 @@ class TestCalendarViewFunctionality:
             created_blocks = []
             for i, (reason_name, expected_color) in enumerate(reason_types):
                 reason = BlockReason.query.filter_by(name=reason_name).first()
-                
-                block, error = BlockService.create_block(
-                    court_id=court.id,
+
+                block_list, error = BlockService.create_multi_court_blocks(
+                    court_ids=[court.id],
                     date=date.today() + timedelta(days=i+1),
                     start_time=time(10, 0),
                     end_time=time(11, 0),
@@ -574,6 +584,7 @@ class TestCalendarViewFunctionality:
                     admin_id=test_admin.id
                 )
                 assert error is None
+                block = block_list[0]
                 created_blocks.append((block, expected_color))
             
             # Create series blocks for striped pattern indicator

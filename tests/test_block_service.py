@@ -85,8 +85,8 @@ def test_property_14_blocks_cascade_cancel_existing_reservations(app, court_num,
             db.session.commit()
         
         # Create a block that covers the reservation time
-        block, block_error = BlockService.create_block(
-            court_id=court.id,
+        blocks, block_error = BlockService.create_multi_court_blocks(
+            court_ids=[court.id],
             date=booking_date,
             start_time=start,
             end_time=end_time,
@@ -94,10 +94,12 @@ def test_property_14_blocks_cascade_cancel_existing_reservations(app, court_num,
             details=None,
             admin_id=admin.id
         )
-        
+
         # Verify block was created successfully
-        assert block is not None, f"Block creation failed: {block_error}"
+        assert blocks is not None, f"Block creation failed: {block_error}"
         assert block_error is None
+        assert len(blocks) == 1
+        block = blocks[0]
         
         # Verify the reservation was cancelled
         cancelled_reservation = Reservation.query.get(reservation_id)
@@ -205,8 +207,8 @@ def test_property_15_block_cancellations_include_reason_in_notification(app, cou
             db.session.commit()
         
         # Create a block that covers the reservation time
-        block, block_error = BlockService.create_block(
-            court_id=court.id,
+        blocks, block_error = BlockService.create_multi_court_blocks(
+            court_ids=[court.id],
             date=booking_date,
             start_time=start,
             end_time=end_time,
@@ -214,10 +216,12 @@ def test_property_15_block_cancellations_include_reason_in_notification(app, cou
             details=None,
             admin_id=admin.id
         )
-        
+
         # Verify block was created successfully
-        assert block is not None, f"Block creation failed: {block_error}"
+        assert blocks is not None, f"Block creation failed: {block_error}"
         assert block_error is None
+        assert len(blocks) == 1
+        block = blocks[0]
         
         # Verify the reservation was cancelled
         cancelled_reservation = Reservation.query.get(reservation_id)

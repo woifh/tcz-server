@@ -23,74 +23,7 @@ class BlockService:
         if isinstance(value, (list, tuple)):
             return [BlockService._serialize_for_json(v) for v in value]
         return value
-    
-    @staticmethod
-    def create_block(court_id, date, start_time, end_time, reason_id, details, admin_id):
-        """
-        Create a court block and cancel conflicting reservations.
-        
-        Args:
-            court_id: ID of the court to block
-            date: Date to block
-            start_time: Start time of block
-            end_time: End time of block
-            reason_id: ID of the BlockReason
-            details: Optional additional reason detail
-            admin_id: ID of administrator creating the block
-            
-        Returns:
-            tuple: (Block object or None, error message or None)
-        """
-        # Generate a unique batch ID for this block
-        batch_id = str(uuid.uuid4())
-        
-        # Create the block
-        block = Block(
-            court_id=court_id,
-            date=date,
-            start_time=start_time,
-            end_time=end_time,
-            reason_id=reason_id,
-            details=details,
-            created_by_id=admin_id,
-            batch_id=batch_id
-        )
-        
-        try:
-            db.session.add(block)
-            db.session.flush()  # Flush to get block ID but don't commit yet
-            
-            # Cancel conflicting reservations
-            cancelled_reservations = BlockService.cancel_conflicting_reservations(block)
-            
-            # Commit everything together
-            db.session.commit()
-            
-            # Log the operation
-            BlockService.log_block_operation(
-                operation='create',
-                block_data={
-                    'block_id': block.id,
-                    'court_id': court_id,
-                    'date': date.isoformat(),
-                    'start_time': start_time.isoformat(),
-                    'end_time': end_time.isoformat(),
-                    'reason_id': reason_id,
-                    'details': details,
-                    'cancelled_reservations': len(cancelled_reservations)
-                },
-                admin_id=admin_id
-            )
-            
-            logger.info(f"Block created: Court {court_id}, Date {date}, "
-                       f"Cancelled {len(cancelled_reservations)} reservations")
-            
-            return block, None
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Failed to create block: {str(e)}")
-            return None, f"Fehler beim Erstellen der Sperre: {str(e)}"
-    
+
     @staticmethod
     def get_blocks_by_date(date):
         """

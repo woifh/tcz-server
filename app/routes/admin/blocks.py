@@ -96,11 +96,11 @@ def get_blocks():
 @login_required
 @teamster_or_admin_required
 def create_blocks():
-    """Create block(s) in a batch - handles single or multiple courts."""
+    """Create block(s) in a batch for one or multiple courts."""
     try:
         data = request.get_json() if request.is_json else request.form
 
-        # Get court_ids (supports both single court_id and multiple court_ids)
+        # Get court_ids
         court_ids = None
         if 'court_ids' in data:
             court_ids = data.getlist('court_ids') if hasattr(data, 'getlist') else data.get('court_ids', [])
@@ -109,10 +109,10 @@ def create_blocks():
             else:
                 court_ids = [int(x) for x in court_ids]
         elif 'court_id' in data:
-            # Single court - convert to list for unified handling
+            # Legacy support: convert single court_id to list
             court_ids = [int(data['court_id'])]
         else:
-            return jsonify({'error': 'court_id oder court_ids erforderlich'}), 400
+            return jsonify({'error': 'court_ids erforderlich'}), 400
 
         date_str = data['date']
         start_time_str = data['start_time']
@@ -131,7 +131,7 @@ def create_blocks():
         if block_date < today:
             return jsonify({'error': 'Sperrungen können nicht für vergangene Tage erstellt werden'}), 400
 
-        # Always use multi-court approach (works for single court too)
+        # Create blocks for all specified courts
         blocks, error = BlockService.create_multi_court_blocks(
             court_ids=court_ids,
             date=block_date,
