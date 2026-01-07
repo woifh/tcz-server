@@ -1,41 +1,41 @@
 # Changelog
 
-Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
+All notable changes to this project will be documented in this file.
 
 ## [2.1.0] - 2026-01-07
 
-### Behoben
-- Mitglieder-Suche im Buchungsdialog wurde auf Produktion nicht angezeigt (Race Condition zwischen Alpine.js und ES-Modul-Laden behoben)
+### Fixed
+- Member search in booking dialog not showing on production (race condition between Alpine.js and ES module loading)
 
 ## [2.0.0] - 2026-01-07
 
-### Hinzugefügt
-- Versionshistorie (Changelog) mit dedizierter Admin-Seite
-- Klickbare Versionsanzeige im Admin-Panel
+### Added
+- Version history (changelog) with dedicated admin page
+- Clickable version display in admin panel
 
-### Behoben
-- Versionsberechnung zeigt nun korrekt die Tag-Version an
+### Fixed
+- Version calculation now correctly shows tag version
 
 ## [1.0.0] - 2026-01-07
 
-### Hinzugefügt
-- Mitglieder-Suche im Buchungsdialog mit Auto-Favoriten
-- Mitglieder Massenimport per CSV-Datei
-- Passwort-Bestätigungsfeld bei Registrierung
-- Adressinformationen in Mitgliederverwaltung
-- Zahlungserinnerung für Mitglieder
-- Filter in Mitgliederverwaltung mit Buchungsanzahl
-- Datenbank-Seeding-Skript für Initialdaten
-- Datenbank-Neuerstellungsskript
+### Added
+- Member search in booking dialog with auto-favorites
+- Member bulk import via CSV file
+- Password confirmation field during registration
+- Address information in member management
+- Payment reminder for members
+- Filter in member management with booking count
+- Database seeding script for initial data
+- Database recreation script
 
-### Geändert
-- Mitgliederverwaltung erweitert und verbessert
-- Mannschaftsführer-Terminologie im UI vereinheitlicht
-- Sperrungsgründe-Verwaltung um Mannschaftsführer-Nutzung erweitert
-- Mobile Navigation verbessert
-- Navigation für Mannschaftsführer-Rolle angepasst
-- Projekstruktur reorganisiert für bessere Wartbarkeit
+### Changed
+- Member management extended and improved
+- Team leader terminology unified in UI
+- Suspension reasons management extended for team leader usage
+- Mobile navigation improved
+- Navigation adjusted for team leader role
+- Project structure reorganized for better maintainability
 
-### Behoben
-- Zeitzonendarstellung korrigiert
-- Versionsinfo-Zeitzone korrigiert
+### Fixed
+- Timezone display corrected
+- Version info timezone corrected
