@@ -64,3 +64,15 @@ cypress/screenshots/
 cypress/downloads/
 node_modules/
 coverage.json
+
+# Development scripts output
+scripts/dev/*.log
+scripts/dev/*.tmp
+
+# Backup files
+*.backup
+*.bak
+
+# Virtual environments (additional patterns)
+.venv/
+test_venv/

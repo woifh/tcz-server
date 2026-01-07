@@ -7,10 +7,10 @@ A comprehensive web-based court reservation system for tennis clubs, built with 
 ### Python 3.13 Compatible Setup
 ```bash
 # One-time setup (handles Python 3.13 compatibility)
-./setup_env.sh
+./scripts/setup/setup_env.sh
 
 # Start development server
-./run_dev.sh
+./scripts/dev/run_dev.sh
 ```
 
 The application will be available at http://127.0.0.1:5000
@@ -120,12 +120,14 @@ MAIL_DEFAULT_SENDER=noreply@tennisclub.de
 
 ```bash
 # Option 1: Using the initialization script
-python3 init_db.py
+python scripts/setup/init_database.py
 
 # Option 2: Using Flask CLI commands
 flask db upgrade
-flask init-courts
-flask create-admin
+python scripts/database/seed.py
+
+# Option 3: Create admin separately
+python scripts/setup/create_admin.py
 ```
 
 ### 6. Run the Application
@@ -176,10 +178,11 @@ Visit `http://localhost:5000` in your browser.
 
 ## 📚 Documentation
 
-- **[Setup Guide](SETUP_GUIDE.md)**: Detailed installation and configuration instructions
-- **[Deployment Guide](DEPLOYMENT.md)**: Step-by-step PythonAnywhere deployment
-- **[Requirements](/.kiro/specs/tennis-club-reservation/requirements.md)**: Complete system requirements
-- **[Design Document](/.kiro/specs/tennis-club-reservation/design.md)**: Architecture and design decisions
+- **[Deployment Guide](docs/DEPLOYMENT.md)**: Step-by-step PythonAnywhere deployment
+- **[Architecture](docs/ARCHITECTURE.md)**: System architecture and design decisions
+- **[Database Scripts](scripts/database/README.md)**: Database utility scripts
+- **[Deployment Scripts](scripts/deploy/README.md)**: Deployment workflow and scripts
+- **[Setup Scripts](scripts/setup/)**: Initial setup and admin creation
 
 ## 🧪 Testing
 
@@ -208,64 +211,91 @@ The system uses Hypothesis for property-based testing, which validates correctne
 - **Member Management**: CRUD operations, favourites
 - **Email**: Notifications in German for all events
 
-## 🔧 Flask CLI Commands
+## 🔧 Utility Scripts
 
+### Setup & Initialization
 ```bash
-# Create an administrator account
-flask create-admin
+# Create admin user (interactive)
+python scripts/setup/create_admin.py
 
-# Initialize 6 tennis courts
-flask init-courts
+# Seed database with courts
+python scripts/database/seed.py
+
+# Initialize database
+python scripts/setup/init_database.py
+```
+
+### Database Management
+```bash
+# Database migrations
+flask db upgrade              # Apply migrations
+flask db migrate              # Create new migration
+flask db current              # Show current version
+
+# Database utilities
+python scripts/database/inspect_structure.py  # View schema
+python scripts/database/inspect_data.py       # View data
+python scripts/database/fix_migration.py      # Fix version issues
+```
+
+### Deployment
+```bash
+# Deploy to PythonAnywhere
+./scripts/deploy/pythonanywhere.sh
 
 # Test email configuration
-flask test-email --to your-email@example.com
-
-# Database migrations
-flask db upgrade    # Apply migrations
-flask db migrate    # Create new migration
-flask db downgrade  # Rollback migration
+flask test-email your-email@example.com
 ```
 
 ## 📁 Project Structure
 
 ```
-tennis-club-reservation/
-├── app/
-│   ├── __init__.py           # Flask app factory
-│   ├── models.py             # Database models
-│   ├── decorators.py         # Authorization decorators
-│   ├── errors.py             # German error messages
-│   ├── cli.py                # CLI commands
-│   ├── routes/               # Route blueprints
-│   │   ├── auth.py           # Authentication
-│   │   ├── reservations.py   # Booking management
-│   │   ├── members.py        # Member management
-│   │   ├── courts.py         # Court availability
-│   │   ├── admin.py          # Admin functions
-│   │   └── dashboard.py      # Main dashboard
-│   ├── services/             # Business logic
+tcz/
+├── app/                      # Main application package
+│   ├── __init__.py          # Flask app factory
+│   ├── models.py            # Database models
+│   ├── routes/              # Route blueprints
+│   │   ├── auth.py         # Authentication
+│   │   ├── main.py         # Main routes
+│   │   └── admin.py        # Admin dashboard
+│   ├── services/            # Business logic
 │   │   ├── reservation_service.py
-│   │   ├── validation_service.py
 │   │   ├── email_service.py
-│   │   └── block_service.py
-│   ├── templates/            # HTML templates
-│   │   ├── base.html
-│   │   ├── dashboard.html
-│   │   ├── login.html
-│   │   ├── reservations.html
-│   │   ├── members.html
-│   │   ├── admin.html
-│   │   └── errors/
-│   └── static/               # Static files
-│       ├── css/
-│       └── js/
-├── tests/                    # Test suite
-├── migrations/               # Database migrations
-├── config.py                 # Configuration
-├── wsgi.py                   # WSGI entry point
-├── init_db.py               # Database initialization
-└── requirements.txt          # Python dependencies
+│   │   └── blocking_service.py
+│   ├── forms/               # WTForms definitions
+│   ├── templates/           # Jinja2 templates
+│   └── static/              # CSS, JS, images
+├── tests/                   # Official test suite
+├── migrations/              # Database migrations
+├── scripts/                 # Utility scripts
+│   ├── deploy/             # Deployment scripts
+│   │   ├── pythonanywhere.sh
+│   │   └── README.md
+│   ├── setup/              # Initial setup
+│   │   ├── create_admin.py
+│   │   ├── init_database.py
+│   │   └── setup_*.sh
+│   ├── database/           # Database tools
+│   │   ├── seed.py
+│   │   ├── recreate.py
+│   │   ├── fix_migration.py
+│   │   └── README.md
+│   └── dev/                # Development utilities
+│       ├── debug/          # Archived debug scripts
+│       └── archived_tests/ # Archived ad-hoc tests
+├── docs/                    # Documentation
+│   ├── DEPLOYMENT.md       # Deployment guide
+│   ├── ARCHITECTURE.md     # System architecture
+│   └── archive/            # Historical docs
+├── config.py               # Configuration
+├── wsgi.py                 # WSGI entry point
+├── requirements.txt        # Dependencies
+├── .env.example            # Dev environment template
+├── .env.production.example # Prod environment template
+└── README.md               # This file
 ```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture documentation.
 
 ## 🔐 Security Features
 
@@ -325,16 +355,20 @@ The system sends German-language email notifications for:
 
 ### PythonAnywhere
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment instructions.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete deployment instructions.
 
-Quick steps:
-1. Upload code to PythonAnywhere
-2. Create virtual environment
-3. Configure environment variables
-4. Set up MySQL database
-5. Run migrations
-6. Configure WSGI
-7. Set up static files
+Quick deployment:
+```bash
+# On PythonAnywhere bash console
+cd ~/tcz
+./scripts/deploy/pythonanywhere.sh
+```
+
+The script handles:
+- Git pull
+- Dependency updates
+- Database migrations
+- Configuration checks
 
 ### Other Platforms
 
