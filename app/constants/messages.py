@@ -60,6 +60,12 @@ class ErrorMessages:
     SUSTAINING_MEMBER_NO_ACCESS = "Fördermitglieder haben keinen Zugang zum Buchungssystem"
     MEMBER_INVALID_MEMBERSHIP_TYPE = "Ungültiger Mitgliedschaftstyp"
 
+    # CSV Import errors
+    CSV_NO_FILE = "Keine Datei ausgewählt"
+    CSV_EMPTY_FILE = "Die CSV-Datei ist leer"
+    CSV_INVALID_FORMAT = "Ungültiges CSV-Format. Erwartetes Format: Vorname;Nachname;Email;PLZ;Stadt;Adresse;Telefon"
+    CSV_IMPORT_FAILED = "CSV-Import fehlgeschlagen"
+
     # Payment errors
     MEMBER_FEE_UNPAID_REMINDER = "Ihr Mitgliedsbeitrag ist noch nicht bezahlt. Bitte kontaktieren Sie den Vorstand."
     MEMBER_FEE_UNPAID_BOOKING_WARNING = "Hinweis: Ihr Mitgliedsbeitrag ist noch nicht bezahlt."
@@ -98,6 +104,9 @@ class SuccessMessages:
     MEMBER_MEMBERSHIP_TYPE_CHANGED = "Mitgliedschaftstyp erfolgreich geändert"
     MEMBER_FEE_MARKED_PAID = "Beitragszahlung erfolgreich vermerkt"
     MEMBER_FEE_MARKED_UNPAID = "Beitragszahlung entfernt"
+
+    # CSV Import success
+    CSV_IMPORT_SUCCESS = "CSV-Import erfolgreich abgeschlossen"
 
     # Payment deadline success
     PAYMENT_DEADLINE_SET = "Zahlungsfrist erfolgreich gesetzt"

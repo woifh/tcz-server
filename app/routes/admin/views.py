@@ -195,6 +195,48 @@ def clear_payment_deadline():
     return jsonify({'error': error}), 400
 
 
+@bp.route('/import-members', methods=['POST'])
+@login_required
+@admin_required
+def import_members():
+    """Import members from CSV file."""
+    from app.constants.messages import ErrorMessages, SuccessMessages
+
+    # Check if file was uploaded
+    if 'file' not in request.files:
+        return jsonify({'error': ErrorMessages.CSV_NO_FILE}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'error': ErrorMessages.CSV_NO_FILE}), 400
+
+    try:
+        # Read file content
+        csv_content = file.read().decode('utf-8')
+
+        if not csv_content.strip():
+            return jsonify({'error': ErrorMessages.CSV_EMPTY_FILE}), 400
+
+        # Import members
+        results, error = MemberService.import_members_from_csv(csv_content, current_user.id)
+
+        if error:
+            return jsonify({'error': error}), 400
+
+        return jsonify({
+            'message': SuccessMessages.CSV_IMPORT_SUCCESS,
+            'imported': results['imported'],
+            'skipped': results['skipped'],
+            'errors': results['errors']
+        }), 200
+
+    except UnicodeDecodeError:
+        return jsonify({'error': 'Datei konnte nicht gelesen werden. Bitte stellen Sie sicher, dass die Datei UTF-8 kodiert ist.'}), 400
+    except Exception as e:
+        return jsonify({'error': f'{ErrorMessages.CSV_IMPORT_FAILED}: {str(e)}'}), 500
+
+
 @bp.route('/member')
 @login_required
 @admin_required

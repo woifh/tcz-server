@@ -660,6 +660,105 @@ class MemberService:
         return results
 
     @staticmethod
+    def import_members_from_csv(csv_content, admin_id):
+        """
+        Import members from CSV content.
+
+        CSV format: Firstname;Lastname;Email;ZIP;City;Address;Phone
+
+        For bulk imported members:
+        - Email address is used as password
+        - Membership type is 'full'
+        - Payment status (fee_paid) is False
+
+        Args:
+            csv_content: String content of the CSV file
+            admin_id: ID of administrator performing the import
+
+        Returns:
+            tuple: (dict with results, error message or None)
+                   Results dict contains: imported, skipped, errors
+        """
+        import csv
+        from io import StringIO
+
+        results = {
+            'imported': 0,
+            'skipped': 0,
+            'errors': []
+        }
+
+        try:
+            # Parse CSV content
+            reader = csv.reader(StringIO(csv_content), delimiter=';')
+
+            for line_num, row in enumerate(reader, start=1):
+                # Skip empty rows
+                if not row or all(not cell.strip() for cell in row):
+                    continue
+
+                # Validate row has expected number of columns
+                if len(row) < 7:
+                    results['errors'].append(f"Zeile {line_num}: Nicht genügend Spalten (erwartet: 7, gefunden: {len(row)})")
+                    results['skipped'] += 1
+                    continue
+
+                # Extract fields (strip whitespace)
+                firstname = row[0].strip()
+                lastname = row[1].strip()
+                email = row[2].strip()
+                zip_code = row[3].strip()
+                city = row[4].strip()
+                street = row[5].strip()
+                phone = row[6].strip()
+
+                # Validate required fields
+                if not firstname:
+                    results['errors'].append(f"Zeile {line_num}: Vorname fehlt")
+                    results['skipped'] += 1
+                    continue
+                if not lastname:
+                    results['errors'].append(f"Zeile {line_num}: Nachname fehlt")
+                    results['skipped'] += 1
+                    continue
+                if not email:
+                    results['errors'].append(f"Zeile {line_num}: E-Mail fehlt")
+                    results['skipped'] += 1
+                    continue
+
+                # Use email as password for bulk imports
+                password = email
+
+                # Create member with full membership, fee_paid=False
+                member, error = MemberService.create_member(
+                    firstname=firstname,
+                    lastname=lastname,
+                    email=email,
+                    password=password,
+                    role='member',
+                    membership_type='full',
+                    street=street if street else None,
+                    city=city if city else None,
+                    zip_code=zip_code if zip_code else None,
+                    phone=phone if phone else None,
+                    admin_id=admin_id
+                )
+
+                if error:
+                    results['errors'].append(f"Zeile {line_num} ({email}): {error}")
+                    results['skipped'] += 1
+                else:
+                    results['imported'] += 1
+
+            logger.info(f"CSV import completed by admin {admin_id}: {results['imported']} imported, {results['skipped']} skipped")
+
+            return results, None
+
+        except Exception as e:
+            logger.error(f"CSV import failed: {str(e)}")
+            return None, f"CSV-Import fehlgeschlagen: {str(e)}"
+
+    @staticmethod
     def reset_all_payment_status():
         """
         Reset payment status for all members (for annual fee reset).
