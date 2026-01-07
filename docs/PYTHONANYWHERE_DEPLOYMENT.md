@@ -112,7 +112,22 @@ touch /var/www/yourusername_pythonanywhere_com_wsgi.py
 
 ## Common Issues and Solutions
 
-### Issue: Migration Fails
+### Issue: Migration Fails with "Can't locate revision"
+
+**Error:** `Error: Can't locate revision identified by 'xxxxxxxx'`
+
+This happens when the migration files were recreated/squashed but the database still references an old migration version.
+
+**Solution:**
+```bash
+# Run the migration version fix script
+source venv/bin/activate
+python fix_migration_version.py
+```
+
+This will update the `alembic_version` table to match your current migration files.
+
+### Issue: Other Migration Failures
 
 **Solution:**
 ```bash
