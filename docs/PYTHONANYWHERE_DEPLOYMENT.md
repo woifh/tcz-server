@@ -8,13 +8,13 @@ This guide walks you through deploying database changes and updates to your Tenn
 - SSH access to PythonAnywhere (available on paid accounts)
 - Git repository pushed to origin with latest changes
 
-## Deployment Steps
+## First-Time Setup (Run Once)
+
+If this is your first deployment or the virtual environment doesn't exist:
 
 ### Step 1: Connect to PythonAnywhere
 
-You can deploy using either:
-
-**Option A: PythonAnywhere Bash Console** (Recommended for quick updates)
+**Option A: PythonAnywhere Bash Console** (Recommended)
 1. Log in to https://www.pythonanywhere.com
 2. Go to "Consoles" tab
 3. Start a new "Bash" console
@@ -28,52 +28,66 @@ ssh your-username@ssh.pythonanywhere.com
 
 ```bash
 cd ~/tcz
-# or wherever your project is located
 ```
 
-### Step 3: Pull Latest Changes from Git
+### Step 3: Run Initial Setup Script
 
 ```bash
-# Check current status
-git status
-
-# Pull latest changes
-git pull origin main
+./setup_pythonanywhere.sh
 ```
 
-### Step 4: Activate Virtual Environment
+This will:
+- Create a virtual environment
+- Install all dependencies
+- Check for .env.production file
+- Verify database setup
+
+### Step 4: Configure .env.production
+
+If you haven't already, create your production environment file:
 
 ```bash
-# Activate your virtual environment
+cp .env.production.example .env.production
+nano .env.production
+```
+
+Fill in your production credentials (database URL, email settings, etc.)
+
+### Step 5: Run Initial Database Migration
+
+```bash
 source venv/bin/activate
-# or if using .venv:
-# source .venv/bin/activate
-```
-
-### Step 5: Install/Update Dependencies
-
-```bash
-# Update pip
-pip install --upgrade pip
-
-# Install any new dependencies
-pip install -r requirements.txt
-```
-
-### Step 6: Run Database Migrations
-
-```bash
-# Check current migration status
-flask db current
-
-# Run migrations to update database schema
 flask db upgrade
-
-# Verify the migration was successful
-flask db current
 ```
 
-### Step 7: Reload Your Web App
+## Regular Deployment Steps
+
+For subsequent deployments after initial setup:
+
+### Step 1: Connect to PythonAnywhere
+
+Same as above - use Bash console or SSH.
+
+### Step 2: Navigate to Your Project Directory
+
+```bash
+cd ~/tcz
+```
+
+### Step 3: Run Deployment Script
+
+```bash
+./deploy_to_pythonanywhere.sh
+```
+
+This automatically:
+- Pulls latest changes from Git
+- Activates virtual environment
+- Installs/updates dependencies
+- Runs database migrations
+- Verifies migration success
+
+### Step 4: Reload Your Web App
 
 **Important:** You must reload your web app for changes to take effect.
 
@@ -87,7 +101,7 @@ flask db current
 touch /var/www/yourusername_pythonanywhere_com_wsgi.py
 ```
 
-### Step 8: Verify Deployment
+### Step 5: Verify Deployment
 
 1. Visit your web app URL
 2. Test the functionality that was changed
