@@ -177,29 +177,44 @@ export class ReasonForm {
     updateReasonSelects() {
         const reasons = stateManager.getBlockReasons().filter(r => r.is_active);
         const selects = document.querySelectorAll('select[name*="reason"], select[id*="reason"]');
-        
+
         console.log('Updating reason selects:', reasons.length, 'reasons found,', selects.length, 'selects found'); // Debug log
-        
+
+        // Filter reasons based on user role
+        const availableReasons = reasons.filter(reason => {
+            // Admins see all active reasons
+            if (window.currentUserIsAdmin) {
+                return true;
+            }
+            // Teamsters only see teamster-usable reasons
+            if (window.currentUserIsTeamster) {
+                return reason.teamster_usable === true;
+            }
+            return false;
+        });
+
+        console.log('Filtered reasons for user role:', availableReasons.length, 'available'); // Debug log
+
         selects.forEach(select => {
             const currentValue = select.value;
-            
+
             // Clear existing options except the first one (usually "Grund auswählen")
             const firstOption = select.querySelector('option:first-child');
             select.innerHTML = '';
             if (firstOption) {
                 select.appendChild(firstOption);
             }
-            
-            // Add reason options
-            reasons.forEach(reason => {
+
+            // Add filtered reason options
+            availableReasons.forEach(reason => {
                 const option = document.createElement('option');
                 option.value = reason.id;
                 option.textContent = reason.name;
                 select.appendChild(option);
             });
-            
-            // Restore previous value if it still exists
-            if (currentValue) {
+
+            // Restore previous value if it still exists in filtered list
+            if (currentValue && availableReasons.some(r => r.id == currentValue)) {
                 select.value = currentValue;
             }
         });

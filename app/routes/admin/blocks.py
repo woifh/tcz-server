@@ -126,6 +126,15 @@ def create_blocks():
         reason_id = int(data['reason_id'])
         details = data.get('details', '').strip() or None
 
+        # Validate teamsters can only use teamster-usable reasons
+        if current_user.is_teamster() and not current_user.is_admin():
+            from app.models import BlockReason
+            reason = BlockReason.query.get(reason_id)
+            if not reason:
+                return jsonify({'error': 'Ungültiger Sperrungsgrund'}), 400
+            if not reason.teamster_usable:
+                return jsonify({'error': 'Sie haben keine Berechtigung, diesen Sperrungsgrund zu verwenden'}), 403
+
         # Parse date and times
         block_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         start_time = datetime.strptime(start_time_str, '%H:%M').time()

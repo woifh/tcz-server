@@ -18,10 +18,20 @@ from . import bp
 @login_required
 @teamster_or_admin_required
 def list_block_reasons():
-    """List all block reasons (teamsters can read, only admins can manage)."""
+    """
+    List block reasons based on user role.
+    - Admins see all active reasons with full details
+    - Teamsters see only teamster-usable reasons
+    """
     try:
-        reasons = BlockReasonService.get_all_block_reasons()
-        
+        # Get reasons based on user role
+        if current_user.is_admin():
+            # Admins see all active reasons
+            reasons = BlockReasonService.get_all_block_reasons()
+        else:
+            # Teamsters only see teamster-usable reasons
+            reasons = BlockReasonService.get_reasons_for_user(current_user)
+
         reasons_data = []
         for reason in reasons:
             reason_data = {
@@ -29,14 +39,15 @@ def list_block_reasons():
                 'name': reason.name,
                 'color': '#007bff',  # Default color since model doesn't have this field
                 'is_active': reason.is_active,
+                'teamster_usable': reason.teamster_usable,
                 'usage_count': BlockReasonService.get_reason_usage_count(reason.id),
                 'created_by': reason.created_by.name,
                 'created_at': reason.created_at.isoformat()
             }
             reasons_data.append(reason_data)
-        
+
         return jsonify({'reasons': reasons_data}), 200
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -48,36 +59,43 @@ def create_block_reason():
     """Create block reason (admin only)."""
     try:
         data = request.get_json() if request.is_json else request.form
-        
+
         name = data.get('name', '').strip() if data.get('name') else ''
-        
+        teamster_usable = data.get('teamster_usable', False)
+
+        # Convert string 'true'/'false' to boolean if needed
+        if isinstance(teamster_usable, str):
+            teamster_usable = teamster_usable.lower() in ('true', '1', 'yes')
+
         if not name:
             return jsonify({'error': 'Name ist erforderlich'}), 400
-        
+
         # Check if reason with same name exists
         existing = BlockReason.query.filter_by(name=name).first()
         if existing:
             return jsonify({'error': 'Ein Grund mit diesem Namen existiert bereits'}), 400
-        
+
         # Create the reason using the service
         reason, error = BlockReasonService.create_block_reason(
             name=name,
-            admin_id=current_user.id
+            admin_id=current_user.id,
+            teamster_usable=teamster_usable
         )
-        
+
         if error:
             return jsonify({'error': error}), 400
-        
+
         return jsonify({
             'id': reason.id,
             'message': 'Sperrungsgrund erfolgreich erstellt',
             'reason': {
                 'id': reason.id,
                 'name': reason.name,
-                'is_active': reason.is_active
+                'is_active': reason.is_active,
+                'teamster_usable': reason.teamster_usable
             }
         }), 201
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -90,19 +108,31 @@ def update_block_reason(reason_id):
     """Update block reason (admin only)."""
     try:
         data = request.get_json() if request.is_json else request.form
-        
-        name = data.get('name', '').strip() if data.get('name') else ''
-        
-        if not name:
+
+        name = data.get('name', '').strip() if data.get('name') else None
+        teamster_usable = data.get('teamster_usable')
+
+        # Convert string 'true'/'false' to boolean if provided
+        if teamster_usable is not None and isinstance(teamster_usable, str):
+            teamster_usable = teamster_usable.lower() in ('true', '1', 'yes')
+
+        # Validate name if provided
+        if name is not None and not name:
             return jsonify({'error': 'Name ist erforderlich'}), 400
-        
-        success, error = BlockReasonService.update_block_reason(reason_id, name, current_user.id)
-        
+
+        # Update the reason
+        success, error = BlockReasonService.update_block_reason(
+            reason_id=reason_id,
+            name=name,
+            teamster_usable=teamster_usable,
+            admin_id=current_user.id
+        )
+
         if error:
             return jsonify({'error': error}), 400
-        
+
         return jsonify({'message': 'Sperrungsgrund erfolgreich aktualisiert'}), 200
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

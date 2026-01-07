@@ -4,9 +4,21 @@ Environment Configuration:
 -------------------------
 This application supports multiple environments with separate configurations:
 
-- Development (.env): SQLite database, optional email, rate limiting disabled
-- Production (.env.production): MySQL database, required email, rate limiting enabled
+- Development (.env): SQLite database (local file), optional email, rate limiting disabled
+- Production (.env.production): MySQL database (PythonAnywhere), required email, rate limiting enabled
 - Testing: In-memory SQLite, email suppressed, rate limiting disabled
+
+Database Configuration:
+----------------------
+LOCAL DEVELOPMENT uses SQLite:
+  DATABASE_URL=sqlite:////path/to/instance/tennis_club.db
+
+PRODUCTION (PythonAnywhere) uses MySQL:
+  DATABASE_URL=mysql+pymysql://username:password@host/database
+
+IMPORTANT: When adding new columns to models:
+- Local dev: Add column directly with SQLite: sqlite3 instance/tennis_club.db "ALTER TABLE ..."
+- Production: Use recreate.py script or Flask-Migrate migrations
 
 Email Configuration:
 -------------------
@@ -38,9 +50,10 @@ class Config:
     # Rate Limiting
     RATELIMIT_ENABLED = os.environ.get('RATELIMIT_ENABLED', 'true').lower() in ['true', 'on', '1']
 
-    # Database
+    # Database - default to SQLite for local development
+    # Production should always set DATABASE_URL to MySQL
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'mysql+pymysql://localhost/tennis_club_dev'
+        'sqlite:///' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance', 'tennis_club.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
 
@@ -73,24 +86,31 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    """Development configuration."""
+    """Development configuration.
+
+    Uses SQLite database by default (from .env or fallback).
+    Set DATABASE_URL in .env to override.
+    """
     DEBUG = True
     SQLALCHEMY_ECHO = True
-    # Always respect DATABASE_URL environment variable
-    # Only fall back to SQLite if no DATABASE_URL is set
 
 
 class ProductionConfig(Config):
-    """Production configuration."""
+    """Production configuration.
+
+    Uses MySQL database on PythonAnywhere.
+    DATABASE_URL must be set in .env.production or environment.
+    Example: mysql+pymysql://username:password@username.mysql.pythonanywhere-services.com/username$dbname
+    """
     DEBUG = False
     SESSION_COOKIE_SECURE = True
-    
+
     # Ensure required environment variables are set
     @classmethod
     def init_app(cls, app):
         """Initialize production configuration."""
         Config.init_app(app)
-        
+
         # Validate required environment variables
         required_vars = ['SECRET_KEY', 'DATABASE_URL', 'MAIL_USERNAME', 'MAIL_PASSWORD']
         missing = [var for var in required_vars if not os.environ.get(var)]

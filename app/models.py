@@ -177,23 +177,36 @@ class Reservation(db.Model):
 
 class BlockReason(db.Model):
     """BlockReason model for customizable block reasons."""
-    
+
     __tablename__ = 'block_reason'
     __table_args__ = (
         db.Index('idx_block_reason_name', 'name'),
         db.Index('idx_block_reason_active', 'is_active'),
+        db.Index('idx_block_reason_teamster_usable', 'teamster_usable'),
     )
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    teamster_usable = db.Column(db.Boolean, nullable=False, default=False)
     created_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
+
     # Relationships
     created_by = db.relationship('Member', backref='block_reasons_created')
     blocks = db.relationship('Block', backref='reason_obj', lazy='dynamic')
-    
+
+    def to_dict(self):
+        """Convert reason to dictionary for API responses."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'is_active': self.is_active,
+            'teamster_usable': self.teamster_usable,
+            'created_by': self.created_by.name,
+            'created_at': self.created_at.isoformat()
+        }
+
     def __repr__(self):
         return f'<BlockReason {self.name}>'
 
