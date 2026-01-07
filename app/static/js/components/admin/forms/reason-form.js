@@ -186,7 +186,7 @@ export class ReasonForm {
             if (window.currentUserIsAdmin) {
                 return true;
             }
-            // Teamsters only see teamster-usable reasons
+            // Mannschaftsführer only see teamster-usable reasons
             if (window.currentUserIsTeamster) {
                 return reason.teamster_usable === true;
             }

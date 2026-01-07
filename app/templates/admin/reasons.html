@@ -192,9 +192,9 @@
                                                 :checked="reason.teamster_usable"
                                                 disabled
                                                 class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded opacity-60"
-                                                :aria-label="`${reason.name} ${reason.teamster_usable ? 'ist' : 'ist nicht'} für Teamster nutzbar`"
+                                                :aria-label="`${reason.name} ${reason.teamster_usable ? 'ist' : 'ist nicht'} für Mannschaftsführer nutzbar`"
                                             >
-                                            <span class="text-sm text-gray-700">Teamster</span>
+                                            <span class="text-sm text-gray-700">Mannschaftsführer</span>
                                         </div>
                                     </template>
                                     <template x-if="editingReason && editingReason.id === reason.id">
@@ -203,9 +203,9 @@
                                                 type="checkbox"
                                                 x-model="editForm.teamster_usable"
                                                 class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
-                                                aria-label="Für Teamster nutzbar"
+                                                aria-label="Für Mannschaftsführer nutzbar"
                                             >
-                                            <span class="text-sm text-gray-900">Teamster</span>
+                                            <span class="text-sm text-gray-900">Mannschaftsführer</span>
                                         </label>
                                     </template>
                                 </td>
@@ -317,15 +317,15 @@
                                                     :aria-describedby="editForm.errors.name ? 'mobile-edit-error-' + reason.id : null"
                                                 >
                                             </div>
-                                            <!-- Teamster Usable Toggle (Mobile Edit) -->
+                                            <!-- Mannschaftsführer Usable Toggle (Mobile Edit) -->
                                             <div class="flex items-center justify-between py-2 px-1 bg-gray-50 rounded-lg">
-                                                <span class="text-sm text-gray-700">Für Teamster nutzbar</span>
+                                                <span class="text-sm text-gray-700">Für Mannschaftsführer nutzbar</span>
                                                 <label class="relative inline-flex items-center cursor-pointer">
                                                     <input
                                                         type="checkbox"
                                                         class="sr-only peer"
                                                         x-model="editForm.teamster_usable"
-                                                        :aria-label="`${reason.name} für Teamster ${editForm.teamster_usable ? 'deaktivieren' : 'aktivieren'}`"
+                                                        :aria-label="`${reason.name} für Mannschaftsführer ${editForm.teamster_usable ? 'deaktivieren' : 'aktivieren'}`"
                                                     >
                                                     <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                                 </label>
@@ -497,7 +497,7 @@
                     <div x-show="createForm.errors.general && createForm.errors.general.includes('Beschreibung')" class="mt-1 text-sm text-red-600" x-text="createForm.errors.general" id="create-desc-error" role="alert"></div>
                 </div>
 
-                <!-- Teamster Usable Checkbox -->
+                <!-- Mannschaftsführer Usable Checkbox -->
                 <div>
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input
@@ -508,10 +508,10 @@
                         >
                         <div>
                             <span class="text-sm font-medium text-gray-700">
-                                Für Teamster nutzbar
+                                Für Mannschaftsführer nutzbar
                             </span>
                             <p class="text-xs text-gray-500 mt-0.5">
-                                Wenn aktiviert, können Teamster diesen Grund beim Erstellen von Sperrungen verwenden.
+                                Wenn aktiviert, können Mannschaftsführer diesen Grund beim Erstellen von Sperrungen verwenden.
                             </p>
                         </div>
                     </label>

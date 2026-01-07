@@ -38,7 +38,7 @@
                 <label class="block text-gray-700 font-semibold mb-2">Rolle</label>
                 <select id="new-member-role" class="w-full border border-gray-300 rounded px-3 py-2">
                     <option value="member">Mitglied</option>
-                    <option value="teamster">Teamster</option>
+                    <option value="teamster">Mannschaftsführer</option>
                     <option value="administrator">Administrator</option>
                 </select>
             </div>
@@ -78,7 +78,7 @@
                 <label class="block text-gray-700 font-semibold mb-2">Rolle</label>
                 <select id="edit-member-role" class="w-full border border-gray-300 rounded px-3 py-2">
                     <option value="member">Mitglied</option>
-                    <option value="teamster">Teamster</option>
+                    <option value="teamster">Mannschaftsführer</option>
                     <option value="administrator">Administrator</option>
                 </select>
             </div>
@@ -128,7 +128,7 @@
                     <td class="px-6 py-4 whitespace-nowrap">{{ member.email }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="{% if member.role == 'administrator' %}text-yellow-600{% elif member.role == 'teamster' %}text-blue-600{% else %}text-gray-600{% endif %} font-semibold">
-                            {{ 'Administrator' if member.role == 'administrator' else 'Teamster' if member.role == 'teamster' else 'Mitglied' }}
+                            {{ 'Administrator' if member.role == 'administrator' else 'Mannschaftsführer' if member.role == 'teamster' else 'Mitglied' }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
