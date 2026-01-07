@@ -1,5 +1,6 @@
 """Version information for the application."""
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import subprocess
 import os
 import re
@@ -519,5 +520,5 @@ def get_version_info():
         'commit_hash': get_git_commit_hash(),
         'branch': get_git_branch(),
         'last_commit_date': get_last_commit_date(),
-        'deployment_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        'deployment_time': datetime.now(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d %H:%M:%S')
     }
