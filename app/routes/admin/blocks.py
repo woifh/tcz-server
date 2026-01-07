@@ -69,7 +69,12 @@ def get_blocks():
             # Get court and reason information
             court = Court.query.get(block.court_id)
             reason = BlockReason.query.get(block.reason_id)
-            
+
+            # Get creator information
+            from app.models import Member
+            creator = Member.query.get(block.created_by_id) if block.created_by_id else None
+            creator_name = creator.name if creator else 'Unbekannt'
+
             block_data = {
                 'id': block.id,
                 'batch_id': block.batch_id,
@@ -82,7 +87,8 @@ def get_blocks():
                 'reason_name': reason.name if reason else 'Unbekannt',
                 'details': block.details,
                 'created_at': block.created_at.isoformat() if block.created_at else None,
-                'created_by_id': block.created_by_id
+                'created_by_id': block.created_by_id,
+                'created_by_name': creator_name
             }
             blocks_data.append(block_data)
         
@@ -323,6 +329,11 @@ def get_batch(batch_id):
             court = Court.query.get(block.court_id)
             reason = BlockReason.query.get(block.reason_id)
 
+            # Get creator information
+            from app.models import Member
+            creator = Member.query.get(block.created_by_id) if block.created_by_id else None
+            creator_name = creator.name if creator else 'Unbekannt'
+
             block_data = {
                 'id': block.id,
                 'batch_id': block.batch_id,
@@ -335,7 +346,8 @@ def get_batch(batch_id):
                 'reason_name': reason.name if reason else 'Unbekannt',
                 'details': block.details,
                 'created_at': block.created_at.isoformat() if block.created_at else None,
-                'created_by_id': block.created_by_id
+                'created_by_id': block.created_by_id,
+                'created_by_name': creator_name
             }
             blocks_data.append(block_data)
 

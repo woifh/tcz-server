@@ -126,8 +126,6 @@ export class BlocksManager {
         let courtsDisplay;
         if (courtNumbers.length === 1) {
             courtsDisplay = `Platz ${courtNumbers[0]}`;
-        } else if (courtNumbers.length === 2) {
-            courtsDisplay = `Plätze ${courtNumbers.join(' & ')}`;
         } else {
             courtsDisplay = `Plätze ${courtNumbers.join(', ')}`;
         }
@@ -135,19 +133,28 @@ export class BlocksManager {
         // Use batch_id directly without prefix
         const batchId = firstBlock.batch_id;
 
+        // Check if current user can edit this block
+        const canEdit = window.currentUserIsAdmin ||
+                       (window.currentUserIsTeamster && firstBlock.created_by_id === window.currentUserId);
+
         return `
             <div class="p-4 hover:bg-gray-50 flex items-center justify-between">
                 <div class="flex-1">
                     <div class="flex items-center gap-4">
                         <div class="font-medium text-gray-900">
-                            ${courtsDisplay}
+                            ${date} 
                         </div>
                         <div class="text-gray-600">
-                            ${date} • ${startTime} - ${endTime}
+                            ${startTime} - ${endTime} • ${courtsDisplay} •
                         </div>
                         <div class="text-sm text-gray-500">
-                            ${firstBlock.reason_name}${firstBlock.details ? ' • ' + firstBlock.details : ''}
+                            ${firstBlock.reason_name}${firstBlock.details ? ' / ' + firstBlock.details : ''}
                         </div>
+                        ${firstBlock.created_by_name ? `
+                            <div class="text-xs text-gray-400">
+                                von ${firstBlock.created_by_name}
+                            </div>
+                        ` : ''}
                         ${group.blocks.length > 1 ? `
                             <div class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                                 ${group.blocks.length} Plätze
@@ -155,14 +162,16 @@ export class BlocksManager {
                         ` : ''}
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="window.blocksManager.editBatch('${batchId}')" class="text-blue-600 hover:text-blue-800 text-sm">
-                        Bearbeiten
-                    </button>
-                    <button onclick="window.blocksManager.deleteBatch('${batchId}')" class="text-red-600 hover:text-red-800 text-sm">
-                        Löschen
-                    </button>
-                </div>
+                ${canEdit ? `
+                    <div class="flex items-center gap-2">
+                        <button onclick="window.blocksManager.editBatch('${batchId}')" class="text-blue-600 hover:text-blue-800 text-sm">
+                            Bearbeiten
+                        </button>
+                        <button onclick="window.blocksManager.deleteBatch('${batchId}')" class="text-red-600 hover:text-red-800 text-sm">
+                            Löschen
+                        </button>
+                    </div>
+                ` : ''}
             </div>
         `;
     }
