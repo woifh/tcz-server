@@ -8,54 +8,118 @@
         <h2 class="text-2xl font-bold">Audit-Protokoll</h2>
     </div>
 
-    <p class="text-gray-600 mb-6">Verlauf aller Sperrungsoperationen und Änderungen.</p>
+    <p class="text-gray-600 mb-6">Verlauf aller administrativen Operationen (Sperrungen, Mitgliederverwaltung).</p>
+
+    <!-- Filter Buttons -->
+    <div class="flex gap-2 mb-6">
+        <button id="filter-all" class="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white">
+            Alle
+        </button>
+        <button id="filter-block" class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+            Sperrungen
+        </button>
+        <button id="filter-member" class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+            Mitglieder
+        </button>
+    </div>
 
     <!-- Audit Log Container -->
     <div id="audit-log-container" class="bg-white border border-gray-200 rounded-lg">
         <div class="p-8 text-center text-gray-500">
+            <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mr-2"></div>
             <p>Audit-Protokoll wird geladen...</p>
         </div>
     </div>
 </div>
 
 <script type="module">
-    // Load audit log on page load
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
-            const response = await fetch('/admin/blocks/audit-log');
-            const data = await response.json();
+    let currentFilter = null;
+    let allLogs = [];
 
-            const container = document.getElementById('audit-log-container');
+    // Filter button handlers
+    document.getElementById('filter-all').addEventListener('click', () => setFilter(null));
+    document.getElementById('filter-block').addEventListener('click', () => setFilter('block'));
+    document.getElementById('filter-member').addEventListener('click', () => setFilter('member'));
 
-            if (data.success && data.logs && data.logs.length > 0) {
-                container.innerHTML = `
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zeitstempel</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktion</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Benutzer</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                ${data.logs.map(log => `
+    function setFilter(type) {
+        currentFilter = type;
+        updateFilterButtons();
+        renderLogs();
+    }
+
+    function updateFilterButtons() {
+        const buttons = {
+            'filter-all': null,
+            'filter-block': 'block',
+            'filter-member': 'member'
+        };
+
+        Object.entries(buttons).forEach(([id, filterType]) => {
+            const btn = document.getElementById(id);
+            if (filterType === currentFilter) {
+                btn.className = 'px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white';
+            } else {
+                btn.className = 'px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200';
+            }
+        });
+    }
+
+    function getActionBadge(action) {
+        const actionMap = {
+            'create': { label: 'Erstellt', class: 'bg-green-100 text-green-800' },
+            'update': { label: 'Aktualisiert', class: 'bg-blue-100 text-blue-800' },
+            'delete': { label: 'Gelöscht', class: 'bg-red-100 text-red-800' },
+            'role_change': { label: 'Rolle', class: 'bg-purple-100 text-purple-800' },
+            'membership_change': { label: 'Mitgliedschaft', class: 'bg-indigo-100 text-indigo-800' },
+            'payment_update': { label: 'Beitrag', class: 'bg-yellow-100 text-yellow-800' },
+            'deactivate': { label: 'Deaktiviert', class: 'bg-orange-100 text-orange-800' },
+            'reactivate': { label: 'Reaktiviert', class: 'bg-teal-100 text-teal-800' }
+        };
+        return actionMap[action] || { label: action, class: 'bg-gray-100 text-gray-800' };
+    }
+
+    function getTypeBadge(type) {
+        if (type === 'block') {
+            return '<span class="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600">Sperrung</span>';
+        } else if (type === 'member') {
+            return '<span class="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600">Mitglied</span>';
+        }
+        return '';
+    }
+
+    function renderLogs() {
+        const container = document.getElementById('audit-log-container');
+        const filteredLogs = currentFilter
+            ? allLogs.filter(log => log.type === currentFilter)
+            : allLogs;
+
+        if (filteredLogs.length > 0) {
+            container.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zeitstempel</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Typ</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktion</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Benutzer</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${filteredLogs.map(log => {
+                                const actionBadge = getActionBadge(log.action);
+                                return `
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             ${new Date(log.timestamp).toLocaleString('de-DE')}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                log.action === 'create' ? 'bg-green-100 text-green-800' :
-                                                log.action === 'update' ? 'bg-blue-100 text-blue-800' :
-                                                log.action === 'delete' ? 'bg-red-100 text-red-800' :
-                                                'bg-gray-100 text-gray-800'
-                                            }">
-                                                ${log.action === 'create' ? 'Erstellt' :
-                                                  log.action === 'update' ? 'Aktualisiert' :
-                                                  log.action === 'delete' ? 'Gelöscht' :
-                                                  log.action}
+                                            ${getTypeBadge(log.type)}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${actionBadge.class}">
+                                                ${actionBadge.label}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -65,24 +129,48 @@
                                             ${log.details || '-'}
                                         </td>
                                     </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <div class="p-8 text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="text-lg font-medium">Keine Einträge gefunden</p>
+                    <p class="text-sm mt-1">Es wurden noch keine administrativen Operationen durchgeführt.</p>
+                </div>
+            `;
+        }
+    }
+
+    // Load audit log on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            const response = await fetch('/admin/blocks/audit-log');
+            const data = await response.json();
+
+            if (data.success && data.logs) {
+                allLogs = data.logs;
+                renderLogs();
             } else {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <p>Keine Einträge im Audit-Protokoll gefunden.</p>
-                    </div>
-                `;
+                allLogs = [];
+                renderLogs();
             }
         } catch (error) {
             console.error('Error loading audit log:', error);
             const container = document.getElementById('audit-log-container');
             container.innerHTML = `
                 <div class="p-8 text-center text-red-500">
-                    <p>Fehler beim Laden des Audit-Protokolls.</p>
+                    <svg class="mx-auto h-12 w-12 text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p class="text-lg font-medium">Fehler beim Laden</p>
+                    <p class="text-sm mt-1">Das Audit-Protokoll konnte nicht geladen werden.</p>
                 </div>
             `;
         }

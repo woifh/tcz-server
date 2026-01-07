@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2026-01-07
+
+### Added
+- Unified audit log combining block and member operations
+- Filter functionality in audit log (All/Blocks/Members)
+- Human-readable audit log details with formatted timestamps and actions
+
+### Changed
+- Removed email column from member list view for cleaner layout
+- Harmonized action icons (edit/delete/cancel) across all list views using consistent SVG icons
+- Harmonized sort icons in blocking reasons list to match member list pattern
+- Improved audit log UI with type badges and color-coded action indicators
+
 ## [2.1.0] - 2026-01-07
 
 ### Fixed
