@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}{% if edit_member_data %}Mitglied bearbeiten{% else %}Neues Mitglied{% endif %} - Tennisclub{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <a href="/members/" class="text-gray-500 hover:text-gray-700 text-sm mb-2 inline-block">
+                ← Zurück zur Mitgliederliste
+            </a>
+            <h2 class="text-2xl font-bold">
+                {% if edit_member_data %}
+                Mitglied bearbeiten
+                {% else %}
+                Neues Mitglied erstellen
+                {% endif %}
+            </h2>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form id="member-form" class="grid grid-cols-1 md:grid-cols-2 gap-4"
+          data-edit-mode="{{ 'true' if edit_member_data else 'false' }}"
+          data-member-id="{{ edit_member_data.id if edit_member_data else '' }}">
+
+        <!-- Row 1: Firstname | Lastname -->
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Vorname</label>
+            <input type="text" id="member-firstname" class="w-full border border-gray-300 rounded px-3 py-2" required>
+        </div>
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Nachname</label>
+            <input type="text" id="member-lastname" class="w-full border border-gray-300 rounded px-3 py-2" required>
+        </div>
+
+        <!-- Row 2: PLZ | City -->
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">PLZ</label>
+            <input type="text" id="member-zip-code" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="PLZ">
+        </div>
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Stadt</label>
+            <input type="text" id="member-city" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Stadt">
+        </div>
+
+        <!-- Row 3: Street (full width) -->
+        <div class="md:col-span-2">
+            <label class="block text-gray-700 font-semibold mb-2">Straße</label>
+            <input type="text" id="member-street" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Straße und Hausnummer">
+        </div>
+
+        <!-- Row 4: Email | Phone -->
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">E-Mail</label>
+            <input type="email" id="member-email" class="w-full border border-gray-300 rounded px-3 py-2" required>
+        </div>
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Telefon</label>
+            <input type="tel" id="member-phone" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Telefonnummer">
+        </div>
+
+        <!-- Row 5: Password (full width) -->
+        <div class="md:col-span-2">
+            <label class="block text-gray-700 font-semibold mb-2">
+                {% if edit_member_data %}Neues Passwort (optional){% else %}Passwort{% endif %}
+            </label>
+            <input type="password" id="member-password" class="w-full border border-gray-300 rounded px-3 py-2"
+                   {% if edit_member_data %}placeholder="Leer lassen, um beizubehalten"{% else %}required{% endif %}>
+        </div>
+
+        <!-- Row 6: Membership Type | Status -->
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Mitgliedschaft</label>
+            <select id="member-membership-type" class="w-full border border-gray-300 rounded px-3 py-2">
+                <option value="full">Vollmitglied</option>
+                <option value="sustaining">Fördermitglied</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Status</label>
+            <div class="flex items-center gap-4 mt-2">
+                <label class="flex items-center">
+                    <input type="radio" name="member-status" value="active" id="member-active" class="mr-2" checked>
+                    <span class="text-sm">Aktiv</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="radio" name="member-status" value="inactive" id="member-inactive" class="mr-2">
+                    <span class="text-sm">Deaktiviert</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Row 7: Role | Payment State -->
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Rolle</label>
+            <select id="member-role" class="w-full border border-gray-300 rounded px-3 py-2">
+                <option value="member">Mitglied</option>
+                <option value="teamster">Mannschaftsführer</option>
+                <option value="administrator">Administrator</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Beitrag</label>
+            <div class="flex items-center gap-4 mt-2">
+                <label class="flex items-center">
+                    <input type="radio" name="member-fee-paid" value="true" id="member-fee-paid" class="mr-2">
+                    <span class="text-sm text-green-600">Bezahlt</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="radio" name="member-fee-paid" value="false" id="member-fee-unpaid" class="mr-2" checked>
+                    <span class="text-sm text-red-600">Offen</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="md:col-span-2 flex justify-end gap-4 mt-4">
+            <a href="/members/" class="bg-gray-300 text-gray-700 py-2 px-6 rounded hover:bg-gray-400">
+                Abbrechen
+            </a>
+            <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700">
+                {% if edit_member_data %}Aktualisieren{% else %}Erstellen{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('member-form');
+    const isEditMode = form.dataset.editMode === 'true';
+    const memberId = form.dataset.memberId;
+
+    {% if edit_member_data %}
+    // Populate form with existing data
+    document.getElementById('member-firstname').value = '{{ edit_member_data.firstname }}';
+    document.getElementById('member-lastname').value = '{{ edit_member_data.lastname }}';
+    document.getElementById('member-email').value = '{{ edit_member_data.email }}';
+    document.getElementById('member-street').value = '{{ edit_member_data.street or '' }}';
+    document.getElementById('member-city').value = '{{ edit_member_data.city or '' }}';
+    document.getElementById('member-zip-code').value = '{{ edit_member_data.zip_code or '' }}';
+    document.getElementById('member-phone').value = '{{ edit_member_data.phone or '' }}';
+    document.getElementById('member-role').value = '{{ edit_member_data.role }}';
+    document.getElementById('member-membership-type').value = '{{ edit_member_data.membership_type }}';
+
+    // Set fee paid radio
+    if ({{ 'true' if edit_member_data.fee_paid else 'false' }}) {
+        document.getElementById('member-fee-paid').checked = true;
+    } else {
+        document.getElementById('member-fee-unpaid').checked = true;
+    }
+
+    // Set status radio
+    if ({{ 'true' if edit_member_data.is_active else 'false' }}) {
+        document.getElementById('member-active').checked = true;
+    } else {
+        document.getElementById('member-inactive').checked = true;
+    }
+
+    // Store original status for change detection
+    window.originalIsActive = {{ 'true' if edit_member_data.is_active else 'false' }};
+    {% endif %}
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const memberData = {
+            firstname: document.getElementById('member-firstname').value,
+            lastname: document.getElementById('member-lastname').value,
+            email: document.getElementById('member-email').value,
+            street: document.getElementById('member-street').value,
+            city: document.getElementById('member-city').value,
+            zip_code: document.getElementById('member-zip-code').value,
+            phone: document.getElementById('member-phone').value,
+            role: document.getElementById('member-role').value,
+            membership_type: document.getElementById('member-membership-type').value,
+            fee_paid: document.querySelector('input[name="member-fee-paid"]:checked').value
+        };
+
+        const password = document.getElementById('member-password').value;
+        if (password) {
+            memberData.password = password;
+        }
+
+        try {
+            let response;
+
+            if (isEditMode) {
+                // Update existing member
+                response = await fetch(`/members/${memberId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(memberData)
+                });
+            } else {
+                // Create new member - password is required
+                if (!password) {
+                    showToast('Passwort ist erforderlich', 'error');
+                    return;
+                }
+                response = await fetch('/members/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(memberData)
+                });
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                showToast(data.error || 'Fehler beim Speichern', 'error');
+                return;
+            }
+
+            // Handle status change (activate/deactivate) if in edit mode
+            if (isEditMode) {
+                const currentStatus = document.querySelector('input[name="member-status"]:checked').value;
+                const wasActive = window.originalIsActive;
+
+                if (currentStatus === 'inactive' && wasActive) {
+                    // Deactivate the member
+                    const deactivateResponse = await fetch(`/members/${memberId}/deactivate`, {
+                        method: 'POST'
+                    });
+                    if (!deactivateResponse.ok) {
+                        const deactivateData = await deactivateResponse.json();
+                        showToast(deactivateData.error || 'Fehler beim Deaktivieren', 'error');
+                        return;
+                    }
+                } else if (currentStatus === 'active' && !wasActive) {
+                    // Reactivate the member
+                    const reactivateResponse = await fetch(`/members/${memberId}/reactivate`, {
+                        method: 'POST'
+                    });
+                    if (!reactivateResponse.ok) {
+                        const reactivateData = await reactivateResponse.json();
+                        showToast(reactivateData.error || 'Fehler beim Reaktivieren', 'error');
+                        return;
+                    }
+                }
+            }
+
+            const message = isEditMode ? 'Mitglied erfolgreich aktualisiert!' : 'Mitglied erfolgreich erstellt!';
+            showToast(message);
+
+            // Redirect to members list
+            setTimeout(() => {
+                window.location.href = '/members/';
+            }, 500);
+
+        } catch (error) {
+            showToast('Fehler beim Speichern des Mitglieds', 'error');
+        }
+    });
+});
+</script>
+{% endblock %}

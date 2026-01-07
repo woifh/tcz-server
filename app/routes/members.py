@@ -115,6 +115,10 @@ def create_member():
         password = data.get('password')
         role = data.get('role', 'member')
         membership_type = data.get('membership_type', 'full')
+        street = data.get('street')
+        city = data.get('city')
+        zip_code = data.get('zip_code')
+        phone = data.get('phone')
 
         # Create member via service
         member, error = MemberService.create_member(
@@ -124,6 +128,10 @@ def create_member():
             password=password,
             role=role,
             membership_type=membership_type,
+            street=street,
+            city=city,
+            zip_code=zip_code,
+            phone=phone,
             admin_id=current_user.id
         )
 
@@ -163,6 +171,10 @@ def get_member(id):
         'membership_type': member.membership_type,
         'fee_paid': member.fee_paid,
         'is_active': member.is_active,
+        'street': member.street,
+        'city': member.city,
+        'zip_code': member.zip_code,
+        'phone': member.phone,
         'created_at': member.created_at.isoformat() if member.created_at else None
     }), 200
 
@@ -205,6 +217,16 @@ def update_member(id):
                 updates['fee_paid'] = fee_paid_value.lower() in ('true', '1', 'yes')
             else:
                 updates['fee_paid'] = bool(fee_paid_value)
+
+        # Address and phone fields (can be updated by user or admin)
+        if 'street' in data:
+            updates['street'] = data['street']
+        if 'city' in data:
+            updates['city'] = data['city']
+        if 'zip_code' in data:
+            updates['zip_code'] = data['zip_code']
+        if 'phone' in data:
+            updates['phone'] = data['phone']
 
         # Update member via service
         member, error = MemberService.update_member(

@@ -35,6 +35,13 @@ class Member(db.Model, UserMixin):
     fee_paid = db.Column(db.Boolean, nullable=False, default=False)
     fee_paid_date = db.Column(db.Date, nullable=True)
     fee_paid_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=True)
+
+    # Address fields
+    street = db.Column(db.String(100), nullable=True)
+    city = db.Column(db.String(50), nullable=True)
+    zip_code = db.Column(db.String(10), nullable=True)
+    # Contact
+    phone = db.Column(db.String(20), nullable=True)
     
     @property
     def name(self):

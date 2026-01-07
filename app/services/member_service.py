@@ -33,7 +33,8 @@ class MemberService:
         return value
 
     @staticmethod
-    def create_member(firstname, lastname, email, password, role='member', membership_type='full', admin_id=None):
+    def create_member(firstname, lastname, email, password, role='member', membership_type='full',
+                      street=None, city=None, zip_code=None, phone=None, admin_id=None):
         """
         Create a new member with validation.
 
@@ -44,6 +45,10 @@ class MemberService:
             password: Plain text password
             role: Member role (default: 'member')
             membership_type: Membership type 'full' or 'sustaining' (default: 'full')
+            street: Street address (optional)
+            city: City (optional)
+            zip_code: ZIP/postal code (optional)
+            phone: Phone number (optional)
             admin_id: ID of administrator creating the member
 
         Returns:
@@ -96,7 +101,11 @@ class MemberService:
                 lastname=lastname.strip(),
                 email=email.lower(),
                 role=role,
-                membership_type=membership_type
+                membership_type=membership_type,
+                street=street.strip() if street else None,
+                city=city.strip() if city else None,
+                zip_code=zip_code.strip() if zip_code else None,
+                phone=phone.strip() if phone else None
             )
             member.set_password(password)
 
@@ -113,7 +122,11 @@ class MemberService:
                         'lastname': lastname,
                         'email': email,
                         'role': role,
-                        'membership_type': membership_type
+                        'membership_type': membership_type,
+                        'street': street,
+                        'city': city,
+                        'zip_code': zip_code,
+                        'phone': phone
                     },
                     performed_by_id=admin_id
                 )
@@ -277,6 +290,32 @@ class MemberService:
                         member.fee_paid_date = None
                         member.fee_paid_by_id = None
                     payment_changed = True
+
+            # Update address fields
+            if 'street' in updates:
+                new_street = updates['street'].strip() if updates['street'] else None
+                if member.street != new_street:
+                    changes['street'] = {'old': member.street, 'new': new_street}
+                    member.street = new_street
+
+            if 'city' in updates:
+                new_city = updates['city'].strip() if updates['city'] else None
+                if member.city != new_city:
+                    changes['city'] = {'old': member.city, 'new': new_city}
+                    member.city = new_city
+
+            if 'zip_code' in updates:
+                new_zip_code = updates['zip_code'].strip() if updates['zip_code'] else None
+                if member.zip_code != new_zip_code:
+                    changes['zip_code'] = {'old': member.zip_code, 'new': new_zip_code}
+                    member.zip_code = new_zip_code
+
+            # Update phone
+            if 'phone' in updates:
+                new_phone = updates['phone'].strip() if updates['phone'] else None
+                if member.phone != new_phone:
+                    changes['phone'] = {'old': member.phone, 'new': new_phone}
+                    member.phone = new_phone
 
             # If no changes, return early
             if not changes:

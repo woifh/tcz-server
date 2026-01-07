@@ -11,6 +11,7 @@ from app.decorators import admin_required, teamster_or_admin_required
 from app.models import Block, BlockReason, Member
 from app.services.block_service import BlockService
 from app.services.block_reason_service import BlockReasonService
+from app.services.member_service import MemberService
 from . import bp
 
 
@@ -192,3 +193,37 @@ def clear_payment_deadline():
         return jsonify({'message': SuccessMessages.PAYMENT_DEADLINE_CLEARED}), 200
 
     return jsonify({'error': error}), 400
+
+
+@bp.route('/member')
+@login_required
+@admin_required
+def member_create():
+    """Member create page."""
+    return render_template('admin/member.html')
+
+
+@bp.route('/member/<int:member_id>')
+@login_required
+@admin_required
+def member_edit(member_id):
+    """Member edit page."""
+    member, error = MemberService.get_member(member_id)
+    if error:
+        return render_template('admin/member.html', error="Mitglied nicht gefunden")
+
+    edit_member_data = {
+        'id': member.id,
+        'firstname': member.firstname,
+        'lastname': member.lastname,
+        'email': member.email,
+        'street': member.street,
+        'city': member.city,
+        'zip_code': member.zip_code,
+        'phone': member.phone,
+        'role': member.role,
+        'membership_type': member.membership_type,
+        'fee_paid': member.fee_paid,
+        'is_active': member.is_active
+    }
+    return render_template('admin/member.html', edit_member_data=edit_member_data)
