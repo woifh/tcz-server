@@ -269,14 +269,21 @@ export function bookingModal() {
         },
         
         reloadDashboard() {
-            // Trigger dashboard component reload
+            // Trigger dashboard component refresh (partial update to avoid table flicker)
             const dashboardEl = document.querySelector('[x-data*="dashboard"]');
             if (dashboardEl && window.Alpine) {
                 try {
                     const dashboard = window.Alpine.$data(dashboardEl);
-                    if (dashboard && typeof dashboard.loadAvailability === 'function') {
-                        dashboard.loadAvailability();
-                        dashboard.loadUserReservations();
+                    if (dashboard) {
+                        // Use refreshAvailability for partial update (no flicker)
+                        if (typeof dashboard.refreshAvailability === 'function') {
+                            dashboard.refreshAvailability();
+                        } else if (typeof dashboard.loadAvailability === 'function') {
+                            dashboard.loadAvailability();
+                        }
+                        if (typeof dashboard.loadUserReservations === 'function') {
+                            dashboard.loadUserReservations();
+                        }
                     }
                 } catch (e) {
                     console.error('Error reloading dashboard:', e);

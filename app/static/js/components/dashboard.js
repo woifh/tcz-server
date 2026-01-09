@@ -98,7 +98,41 @@ export function dashboard() {
                 this.loading = false;
             }
         },
-        
+
+        async refreshAvailability() {
+            // Refresh availability without showing loading state (prevents table flicker)
+            try {
+                const response = await fetch(`/courts/availability?date=${this.selectedDate}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                // Handle production format with grid
+                const newCourts = data.grid || data.slots || [];
+
+                // Update only changed slots, preserving table structure
+                newCourts.forEach((newCourt, courtIndex) => {
+                    if (this.courts[courtIndex]) {
+                        newCourt.slots.forEach((newSlot, slotIndex) => {
+                            const oldSlot = this.courts[courtIndex].slots[slotIndex];
+                            if (oldSlot && this.slotHasChanged(oldSlot, newSlot)) {
+                                Object.assign(this.courts[courtIndex].slots[slotIndex], newSlot);
+                            }
+                        });
+                    }
+                });
+            } catch (err) {
+                console.error('Error refreshing availability:', err);
+            }
+        },
+
+        slotHasChanged(oldSlot, newSlot) {
+            return oldSlot.status !== newSlot.status ||
+                   oldSlot.reservation_id !== newSlot.reservation_id ||
+                   JSON.stringify(oldSlot.details) !== JSON.stringify(newSlot.details);
+        },
+
         async loadUserReservations() {
             try {
                 const response = await fetch('/reservations/?format=json');
@@ -190,7 +224,7 @@ export function dashboard() {
                 if (response.ok) {
                     // Show success as toast message (not dialog)
                     this.showSuccess('Buchung erfolgreich storniert');
-                    await this.loadAvailability();
+                    await this.refreshAvailability();
                     await this.loadUserReservations();
                 } else {
                     this.showError(data.error || 'Fehler beim Stornieren der Buchung');

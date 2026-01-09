@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.1] - 2026-01-09
+
+### Improved
+- Smoother UI when creating or cancelling bookings - table no longer flickers
+
+### Technical
+- Partial slot updates instead of full table reload after booking changes
+
 ## [3.0.0] - 2026-01-09
 
 ### Performance
