@@ -67,7 +67,6 @@ class ErrorMessages:
     CSV_IMPORT_FAILED = "CSV-Import fehlgeschlagen"
 
     # Payment errors
-    MEMBER_FEE_UNPAID_REMINDER = "Ihr Mitgliedsbeitrag ist noch nicht bezahlt. Bitte kontaktieren Sie den Vorstand."
     MEMBER_FEE_UNPAID_BOOKING_WARNING = "Hinweis: Ihr Mitgliedsbeitrag ist noch nicht bezahlt."
 
     # Payment deadline errors

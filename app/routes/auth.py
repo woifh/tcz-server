@@ -40,11 +40,6 @@ def login():
 
             login_user(member)
 
-            # Show payment reminder if fee is unpaid
-            if member.has_unpaid_fee():
-                flash(ErrorMessages.MEMBER_FEE_UNPAID_REMINDER, 'warning')
-
-            flash('Erfolgreich angemeldet!', 'success')
             next_page = request.args.get('next')
             return redirect(next_page or url_for('dashboard.index'))
         else:
