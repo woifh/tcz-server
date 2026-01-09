@@ -1,10 +1,20 @@
 """Settings service for managing system-wide settings."""
 from datetime import date
 import logging
+from flask import g, has_app_context
 from app import db
 from app.models import SystemSetting
 
 logger = logging.getLogger(__name__)
+
+
+def _get_request_cache():
+    """Get request-scoped cache, creating if necessary."""
+    if not has_app_context():
+        return None
+    if not hasattr(g, '_settings_cache'):
+        g._settings_cache = {}
+    return g._settings_cache
 
 
 class SettingsService:
@@ -16,15 +26,29 @@ class SettingsService:
     def get_payment_deadline():
         """
         Get the configured payment deadline date.
+        Uses request-scoped caching to avoid redundant queries within the same request.
 
         Returns:
             date | None: The deadline date, or None if not set
         """
+        cache_key = SettingsService.PAYMENT_DEADLINE_KEY
+        cache = _get_request_cache()
+
+        # Check cache first
+        if cache is not None and cache_key in cache:
+            return cache[cache_key]
+
         try:
             setting = SystemSetting.query.filter_by(key=SettingsService.PAYMENT_DEADLINE_KEY).first()
+            result = None
             if setting and setting.value:
-                return date.fromisoformat(setting.value)
-            return None
+                result = date.fromisoformat(setting.value)
+
+            # Store in cache for this request
+            if cache is not None:
+                cache[cache_key] = result
+
+            return result
         except (ValueError, Exception) as e:
             logger.error(f"Error getting payment deadline: {e}")
             return None

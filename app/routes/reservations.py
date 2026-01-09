@@ -254,12 +254,15 @@ def create_reservation():
             return redirect(url_for('dashboard.index'))
         
         # Create reservation
+        # Pass current_user as booked_for_member when booking for self to avoid redundant query
+        booked_for_member = current_user if booked_for_id == current_user.id else None
         reservation, error = ReservationService.create_reservation(
             court_id=court_id,
             date=reservation_date,
             start_time=start_time,
             booked_for_id=booked_for_id,
-            booked_by_id=current_user.id
+            booked_by_id=current_user.id,
+            booked_for_member=booked_for_member
         )
         
         if error:

@@ -2,8 +2,9 @@
 import logging
 from datetime import time
 
+from sqlalchemy.orm import joinedload
 from app import db
-from app.models import Reservation
+from app.models import Reservation, Court, Member
 from app.services.validation_service import ValidationService
 from app.services.email_service import EmailService
 from app.services.reservation.helpers import ReservationHelpers
@@ -25,7 +26,7 @@ class ReservationCreationService:
 
     @staticmethod
     @monitor_performance("create_reservation", threshold_ms=2000)
-    def create_reservation(court_id, date, start_time, booked_for_id, booked_by_id, current_time=None):
+    def create_reservation(court_id, date, start_time, booked_for_id, booked_by_id, current_time=None, booked_for_member=None):
         """
         Create a new reservation.
 
@@ -36,6 +37,7 @@ class ReservationCreationService:
             booked_for_id: ID of member the reservation is for
             booked_by_id: ID of member creating the reservation
             current_time: Current datetime for testing (defaults to now)
+            booked_for_member: Optional pre-loaded Member object (booked_for) to avoid redundant query
 
         Returns:
             tuple: (Reservation object or None, error message or None)
@@ -52,8 +54,9 @@ class ReservationCreationService:
             logger.info(f"Creating reservation - date={date}, start_time={start_time}, is_short_notice={is_short_notice}")
 
             # Validate all constraints (pass short notice flag and current_time for proper validation)
+            # Pass pre-loaded member to avoid redundant query
             is_valid, error_msg = ValidationService.validate_all_booking_constraints(
-                court_id, date, start_time, booked_for_id, is_short_notice, berlin_time
+                court_id, date, start_time, booked_for_id, is_short_notice, berlin_time, member=booked_for_member
             )
 
             if not is_valid:
@@ -80,6 +83,15 @@ class ReservationCreationService:
                 db.session.commit()
 
                 logger.info(f"Reservation created successfully: ID={reservation.id}")
+
+                # Eager load relationships for email to avoid additional queries
+                # Note: Must use filter_by().first() instead of .get() because
+                # .get() bypasses query options like joinedload
+                reservation = Reservation.query.options(
+                    joinedload(Reservation.court),
+                    joinedload(Reservation.booked_for),
+                    joinedload(Reservation.booked_by)
+                ).filter_by(id=reservation.id).first()
 
                 # Send email notifications (don't fail if email fails)
                 try:
@@ -142,6 +154,15 @@ class ReservationCreationService:
 
         try:
             db.session.commit()
+
+            # Eager load relationships for email to avoid additional queries
+            # Note: Must use filter_by().first() instead of .get() because
+            # .get() bypasses query options like joinedload
+            reservation = Reservation.query.options(
+                joinedload(Reservation.court),
+                joinedload(Reservation.booked_for),
+                joinedload(Reservation.booked_by)
+            ).filter_by(id=reservation_id).first()
 
             # Send email notifications
             EmailService.send_booking_modified(reservation)

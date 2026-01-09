@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] - 2026-01-09
+
+### Performance
+- Significantly improved booking performance with optimized database queries
+- Reduced database queries per booking from ~10 to ~7 using eager loading
+- Added request-scoped caching for system settings
+- Emails are now sent asynchronously in background threads for faster API responses
+
+### Technical
+- SQLAlchemy eager loading with `joinedload` for reservation relationships
+- Member object passed through validation to avoid redundant lookups
+- Settings cache using Flask's `g` object for request-scoped storage
+
 ## [2.2.5] - 2026-01-09
 
 ### Improved

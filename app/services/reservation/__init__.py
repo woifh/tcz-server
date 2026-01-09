@@ -99,10 +99,10 @@ class ReservationService:
     # ============================================================================
 
     @staticmethod
-    def create_reservation(court_id, date, start_time, booked_for_id, booked_by_id, current_time=None):
+    def create_reservation(court_id, date, start_time, booked_for_id, booked_by_id, current_time=None, booked_for_member=None):
         """Create a new reservation."""
         return ReservationCreationService.create_reservation(
-            court_id, date, start_time, booked_for_id, booked_by_id, current_time
+            court_id, date, start_time, booked_for_id, booked_by_id, current_time, booked_for_member
         )
 
     @staticmethod

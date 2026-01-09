@@ -252,10 +252,10 @@ class ValidationService:
         return block is None
     
     @staticmethod
-    def validate_all_booking_constraints(court_id, date, start_time, member_id, is_short_notice=False, current_time=None):
+    def validate_all_booking_constraints(court_id, date, start_time, member_id, is_short_notice=False, current_time=None, member=None):
         """
         Validate all booking constraints.
-        
+
         Args:
             court_id: ID of the court
             date: date object
@@ -263,7 +263,8 @@ class ValidationService:
             member_id: ID of the member making the booking
             is_short_notice: Whether this is a short notice booking (default False)
             current_time: Current datetime for testing (defaults to Europe/Berlin now)
-            
+            member: Optional pre-loaded Member object to avoid redundant query
+
         Returns:
             tuple: (bool, str) - (is_valid, error_message)
         """
@@ -281,7 +282,9 @@ class ValidationService:
             log_timezone_operation("validate_all_booking_constraints", current_time, berlin_time)
 
             # Validate member can reserve (membership type check)
-            member = Member.query.get(member_id)
+            # Use provided member object or fetch from database
+            if member is None:
+                member = Member.query.get(member_id)
             if not member:
                 return False, ErrorMessages.MEMBER_NOT_FOUND
             if not member.can_reserve_courts():

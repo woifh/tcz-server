@@ -1,5 +1,6 @@
 """Email service for sending notifications."""
-from flask import current_app
+import threading
+from flask import current_app, copy_current_request_context
 from flask_mail import Message
 from app import mail
 import logging
@@ -73,7 +74,53 @@ Ihr Tennisclub-Team'''
     }
     
     @staticmethod
-    def _send_email(recipient_email, subject, body):
+    def _send_email_sync(recipient_email, subject, body, app):
+        """
+        Synchronously send an email (used by background thread).
+
+        Args:
+            recipient_email: Email address of recipient
+            subject: Email subject
+            body: Email body text
+            app: Flask application instance for context
+
+        Returns:
+            bool: True if sent successfully, False otherwise
+        """
+        with app.app_context():
+            # Skip email if disabled (check for disabled placeholder)
+            mail_username = app.config.get('MAIL_USERNAME')
+            if not mail_username or mail_username == 'disabled@example.com':
+                logger.info(f"Email sending disabled, skipping email to {recipient_email}")
+                return False
+
+            # In development mode, redirect all emails to a single address
+            dev_recipient = app.config.get('DEV_EMAIL_RECIPIENT')
+            actual_recipient = recipient_email
+
+            if dev_recipient and app.debug:
+                logger.info(f"DEV MODE: Redirecting email from {recipient_email} to {dev_recipient}")
+                actual_recipient = dev_recipient
+                # Add header to body showing original recipient
+                body = f"[DEV MODE - Original recipient: {recipient_email}]\n\n" + body
+
+            try:
+                msg = Message(
+                    subject=subject,
+                    recipients=[actual_recipient],
+                    body=body,
+                    sender=app.config.get('MAIL_DEFAULT_SENDER')
+                )
+                mail.send(msg)
+                logger.info(f"Email sent successfully to {actual_recipient}")
+                return True
+            except Exception as e:
+                # Log error but don't fail the operation
+                logger.error(f"Failed to send email to {actual_recipient}: {str(e)}")
+                return False
+
+    @staticmethod
+    def _send_email(recipient_email, subject, body, async_send=True):
         """
         Send an email with error handling.
 
@@ -84,40 +131,25 @@ Ihr Tennisclub-Team'''
             recipient_email: Email address of recipient
             subject: Email subject
             body: Email body text
+            async_send: If True, send in background thread (default True)
 
         Returns:
-            bool: True if sent successfully, False otherwise
+            bool: True if queued/sent successfully, False otherwise
         """
-        # Skip email if disabled (check for disabled placeholder)
-        mail_username = current_app.config.get('MAIL_USERNAME')
-        if not mail_username or mail_username == 'disabled@example.com':
-            logger.info(f"Email sending disabled, skipping email to {recipient_email}")
-            return False
+        app = current_app._get_current_object()
 
-        # In development mode, redirect all emails to a single address
-        dev_recipient = current_app.config.get('DEV_EMAIL_RECIPIENT')
-        actual_recipient = recipient_email
-
-        if dev_recipient and current_app.debug:
-            logger.info(f"DEV MODE: Redirecting email from {recipient_email} to {dev_recipient}")
-            actual_recipient = dev_recipient
-            # Add header to body showing original recipient
-            body = f"[DEV MODE - Original recipient: {recipient_email}]\n\n" + body
-
-        try:
-            msg = Message(
-                subject=subject,
-                recipients=[actual_recipient],
-                body=body,
-                sender=current_app.config.get('MAIL_DEFAULT_SENDER')
+        if async_send:
+            # Send in background thread to avoid blocking the request
+            thread = threading.Thread(
+                target=EmailService._send_email_sync,
+                args=(recipient_email, subject, body, app)
             )
-            mail.send(msg)
-            logger.info(f"Email sent successfully to {actual_recipient}")
+            thread.daemon = True
+            thread.start()
+            logger.info(f"Email queued for async delivery to {recipient_email}")
             return True
-        except Exception as e:
-            # Log error but don't fail the operation
-            logger.error(f"Failed to send email to {actual_recipient}: {str(e)}")
-            return False
+        else:
+            return EmailService._send_email_sync(recipient_email, subject, body, app)
     
     @staticmethod
     def _send_reservation_email(reservation, template_key, extra_context=None):
