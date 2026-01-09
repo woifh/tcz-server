@@ -362,6 +362,10 @@ export function dashboard() {
                 const reservation = slot.reservation || slot.details;
                 if (reservation && this.isAuthenticated) {
                     // Show member details only to authenticated users
+                    // Simplify display for own bookings (don't show redundant "von" info)
+                    if (reservation.booked_for_id === reservation.booked_by_id) {
+                        return reservation.booked_for;
+                    }
                     return `${reservation.booked_for}<br>(von ${reservation.booked_by})`;
                 }
                 return 'Gebucht'; // Anonymous users see generic "Gebucht"
@@ -369,6 +373,10 @@ export function dashboard() {
                 const reservation = slot.reservation || slot.details;
                 if (reservation && this.isAuthenticated) {
                     // Show member details only to authenticated users
+                    // Simplify display for own bookings (don't show redundant "von" info)
+                    if (reservation.booked_for_id === reservation.booked_by_id) {
+                        return reservation.booked_for;
+                    }
                     return `${reservation.booked_for}<br>(von ${reservation.booked_by})`;
                 }
                 return 'Gebucht'; // Anonymous users see generic "Gebucht"

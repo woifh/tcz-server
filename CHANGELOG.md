@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.5] - 2026-01-09
+
+### Improved
+- Court slots now show only the member name for own bookings instead of redundant "Name (von Name)"
+
 ## [2.2.4] - 2026-01-09
 
 ### Fixed
