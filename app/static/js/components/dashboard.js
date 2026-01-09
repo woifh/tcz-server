@@ -14,6 +14,7 @@ export function dashboard() {
         timeSlots: [],
         availability: {},
         userReservations: [],
+        bookingsForOthers: [],
         loading: false,
         error: null,
         currentUserId: null,
@@ -101,12 +102,18 @@ export function dashboard() {
         async loadUserReservations() {
             try {
                 const response = await fetch('/reservations/?format=json');
-                
+
                 if (response.ok) {
                     const data = await response.json();
-                    // The backend now returns only active booking sessions (time-based filtering)
-                    // so we don't need additional filtering here
-                    this.userReservations = data.reservations || [];
+                    const allReservations = data.reservations || [];
+
+                    // Split reservations: my own vs bookings I made for others
+                    // userReservations: where I am the booked_for person (counts toward my limits)
+                    // bookingsForOthers: where I booked for someone else
+                    this.userReservations = allReservations.filter(r => r.booked_for_id === this.currentUserId);
+                    this.bookingsForOthers = allReservations.filter(r =>
+                        r.booked_by_id === this.currentUserId && r.booked_for_id !== this.currentUserId
+                    );
                 }
             } catch (err) {
                 console.error('Error loading user reservations:', err);

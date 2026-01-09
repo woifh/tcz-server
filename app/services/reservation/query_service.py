@@ -23,6 +23,7 @@ class ReservationQueryService:
     @staticmethod
     def _get_member_active_reservations_base(member_id, include_short_notice=None,
                                              short_notice_only=False, current_time=None,
+                                             include_bookings_for_others=False,
                                              operation_name="get_member_active_reservations"):
         """
         Internal base method to get active reservations with flexible filtering.
@@ -35,6 +36,9 @@ class ReservationQueryService:
                                  or don't filter by this (None)
             short_notice_only: Only return short notice bookings (default False)
             current_time: Current datetime for testing (defaults to Europe/Berlin now)
+            include_bookings_for_others: Include bookings made for others (default False).
+                                        When True, returns reservations where member is booked_for OR booked_by.
+                                        When False, only returns reservations where member is booked_for.
             operation_name: Name for logging purposes
 
         Returns:
@@ -53,8 +57,14 @@ class ReservationQueryService:
                 current_date, current_time_only, Reservation
             )
 
+            # Build member filter based on include_bookings_for_others
+            if include_bookings_for_others:
+                member_filter = (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id)
+            else:
+                member_filter = Reservation.booked_for_id == member_id
+
             query = Reservation.query.filter(
-                Reservation.booked_for_id == member_id,
+                member_filter,
                 Reservation.status == 'active',
                 time_filter
             )
@@ -74,6 +84,7 @@ class ReservationQueryService:
                 'member_id': member_id,
                 'include_short_notice': include_short_notice,
                 'short_notice_only': short_notice_only,
+                'include_bookings_for_others': include_bookings_for_others,
                 'current_time': current_time
             }
             log_error_with_context(e, context, operation_name)
@@ -83,8 +94,14 @@ class ReservationQueryService:
                 logger.warning(f"{operation_name}: Falling back to date-based logic")
                 today = date_class.today()
 
+                # Build member filter based on include_bookings_for_others
+                if include_bookings_for_others:
+                    member_filter = (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id)
+                else:
+                    member_filter = Reservation.booked_for_id == member_id
+
                 query = Reservation.query.filter(
-                    Reservation.booked_for_id == member_id,
+                    member_filter,
                     Reservation.status == 'active',
                     Reservation.date >= today
                 )
@@ -127,7 +144,8 @@ class ReservationQueryService:
 
     @staticmethod
     @monitor_performance("get_member_active_booking_sessions", threshold_ms=500)
-    def get_member_active_booking_sessions(member_id, include_short_notice=False, current_time=None):
+    def get_member_active_booking_sessions(member_id, include_short_notice=False, current_time=None,
+                                           include_bookings_for_others=False):
         """
         Get active booking sessions for a member using time-based logic.
 
@@ -144,6 +162,10 @@ class ReservationQueryService:
             member_id: ID of the member
             include_short_notice: Whether to include short notice bookings (default False)
             current_time: Current datetime for testing (defaults to Europe/Berlin now)
+            include_bookings_for_others: Include bookings made for others (default False).
+                                        When True, returns reservations where member is booked_for OR booked_by.
+                                        When False, only returns reservations where member is booked_for.
+                                        Use True for display, False for limit validation.
 
         Returns:
             list: List of active booking session Reservation objects
@@ -157,6 +179,11 @@ class ReservationQueryService:
                 member_id, include_short_notice=True
             )
 
+            # Get active booking sessions including bookings for others (for display)
+            all_sessions = ReservationQueryService.get_member_active_booking_sessions(
+                member_id, include_short_notice=True, include_bookings_for_others=True
+            )
+
             # Get active booking sessions at a specific time (for testing)
             test_time = datetime(2024, 1, 15, 14, 30)
             sessions = ReservationQueryService.get_member_active_booking_sessions(
@@ -167,6 +194,7 @@ class ReservationQueryService:
             member_id=member_id,
             include_short_notice=include_short_notice,
             current_time=current_time,
+            include_bookings_for_others=include_bookings_for_others,
             operation_name="get_member_active_booking_sessions"
         )
 

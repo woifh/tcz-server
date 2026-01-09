@@ -94,16 +94,23 @@ def list_reservations():
             reservations = all_reservations
         else:
             # Get only active booking sessions using time-based logic (default behavior)
-            reservations = ReservationService.get_member_active_booking_sessions(current_user.id, include_short_notice=True, current_time=current_time)
+            # include_bookings_for_others=True to show bookings made for others in display
+            reservations = ReservationService.get_member_active_booking_sessions(
+                current_user.id, include_short_notice=True, current_time=current_time,
+                include_bookings_for_others=True
+            )
         
         # Return JSON if explicitly requested
         if request.args.get('format') == 'json' or (request.is_json and request.accept_mimetypes.best == 'application/json'):
             # Calculate statistics for enhanced response
             active_reservations = [r for r in reservations if ReservationService.is_reservation_currently_active(r, current_time)]
             past_reservations = [r for r in reservations if not ReservationService.is_reservation_currently_active(r, current_time)]
-            regular_active = [r for r in active_reservations if not r.is_short_notice]
-            short_notice_active = [r for r in active_reservations if r.is_short_notice]
-            
+
+            # For limit counting, only count reservations where user is booked_for (not bookings made for others)
+            my_active_reservations = [r for r in active_reservations if r.booked_for_id == current_user.id]
+            regular_active = [r for r in my_active_reservations if not r.is_short_notice]
+            short_notice_active = [r for r in my_active_reservations if r.is_short_notice]
+
             return jsonify({
                 'current_time': current_time.isoformat(),
                 'reservations': [

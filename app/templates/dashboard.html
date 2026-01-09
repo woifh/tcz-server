@@ -205,6 +205,45 @@
             </div>
         </div>
     </div>
+
+    <!-- Bookings Made for Others -->
+    <div x-show="bookingsForOthers.length > 0" class="mt-8 border border-gray-200 rounded-lg p-6 bg-purple-50">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold flex items-center gap-2">
+                <span class="material-icons">people</span>
+                Buchungen für andere
+            </h3>
+        </div>
+        <div class="space-y-3">
+            <template x-for="reservation in bookingsForOthers" :key="reservation.id">
+                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-semibold" x-text="`Platz ${reservation.court_number}`"></h4>
+                            <p class="text-sm text-gray-600" x-text="`${formatDate(reservation.date)} • ${reservation.start_time} - ${reservation.end_time}`"></p>
+                            <p class="text-sm text-gray-500" x-text="`Gebucht für: ${reservation.booked_for}`"></p>
+                            <span x-show="reservation.is_short_notice"
+                                  class="inline-block mt-1 px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
+                                Kurzfristige Buchung
+                            </span>
+                        </div>
+                        <button x-show="!reservation.is_short_notice"
+                                @click="cancelReservation(reservation.id)"
+                                class="text-red-600 hover:text-red-900 p-1"
+                                title="Stornieren">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                        <span x-show="reservation.is_short_notice"
+                              class="text-gray-500 text-sm">
+                            Nicht stornierbar
+                        </span>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
 </div>
 
 {% endblock %}

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.3] - 2026-01-09
+
+### Added
+- New "Bookings for others" section on dashboard and reservations page
+- Bookings made for other members are now displayed separately from your own bookings
+
+### Fixed
+- Booking limit validation now correctly excludes bookings made for others
+
 ## [2.2.2] - 2026-01-09
 
 ### Fixed

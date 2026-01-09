@@ -63,10 +63,11 @@ class ReservationService:
         )
 
     @staticmethod
-    def get_member_active_booking_sessions(member_id, include_short_notice=False, current_time=None):
-        """Get active booking sessions for a member (for limit enforcement)."""
+    def get_member_active_booking_sessions(member_id, include_short_notice=False, current_time=None,
+                                           include_bookings_for_others=False):
+        """Get active booking sessions for a member (for limit enforcement or display)."""
         return ReservationQueryService.get_member_active_booking_sessions(
-            member_id, include_short_notice, current_time
+            member_id, include_short_notice, current_time, include_bookings_for_others
         )
 
     @staticmethod

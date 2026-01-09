@@ -3,7 +3,7 @@
 {% block title %}Meine aktiven Buchungen - Tennisclub{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-lg shadow-md p-6" x-data="reservationsList()">
+<div class="bg-white rounded-lg shadow-md p-6" x-data="reservationsList()" data-current-user-id="{{ current_user.id }}">
     <h2 class="text-2xl font-bold mb-6">Meine aktiven Buchungen</h2>
     
     <!-- Loading State -->
@@ -78,7 +78,66 @@
     <template x-if="!loading && !error && reservations.length === 0">
         <p class="text-gray-600">Sie haben derzeit keine aktiven Buchungen.</p>
     </template>
-    
+
+    <!-- Bookings Made for Others -->
+    <template x-if="!loading && !error && bookingsForOthers.length > 0">
+        <div class="mt-8">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span class="material-icons">people</span>
+                Buchungen für andere
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-purple-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platz</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uhrzeit</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gebucht für</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <template x-for="reservation in bookingsForOthers" :key="reservation.id">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap" x-text="`Platz ${reservation.court_number}`"></td>
+                                <td class="px-6 py-4 whitespace-nowrap" x-text="formatDate(reservation.date)"></td>
+                                <td class="px-6 py-4 whitespace-nowrap" x-text="`${reservation.start_time} - ${reservation.end_time}`"></td>
+                                <td class="px-6 py-4 whitespace-nowrap" x-text="reservation.booked_for"></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <button x-show="!reservation.is_short_notice"
+                                            @click="cancelReservation(reservation.id)"
+                                            :disabled="cancelling === reservation.id"
+                                            class="text-red-600 hover:text-red-900 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title="Stornieren"
+                                        >
+                                            <template x-if="cancelling === reservation.id">
+                                                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            </template>
+                                            <template x-if="cancelling !== reservation.id">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </template>
+                                        </button>
+                                        <span x-show="reservation.is_short_notice"
+                                              class="text-gray-500 text-sm">
+                                            Nicht stornierbar
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
 </div>
 
 <script>
@@ -86,24 +145,34 @@
 function reservationsList() {
     return {
         reservations: [],
+        bookingsForOthers: [],
+        currentUserId: null,
         loading: true,
         error: '',
         cancelling: null,
-        
+
         init() {
+            // Get current user ID from the container's data attribute
+            this.currentUserId = parseInt(this.$el.dataset.currentUserId);
             this.loadReservations();
         },
-        
+
         async loadReservations() {
             this.loading = true;
             this.error = '';
-            
+
             try {
                 const response = await fetch('/reservations/?format=json');
                 const data = await response.json();
-                
+
                 if (response.ok) {
-                    this.reservations = data.reservations || [];
+                    const allReservations = data.reservations || [];
+
+                    // Split reservations: my own vs bookings I made for others
+                    this.reservations = allReservations.filter(r => r.booked_for_id === this.currentUserId);
+                    this.bookingsForOthers = allReservations.filter(r =>
+                        r.booked_by_id === this.currentUserId && r.booked_for_id !== this.currentUserId
+                    );
                 } else {
                     this.error = 'Fehler beim Laden der Buchungen';
                 }
@@ -114,21 +183,22 @@ function reservationsList() {
                 this.loading = false;
             }
         },
-        
+
         async cancelReservation(reservationId) {
             this.cancelling = reservationId;
-            
+
             try {
                 const response = await fetch(`/reservations/${reservationId}`, {
                     method: 'DELETE'
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     showToast('Buchung erfolgreich storniert', 'success');
-                    // Remove from list
+                    // Remove from both lists
                     this.reservations = this.reservations.filter(r => r.id !== reservationId);
+                    this.bookingsForOthers = this.bookingsForOthers.filter(r => r.id !== reservationId);
                 } else {
                     showToast(data.error || 'Fehler beim Stornieren der Buchung', 'error');
                 }
@@ -139,7 +209,7 @@ function reservationsList() {
                 this.cancelling = null;
             }
         },
-        
+
         formatDate(dateString) {
             const date = new Date(dateString);
             const day = date.getDate().toString().padStart(2, '0');
