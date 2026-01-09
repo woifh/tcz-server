@@ -54,7 +54,7 @@ class ReservationQueryService:
             )
 
             query = Reservation.query.filter(
-                (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+                Reservation.booked_for_id == member_id,
                 Reservation.status == 'active',
                 time_filter
             )
@@ -84,7 +84,7 @@ class ReservationQueryService:
                 today = date_class.today()
 
                 query = Reservation.query.filter(
-                    (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+                    Reservation.booked_for_id == member_id,
                     Reservation.status == 'active',
                     Reservation.date >= today
                 )
@@ -222,7 +222,7 @@ class ReservationQueryService:
         today = date_class.today()
 
         return Reservation.query.filter(
-            (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+            Reservation.booked_for_id == member_id,
             Reservation.status == 'active',
             Reservation.date >= today,
             Reservation.is_short_notice == False

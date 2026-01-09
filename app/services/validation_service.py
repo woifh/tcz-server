@@ -154,7 +154,7 @@ class ValidationService:
                 
                 today = date_class.today()
                 fallback_short_notice = Reservation.query.filter(
-                    (Reservation.booked_for_id == member_id) | (Reservation.booked_by_id == member_id),
+                    Reservation.booked_for_id == member_id,
                     Reservation.status == 'active',
                     Reservation.is_short_notice == True,
                     Reservation.date >= today

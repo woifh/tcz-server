@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.2] - 2026-01-09
+
+### Fixed
+- Reservations made for another member no longer count toward the booker's active reservation limit
+- Only the `booked_for` member now has the reservation counted against their limit
+
 ## [2.2.1] - 2026-01-09
 
 ### Fixed
