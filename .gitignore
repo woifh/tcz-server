@@ -55,6 +55,10 @@ Thumbs.db
 htmlcov/
 .hypothesis/
 
+# Log files
+*.log
+logs/
+
 # Node modules (for Tailwind)
 node_modules/
 
