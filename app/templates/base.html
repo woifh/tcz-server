@@ -139,17 +139,25 @@
                     {% endif %}
                     </div>
 
-                    <!-- Mobile Menu Button -->
+                    <!-- Mobile Menu Button (only for authenticated users) -->
+                    {% if current_user.is_authenticated %}
                     <button class="lg:hidden text-white" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Menü öffnen">
                         <span class="material-icons">menu</span>
                     </button>
+                    {% else %}
+                    <!-- Direct login link for anonymous users on mobile -->
+                    <a href="{{ url_for('auth.login') }}" class="lg:hidden hover:bg-green-600 px-3 py-2 rounded transition-colors flex items-center gap-1">
+                        <span class="material-icons text-sm">login</span>
+                        <span>Anmelden</span>
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Mobile Menu (shown when hamburger is clicked) -->
+        <!-- Mobile Menu (shown when hamburger is clicked, only for authenticated users) -->
+        {% if current_user.is_authenticated %}
         <div x-show="mobileMenuOpen" x-cloak @click.away="mobileMenuOpen = false" class="lg:hidden pb-4">
-                {% if current_user.is_authenticated %}
                     <!-- Dashboard -->
                     <a href="{{ url_for('dashboard.dashboard') }}" class="block w-full flex items-center gap-2 px-4 py-3 hover:bg-green-600">
                         <span class="material-icons text-sm">dashboard</span>
@@ -227,17 +235,8 @@
                             </a>
                         </div>
                     </div>
-                {% else %}
-                    <a href="{{ url_for('dashboard.anonymous_overview') }}" class="block w-full flex items-center gap-2 px-4 py-3 hover:bg-green-600">
-                        <span class="material-icons text-sm">visibility</span>
-                        <span>Platzübersicht</span>
-                    </a>
-                    <a href="{{ url_for('auth.login') }}" class="block w-full flex items-center gap-2 px-4 py-3 hover:bg-green-600">
-                        <span class="material-icons text-sm">login</span>
-                        <span>Anmelden</span>
-                    </a>
-                {% endif %}
-            </div>
+        </div>
+        {% endif %}
     </nav>
 
     <div class="container mx-auto mt-8 px-4">

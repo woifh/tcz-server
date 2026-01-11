@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.2] - 2026-01-11
+
+### Improved
+- Simplified navigation for anonymous users - login link now directly visible instead of hamburger menu
+
 ## [3.0.1] - 2026-01-09
 
 ### Improved
