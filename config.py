@@ -63,6 +63,11 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
 
+    # JWT Configuration (for mobile API authentication)
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or SECRET_KEY
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=30)
+    JWT_ALGORITHM = 'HS256'
+
     # Email Configuration (Flask-Mail)
     # Uses Gmail SMTP with App Password authentication
     # Leave MAIL_USERNAME/MAIL_PASSWORD empty to disable email sending

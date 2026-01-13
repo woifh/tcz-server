@@ -1,7 +1,53 @@
 """Authorization decorators for route protection."""
 from functools import wraps
-from flask import flash, redirect, url_for, jsonify, request
-from flask_login import current_user
+from flask import flash, redirect, url_for, jsonify, request, current_app
+from flask_login import current_user, login_user
+import jwt
+
+
+def jwt_or_session_required(f):
+    """
+    Decorator that accepts either JWT Bearer token or session cookie.
+    For JWT auth, decodes token, validates user, and calls login_user()
+    to ensure current_user works throughout the request.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization', '')
+
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            try:
+                payload = jwt.decode(
+                    token,
+                    current_app.config['JWT_SECRET_KEY'],
+                    algorithms=[current_app.config['JWT_ALGORITHM']]
+                )
+                from app.models import Member
+                member = Member.query.get(payload['user_id'])
+
+                if not member:
+                    return jsonify({'error': 'Invalid token'}), 401
+                if not member.is_active:
+                    return jsonify({'error': 'Ihr Konto wurde deaktiviert'}), 403
+                if member.is_sustaining_member():
+                    return jsonify({'error': 'Fördermitglieder haben keinen Zugang zum Buchungssystem'}), 403
+
+                # Set Flask-Login's current_user for compatibility with existing code
+                login_user(member, remember=False)
+                return f(*args, **kwargs)
+
+            except jwt.ExpiredSignatureError:
+                return jsonify({'error': 'Token expired'}), 401
+            except jwt.InvalidTokenError:
+                return jsonify({'error': 'Invalid token'}), 401
+
+        # Fall back to session-based auth
+        if current_user.is_authenticated:
+            return f(*args, **kwargs)
+
+        return jsonify({'error': 'Authentifizierung erforderlich'}), 401
+    return decorated_function
 
 
 def login_required_json(f):

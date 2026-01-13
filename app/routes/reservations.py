@@ -5,6 +5,7 @@ from datetime import datetime, date
 from app import db  # Removed limiter import for local development
 from app.models import Reservation
 from app.services.reservation_service import ReservationService
+from app.decorators.auth import jwt_or_session_required
 from app.utils.validators import (
     ValidationError,
     validate_date_format,
@@ -17,7 +18,7 @@ bp = Blueprint('reservations', __name__, url_prefix='/reservations')
 
 
 @bp.route('/', methods=['GET'])
-@login_required
+@jwt_or_session_required
 def list_reservations():
     """
     List user's reservations or all reservations for a date.
@@ -157,7 +158,7 @@ def list_reservations():
 
 
 @bp.route('/status', methods=['GET'])
-@login_required
+@jwt_or_session_required
 def reservation_status():
     """
     Get reservation status information for the current user.
@@ -231,7 +232,7 @@ def reservation_status():
 
 
 @bp.route('/', methods=['POST'])
-@login_required
+@jwt_or_session_required
 # @limiter.limit("10 per minute")  # Disabled for local development
 def create_reservation():
     """Create a new reservation."""
@@ -342,7 +343,7 @@ def update_reservation(id):
 
 
 @bp.route('/<int:id>', methods=['DELETE'])
-@login_required
+@jwt_or_session_required
 def delete_reservation(id):
     """Cancel a reservation."""
     try:

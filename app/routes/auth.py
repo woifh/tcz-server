@@ -1,10 +1,26 @@
 """Authentication routes."""
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from datetime import datetime, timezone
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_user, logout_user, current_user
+import jwt
 from app import csrf
 from app.models import Member
 from app.utils.validators import validate_email_address, validate_string_length, ValidationError
 from app.constants.messages import ErrorMessages
+
+
+def generate_access_token(member):
+    """Generate JWT access token for a member."""
+    payload = {
+        'user_id': member.id,
+        'email': member.email,
+        'exp': datetime.now(timezone.utc) + current_app.config['JWT_ACCESS_TOKEN_EXPIRES']
+    }
+    return jwt.encode(
+        payload,
+        current_app.config['JWT_SECRET_KEY'],
+        algorithm=current_app.config['JWT_ALGORITHM']
+    )
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -78,7 +94,8 @@ def login_api():
                 'lastname': member.lastname,
                 'email': member.email,
                 'name': member.name
-            }
+            },
+            'access_token': generate_access_token(member)
         })
 
     return jsonify({'error': 'E-Mail oder Passwort ist falsch'}), 401

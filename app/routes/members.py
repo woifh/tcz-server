@@ -5,7 +5,7 @@ from sqlalchemy import func
 from app import db
 from app.models import Member, Reservation
 from app.services.member_service import MemberService
-from app.decorators.auth import admin_required, member_or_admin_required
+from app.decorators.auth import admin_required, member_or_admin_required, jwt_or_session_required
 from app.constants.messages import ErrorMessages, SuccessMessages
 
 bp = Blueprint('members', __name__, url_prefix='/members')
@@ -78,7 +78,7 @@ def get_all_members():
 
 
 @bp.route('/search', methods=['GET'])
-@login_required
+@jwt_or_session_required
 def search_members():
     """Search for members by name or email."""
     try:
@@ -364,7 +364,7 @@ def reactivate_member(id):
 
 
 @bp.route('/<id>/favourites', methods=['POST'])
-@login_required
+@jwt_or_session_required
 def add_favourite(id):
     """Add favourite (user can add to own favourites)."""
     try:
@@ -408,7 +408,7 @@ def add_favourite(id):
 
 
 @bp.route('/<id>/favourites', methods=['GET'])
-@login_required
+@jwt_or_session_required
 def get_favourites(id):
     """Get user's favourites."""
     try:
@@ -438,7 +438,7 @@ def get_favourites(id):
 
 
 @bp.route('/<id>/favourites/<fav_id>', methods=['DELETE'])
-@login_required
+@jwt_or_session_required
 def remove_favourite(id, fav_id):
     """Remove favourite (user can remove from own favourites)."""
     try:
