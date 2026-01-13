@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "pythonanywhere": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--native-tls",
+        "pythonanywhere-mcp-server"
+      ],
+      "env": {
+        "API_TOKEN": "c143f71e4d982b7a8d92237a7a4f0aef295bbabd"
+      }
+    }
+  }
+}
