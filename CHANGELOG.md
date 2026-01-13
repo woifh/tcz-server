@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2026-01-13
+
+### Added
+- Member profile page for editing personal information
+- Email notification preferences - members can control which notifications they receive:
+  - Master toggle to enable/disable all notifications
+  - Own bookings (create/cancel)
+  - Bookings by other members
+  - Court blocking notifications
+  - Booking override notifications
+- Admin can now edit member notification preferences
+
+### Technical
+- Member IDs changed from integer to UUID for better security
+- Profile and admin member edit pages now fetch data via API
+- Email service respects member notification preferences before sending
+
 ## [3.0.2] - 2026-01-11
 
 ### Improved

@@ -9,7 +9,8 @@ from app.utils.validators import (
     ValidationError,
     validate_date_format,
     validate_time_format,
-    validate_integer
+    validate_integer,
+    validate_uuid
 )
 
 bp = Blueprint('reservations', __name__, url_prefix='/reservations')
@@ -242,10 +243,9 @@ def create_reservation():
             court_id = validate_integer(data.get('court_id'), 'court_id', min_value=1, max_value=6)
             reservation_date = validate_date_format(data.get('date'), 'date')
             start_time = validate_time_format(data.get('start_time'), 'start_time')
-            booked_for_id = validate_integer(
-                data.get('booked_for_id', current_user.id), 
-                'booked_for_id', 
-                min_value=1
+            booked_for_id = validate_uuid(
+                data.get('booked_for_id', current_user.id),
+                'booked_for_id'
             )
         except ValidationError as e:
             if request.is_json:

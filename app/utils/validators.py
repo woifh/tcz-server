@@ -1,4 +1,5 @@
 """Input validation utilities."""
+import uuid as uuid_module
 from datetime import datetime, date, time
 from functools import wraps
 from flask import request, jsonify
@@ -103,6 +104,33 @@ def validate_integer(value, field_name="value", min_value=None, max_value=None):
         raise ValidationError(f"{field_name} darf höchstens {max_value} sein")
     
     return int_value
+
+
+def validate_uuid(value, field_name="id"):
+    """
+    Validate UUID string format.
+
+    Args:
+        value: Value to validate
+        field_name: Name of the field (for error messages)
+
+    Returns:
+        str: Validated UUID string
+
+    Raises:
+        ValidationError: If value is not a valid UUID
+    """
+    if value is None:
+        raise ValidationError(f"{field_name} ist erforderlich")
+
+    str_value = str(value).strip()
+
+    try:
+        # Validate it's a proper UUID format
+        uuid_module.UUID(str_value)
+        return str_value
+    except (ValueError, AttributeError):
+        raise ValidationError(f"{field_name} muss eine gültige UUID sein")
 
 
 def validate_email_address(email, field_name="email"):

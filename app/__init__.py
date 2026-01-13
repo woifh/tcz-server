@@ -116,7 +116,7 @@ def create_app(config_name=None):
     @login_manager.user_loader
     def load_user(user_id):
         from app.models import Member
-        return Member.query.get(int(user_id))
+        return Member.query.get(user_id)
     
     # Register error handlers
     @app.errorhandler(404)

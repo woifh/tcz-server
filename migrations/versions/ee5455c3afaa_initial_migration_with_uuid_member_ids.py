@@ -1,8 +1,8 @@
-"""Initial migration with member audit log and soft delete
+"""Initial migration with UUID member IDs
 
-Revision ID: 7347717de84b
+Revision ID: ee5455c3afaa
 Revises: 
-Create Date: 2026-01-07 09:58:17.868194
+Create Date: 2026-01-13 20:51:24.277966
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '7347717de84b'
+revision = 'ee5455c3afaa'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -26,7 +26,7 @@ def upgrade():
     sa.UniqueConstraint('number')
     )
     op.create_table('member',
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('firstname', sa.String(length=50), nullable=False),
     sa.Column('lastname', sa.String(length=50), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
@@ -35,19 +35,44 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('deactivated_at', sa.DateTime(), nullable=True),
-    sa.Column('deactivated_by_id', sa.Integer(), nullable=True),
+    sa.Column('deactivated_by_id', sa.String(length=36), nullable=True),
+    sa.Column('membership_type', sa.String(length=20), nullable=False),
+    sa.Column('fee_paid', sa.Boolean(), nullable=False),
+    sa.Column('fee_paid_date', sa.Date(), nullable=True),
+    sa.Column('fee_paid_by_id', sa.String(length=36), nullable=True),
+    sa.Column('street', sa.String(length=100), nullable=True),
+    sa.Column('city', sa.String(length=50), nullable=True),
+    sa.Column('zip_code', sa.String(length=10), nullable=True),
+    sa.Column('phone', sa.String(length=20), nullable=True),
+    sa.Column('notifications_enabled', sa.Boolean(), nullable=False),
+    sa.Column('notify_own_bookings', sa.Boolean(), nullable=False),
+    sa.Column('notify_other_bookings', sa.Boolean(), nullable=False),
+    sa.Column('notify_court_blocked', sa.Boolean(), nullable=False),
+    sa.Column('notify_booking_overridden', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['deactivated_by_id'], ['member.id'], ),
+    sa.ForeignKeyConstraint(['fee_paid_by_id'], ['member.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('member', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_member_email'), ['email'], unique=True)
+
+    op.create_table('system_setting',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('key', sa.String(length=100), nullable=False),
+    sa.Column('value', sa.String(length=255), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('system_setting', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_system_setting_key'), ['key'], unique=True)
 
     op.create_table('block_audit_log',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('operation', sa.String(length=20), nullable=False),
     sa.Column('block_id', sa.Integer(), nullable=True),
     sa.Column('operation_data', sa.JSON(), nullable=True),
-    sa.Column('admin_id', sa.Integer(), nullable=False),
+    sa.Column('admin_id', sa.String(length=36), nullable=False),
     sa.Column('timestamp', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['admin_id'], ['member.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -61,7 +86,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.Column('created_by_id', sa.Integer(), nullable=False),
+    sa.Column('teamster_usable', sa.Boolean(), nullable=False),
+    sa.Column('created_by_id', sa.String(length=36), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['created_by_id'], ['member.id'], ),
     sa.PrimaryKeyConstraint('id'),
@@ -70,10 +96,11 @@ def upgrade():
     with op.batch_alter_table('block_reason', schema=None) as batch_op:
         batch_op.create_index('idx_block_reason_active', ['is_active'], unique=False)
         batch_op.create_index('idx_block_reason_name', ['name'], unique=False)
+        batch_op.create_index('idx_block_reason_teamster_usable', ['teamster_usable'], unique=False)
 
     op.create_table('favourite',
-    sa.Column('member_id', sa.Integer(), nullable=False),
-    sa.Column('favourite_id', sa.Integer(), nullable=False),
+    sa.Column('member_id', sa.String(length=36), nullable=False),
+    sa.Column('favourite_id', sa.String(length=36), nullable=False),
     sa.CheckConstraint('member_id != favourite_id', name='check_not_self_favourite'),
     sa.ForeignKeyConstraint(['favourite_id'], ['member.id'], ),
     sa.ForeignKeyConstraint(['member_id'], ['member.id'], ),
@@ -81,10 +108,10 @@ def upgrade():
     )
     op.create_table('member_audit_log',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('member_id', sa.Integer(), nullable=False),
+    sa.Column('member_id', sa.String(length=36), nullable=False),
     sa.Column('operation', sa.String(length=20), nullable=False),
     sa.Column('operation_data', sa.JSON(), nullable=True),
-    sa.Column('performed_by_id', sa.Integer(), nullable=False),
+    sa.Column('performed_by_id', sa.String(length=36), nullable=False),
     sa.Column('timestamp', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['performed_by_id'], ['member.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -97,7 +124,7 @@ def upgrade():
 
     op.create_table('notification',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('recipient_id', sa.Integer(), nullable=False),
+    sa.Column('recipient_id', sa.String(length=36), nullable=False),
     sa.Column('type', sa.String(length=50), nullable=False),
     sa.Column('message', sa.Text(), nullable=False),
     sa.Column('timestamp', sa.DateTime(), nullable=False),
@@ -109,14 +136,30 @@ def upgrade():
         batch_op.create_index('idx_notification_recipient', ['recipient_id'], unique=False)
         batch_op.create_index('idx_notification_timestamp', ['timestamp'], unique=False)
 
+    op.create_table('reason_audit_log',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('reason_id', sa.Integer(), nullable=False),
+    sa.Column('operation', sa.String(length=20), nullable=False),
+    sa.Column('operation_data', sa.JSON(), nullable=True),
+    sa.Column('performed_by_id', sa.String(length=36), nullable=False),
+    sa.Column('timestamp', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['performed_by_id'], ['member.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('reason_audit_log', schema=None) as batch_op:
+        batch_op.create_index('idx_reason_audit_admin', ['performed_by_id'], unique=False)
+        batch_op.create_index('idx_reason_audit_operation', ['operation'], unique=False)
+        batch_op.create_index('idx_reason_audit_reason', ['reason_id'], unique=False)
+        batch_op.create_index('idx_reason_audit_timestamp', ['timestamp'], unique=False)
+
     op.create_table('reservation',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('court_id', sa.Integer(), nullable=False),
     sa.Column('date', sa.Date(), nullable=False),
     sa.Column('start_time', sa.Time(), nullable=False),
     sa.Column('end_time', sa.Time(), nullable=False),
-    sa.Column('booked_for_id', sa.Integer(), nullable=False),
-    sa.Column('booked_by_id', sa.Integer(), nullable=False),
+    sa.Column('booked_for_id', sa.String(length=36), nullable=False),
+    sa.Column('booked_by_id', sa.String(length=36), nullable=False),
     sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('is_short_notice', sa.Boolean(), nullable=False),
     sa.Column('reason', sa.String(length=255), nullable=True),
@@ -142,7 +185,7 @@ def upgrade():
     sa.Column('details', sa.String(length=255), nullable=True),
     sa.Column('batch_id', sa.String(length=36), nullable=True),
     sa.Column('is_modified', sa.Boolean(), nullable=False),
-    sa.Column('created_by_id', sa.Integer(), nullable=False),
+    sa.Column('created_by_id', sa.String(length=36), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['court_id'], ['court.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['created_by_id'], ['member.id'], ),
@@ -176,6 +219,13 @@ def downgrade():
         batch_op.drop_index('idx_reservation_booked_by')
 
     op.drop_table('reservation')
+    with op.batch_alter_table('reason_audit_log', schema=None) as batch_op:
+        batch_op.drop_index('idx_reason_audit_timestamp')
+        batch_op.drop_index('idx_reason_audit_reason')
+        batch_op.drop_index('idx_reason_audit_operation')
+        batch_op.drop_index('idx_reason_audit_admin')
+
+    op.drop_table('reason_audit_log')
     with op.batch_alter_table('notification', schema=None) as batch_op:
         batch_op.drop_index('idx_notification_timestamp')
         batch_op.drop_index('idx_notification_recipient')
@@ -190,6 +240,7 @@ def downgrade():
     op.drop_table('member_audit_log')
     op.drop_table('favourite')
     with op.batch_alter_table('block_reason', schema=None) as batch_op:
+        batch_op.drop_index('idx_block_reason_teamster_usable')
         batch_op.drop_index('idx_block_reason_name')
         batch_op.drop_index('idx_block_reason_active')
 
@@ -200,6 +251,10 @@ def downgrade():
         batch_op.drop_index('idx_block_audit_admin')
 
     op.drop_table('block_audit_log')
+    with op.batch_alter_table('system_setting', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_system_setting_key'))
+
+    op.drop_table('system_setting')
     with op.batch_alter_table('member', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_member_email'))
 

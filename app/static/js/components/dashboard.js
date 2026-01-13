@@ -34,7 +34,7 @@ export function dashboard() {
                 const bookingForSelect = document.getElementById('booking-for');
                 if (bookingForSelect) {
                     const firstOption = bookingForSelect.querySelector('option');
-                    this.currentUserId = firstOption ? parseInt(firstOption.value) : null;
+                    this.currentUserId = firstOption ? firstOption.value : null;
                 }
             }
 

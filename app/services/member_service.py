@@ -317,6 +317,37 @@ class MemberService:
                     changes['phone'] = {'old': member.phone, 'new': new_phone}
                     member.phone = new_phone
 
+            # Update notification preferences
+            if 'notifications_enabled' in updates:
+                new_notifications_enabled = bool(updates['notifications_enabled'])
+                if member.notifications_enabled != new_notifications_enabled:
+                    changes['notifications_enabled'] = {'old': member.notifications_enabled, 'new': new_notifications_enabled}
+                    member.notifications_enabled = new_notifications_enabled
+
+            if 'notify_own_bookings' in updates:
+                new_notify_own = bool(updates['notify_own_bookings'])
+                if member.notify_own_bookings != new_notify_own:
+                    changes['notify_own_bookings'] = {'old': member.notify_own_bookings, 'new': new_notify_own}
+                    member.notify_own_bookings = new_notify_own
+
+            if 'notify_other_bookings' in updates:
+                new_notify_other = bool(updates['notify_other_bookings'])
+                if member.notify_other_bookings != new_notify_other:
+                    changes['notify_other_bookings'] = {'old': member.notify_other_bookings, 'new': new_notify_other}
+                    member.notify_other_bookings = new_notify_other
+
+            if 'notify_court_blocked' in updates:
+                new_notify_court_blocked = bool(updates['notify_court_blocked'])
+                if member.notify_court_blocked != new_notify_court_blocked:
+                    changes['notify_court_blocked'] = {'old': member.notify_court_blocked, 'new': new_notify_court_blocked}
+                    member.notify_court_blocked = new_notify_court_blocked
+
+            if 'notify_booking_overridden' in updates:
+                new_notify_booking_overridden = bool(updates['notify_booking_overridden'])
+                if member.notify_booking_overridden != new_notify_booking_overridden:
+                    changes['notify_booking_overridden'] = {'old': member.notify_booking_overridden, 'new': new_notify_booking_overridden}
+                    member.notify_booking_overridden = new_notify_booking_overridden
+
             # If no changes, return early
             if not changes:
                 return member, None

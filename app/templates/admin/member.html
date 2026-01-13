@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{% if edit_member_data %}Mitglied bearbeiten{% else %}Neues Mitglied{% endif %} - Tennisclub{% endblock %}
+{% block title %}{% if member_id %}Mitglied bearbeiten{% else %}Neues Mitglied{% endif %} - Tennisclub{% endblock %}
 
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6">
@@ -10,7 +10,7 @@
                 ← Zurück zur Mitgliederliste
             </a>
             <h2 class="text-2xl font-bold">
-                {% if edit_member_data %}
+                {% if member_id %}
                 Mitglied bearbeiten
                 {% else %}
                 Neues Mitglied erstellen
@@ -19,15 +19,19 @@
         </div>
     </div>
 
-    {% if error %}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-        {{ error }}
+    <!-- Loading indicator for edit mode -->
+    {% if member_id %}
+    <div id="loading-indicator" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p class="mt-2 text-gray-600">Lade Mitgliedsdaten...</p>
     </div>
     {% endif %}
 
-    <form id="member-form" class="grid grid-cols-1 md:grid-cols-2 gap-4"
-          data-edit-mode="{{ 'true' if edit_member_data else 'false' }}"
-          data-member-id="{{ edit_member_data.id if edit_member_data else '' }}">
+    <!-- Error container -->
+    <div id="error-container" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 hidden"></div>
+
+    <form id="member-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 {% if member_id %}hidden{% endif %}"
+          data-member-id="{{ member_id or '' }}">
 
         <!-- Row 1: Firstname | Lastname -->
         <div>
@@ -67,20 +71,14 @@
 
         <!-- Row 5: Password | Password Confirmation -->
         <div>
-            <label class="block text-gray-700 font-semibold mb-2">
-                {% if edit_member_data %}Neues Passwort (optional){% else %}Passwort{% endif %}
-            </label>
+            <label class="block text-gray-700 font-semibold mb-2" id="password-label">Passwort</label>
             <input type="password" id="member-password" class="w-full border border-gray-300 rounded px-3 py-2"
-                   autocomplete="new-password"
-                   {% if edit_member_data %}placeholder="Leer lassen, um beizubehalten"{% else %}required{% endif %}>
+                   autocomplete="new-password">
         </div>
         <div>
-            <label class="block text-gray-700 font-semibold mb-2">
-                {% if edit_member_data %}Passwort bestätigen{% else %}Passwort bestätigen{% endif %}
-            </label>
+            <label class="block text-gray-700 font-semibold mb-2">Passwort bestätigen</label>
             <input type="password" id="member-password-confirm" class="w-full border border-gray-300 rounded px-3 py-2"
-                   autocomplete="new-password"
-                   {% if edit_member_data %}placeholder="Leer lassen, um beizubehalten"{% else %}required{% endif %}>
+                   autocomplete="new-password">
         </div>
 
         <!-- Row 6: Membership Type | Status -->
@@ -128,53 +126,145 @@
             </div>
         </div>
 
+        <!-- Notification Preferences Section (only shown in edit mode) -->
+        <div id="notification-section" class="md:col-span-2 border-t pt-6 mt-4 hidden">
+            <h3 class="text-lg font-semibold mb-4">E-Mail Benachrichtigungen</h3>
+
+            <!-- Master Toggle -->
+            <div class="mb-3">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notifications-enabled" class="mr-3 w-5 h-5 accent-green-600">
+                    <span class="font-medium text-gray-800">Benachrichtigungen aktiviert</span>
+                </label>
+            </div>
+
+            <!-- Sub-options with visual hierarchy -->
+            <div id="notification-options" class="ml-8 pl-4 border-l-2 border-green-400 space-y-2 py-2">
+                <p class="text-sm text-gray-500 mb-2">Benachrichtigen bei:</p>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notify-own-bookings" class="mr-3 w-4 h-4 accent-green-600">
+                    <span class="text-gray-700">Eigene Buchungen (erstellen, stornieren)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notify-other-bookings" class="mr-3 w-4 h-4 accent-green-600">
+                    <span class="text-gray-700">Buchungen durch andere Mitglieder</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notify-court-blocked" class="mr-3 w-4 h-4 accent-green-600">
+                    <span class="text-gray-700">Platzsperrungen (Turniere, Wartung, etc.)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notify-booking-overridden" class="mr-3 w-4 h-4 accent-green-600">
+                    <span class="text-gray-700">Stornierung meiner Buchung durch Sperrung</span>
+                </label>
+            </div>
+        </div>
+
         <!-- Buttons -->
         <div class="md:col-span-2 flex justify-end gap-4 mt-4">
             <a href="/members/" class="bg-gray-300 text-gray-700 py-2 px-6 rounded hover:bg-gray-400">
                 Abbrechen
             </a>
-            <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700">
-                {% if edit_member_data %}Aktualisieren{% else %}Erstellen{% endif %}
+            <button type="submit" id="submit-button" class="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700">
+                Erstellen
             </button>
         </div>
     </form>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const form = document.getElementById('member-form');
-    const isEditMode = form.dataset.editMode === 'true';
     const memberId = form.dataset.memberId;
-
-    {% if edit_member_data %}
-    // Populate form with existing data
-    document.getElementById('member-firstname').value = '{{ edit_member_data.firstname }}';
-    document.getElementById('member-lastname').value = '{{ edit_member_data.lastname }}';
-    document.getElementById('member-email').value = '{{ edit_member_data.email }}';
-    document.getElementById('member-street').value = '{{ edit_member_data.street or '' }}';
-    document.getElementById('member-city').value = '{{ edit_member_data.city or '' }}';
-    document.getElementById('member-zip-code').value = '{{ edit_member_data.zip_code or '' }}';
-    document.getElementById('member-phone').value = '{{ edit_member_data.phone or '' }}';
-    document.getElementById('member-role').value = '{{ edit_member_data.role }}';
-    document.getElementById('member-membership-type').value = '{{ edit_member_data.membership_type }}';
-
-    // Set fee paid radio
-    if ({{ 'true' if edit_member_data.fee_paid else 'false' }}) {
-        document.getElementById('member-fee-paid').checked = true;
-    } else {
-        document.getElementById('member-fee-unpaid').checked = true;
-    }
-
-    // Set status radio
-    if ({{ 'true' if edit_member_data.is_active else 'false' }}) {
-        document.getElementById('member-active').checked = true;
-    } else {
-        document.getElementById('member-inactive').checked = true;
-    }
+    const isEditMode = !!memberId;
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const errorContainer = document.getElementById('error-container');
+    const notificationSection = document.getElementById('notification-section');
 
     // Store original status for change detection
-    window.originalIsActive = {{ 'true' if edit_member_data.is_active else 'false' }};
-    {% endif %}
+    let originalIsActive = true;
+
+    // Function to update sub-options state based on master toggle
+    function updateNotificationOptions() {
+        const notificationsEnabled = document.getElementById('notifications-enabled');
+        const notificationOptions = document.getElementById('notification-options');
+        const enabled = notificationsEnabled.checked;
+        notificationOptions.style.opacity = enabled ? '1' : '0.5';
+        document.getElementById('notify-own-bookings').disabled = !enabled;
+        document.getElementById('notify-other-bookings').disabled = !enabled;
+        document.getElementById('notify-court-blocked').disabled = !enabled;
+        document.getElementById('notify-booking-overridden').disabled = !enabled;
+    }
+
+    // Listen for master toggle changes
+    document.getElementById('notifications-enabled').addEventListener('change', updateNotificationOptions);
+
+    if (isEditMode) {
+        // Fetch member data via API
+        try {
+            const response = await fetch(`/members/${memberId}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Fehler beim Laden der Mitgliedsdaten');
+            }
+
+            // Populate form with fetched data
+            document.getElementById('member-firstname').value = data.firstname || '';
+            document.getElementById('member-lastname').value = data.lastname || '';
+            document.getElementById('member-email').value = data.email || '';
+            document.getElementById('member-street').value = data.street || '';
+            document.getElementById('member-city').value = data.city || '';
+            document.getElementById('member-zip-code').value = data.zip_code || '';
+            document.getElementById('member-phone').value = data.phone || '';
+            document.getElementById('member-role').value = data.role || 'member';
+            document.getElementById('member-membership-type').value = data.membership_type || 'full';
+
+            // Set fee paid radio
+            if (data.fee_paid) {
+                document.getElementById('member-fee-paid').checked = true;
+            } else {
+                document.getElementById('member-fee-unpaid').checked = true;
+            }
+
+            // Set status radio
+            if (data.is_active) {
+                document.getElementById('member-active').checked = true;
+            } else {
+                document.getElementById('member-inactive').checked = true;
+            }
+            originalIsActive = data.is_active;
+
+            // Set notification preferences
+            document.getElementById('notifications-enabled').checked = data.notifications_enabled;
+            document.getElementById('notify-own-bookings').checked = data.notify_own_bookings;
+            document.getElementById('notify-other-bookings').checked = data.notify_other_bookings;
+            document.getElementById('notify-court-blocked').checked = data.notify_court_blocked;
+            document.getElementById('notify-booking-overridden').checked = data.notify_booking_overridden;
+            updateNotificationOptions();
+
+            // Update UI for edit mode
+            document.getElementById('password-label').textContent = 'Neues Passwort (optional)';
+            document.getElementById('member-password').placeholder = 'Leer lassen, um beizubehalten';
+            document.getElementById('member-password-confirm').placeholder = 'Leer lassen, um beizubehalten';
+            document.getElementById('submit-button').textContent = 'Aktualisieren';
+            notificationSection.classList.remove('hidden');
+
+            // Hide loading, show form
+            loadingIndicator.classList.add('hidden');
+            form.classList.remove('hidden');
+
+        } catch (error) {
+            loadingIndicator.classList.add('hidden');
+            errorContainer.textContent = error.message;
+            errorContainer.classList.remove('hidden');
+            return;
+        }
+    } else {
+        // Create mode - password is required
+        document.getElementById('member-password').required = true;
+        document.getElementById('member-password-confirm').required = true;
+    }
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -191,6 +281,15 @@ document.addEventListener('DOMContentLoaded', function() {
             membership_type: document.getElementById('member-membership-type').value,
             fee_paid: document.querySelector('input[name="member-fee-paid"]:checked').value
         };
+
+        // Add notification preferences if in edit mode
+        if (isEditMode) {
+            memberData.notifications_enabled = document.getElementById('notifications-enabled').checked;
+            memberData.notify_own_bookings = document.getElementById('notify-own-bookings').checked;
+            memberData.notify_other_bookings = document.getElementById('notify-other-bookings').checked;
+            memberData.notify_court_blocked = document.getElementById('notify-court-blocked').checked;
+            memberData.notify_booking_overridden = document.getElementById('notify-booking-overridden').checked;
+        }
 
         const password = document.getElementById('member-password').value;
         const passwordConfirm = document.getElementById('member-password-confirm').value;
@@ -237,9 +336,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Handle status change (activate/deactivate) if in edit mode
             if (isEditMode) {
                 const currentStatus = document.querySelector('input[name="member-status"]:checked').value;
-                const wasActive = window.originalIsActive;
 
-                if (currentStatus === 'inactive' && wasActive) {
+                if (currentStatus === 'inactive' && originalIsActive) {
                     // Deactivate the member
                     const deactivateResponse = await fetch(`/members/${memberId}/deactivate`, {
                         method: 'POST'
@@ -249,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         showToast(deactivateData.error || 'Fehler beim Deaktivieren', 'error');
                         return;
                     }
-                } else if (currentStatus === 'active' && !wasActive) {
+                } else if (currentStatus === 'active' && !originalIsActive) {
                     // Reactivate the member
                     const reactivateResponse = await fetch(`/members/${memberId}/reactivate`, {
                         method: 'POST'

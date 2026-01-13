@@ -152,20 +152,39 @@ Ihr Tennisclub-Team'''
             return EmailService._send_email_sync(recipient_email, subject, body, app)
     
     @staticmethod
+    def _should_notify_member(member, is_own_booking):
+        """
+        Check if member should receive notification based on their preferences.
+
+        Args:
+            member: Member object
+            is_own_booking: True if this member initiated the booking
+
+        Returns:
+            bool: True if member should receive notification
+        """
+        if not member.notifications_enabled:
+            return False
+        if is_own_booking:
+            return member.notify_own_bookings
+        return member.notify_other_bookings
+
+    @staticmethod
     def _send_reservation_email(reservation, template_key, extra_context=None):
         """
         Generic method to send reservation emails to both parties.
-        
+        Respects member notification preferences.
+
         Args:
             reservation: Reservation object
             template_key: Key for template in TEMPLATES dict
             extra_context: Optional dict with additional context variables
-            
+
         Returns:
-            bool: True if both emails sent successfully
+            bool: True if all intended emails sent successfully
         """
         template = EmailService.TEMPLATES[template_key]
-        
+
         # Build base context
         context = {
             'court_number': reservation.court.number,
@@ -175,27 +194,36 @@ Ihr Tennisclub-Team'''
             'booked_for_name': reservation.booked_for.name,
             'booked_by_name': reservation.booked_by.name
         }
-        
+
         # Add extra context if provided
         if extra_context:
             context.update(extra_context)
-        
-        # Send to booked_for member
-        success1 = EmailService._send_email(
-            reservation.booked_for.email,
-            template['subject'].format(**context),
-            template['body'].format(recipient_name=reservation.booked_for.name, **context)
-        )
-        
-        # Send to booked_by member (if different)
+
+        is_own_booking = reservation.booked_for_id == reservation.booked_by_id
+
+        # Send to booked_for member (check preferences)
+        success1 = True
+        if EmailService._should_notify_member(reservation.booked_for, is_own_booking):
+            success1 = EmailService._send_email(
+                reservation.booked_for.email,
+                template['subject'].format(**context),
+                template['body'].format(recipient_name=reservation.booked_for.name, **context)
+            )
+        else:
+            logger.info(f"Skipping notification to {reservation.booked_for.email} (preferences)")
+
+        # Send to booked_by member (if different) - always "own booking" for them
         success2 = True
         if reservation.booked_for_id != reservation.booked_by_id:
-            success2 = EmailService._send_email(
-                reservation.booked_by.email,
-                template['subject'].format(**context),
-                template['body'].format(recipient_name=reservation.booked_by.name, **context)
-            )
-        
+            if EmailService._should_notify_member(reservation.booked_by, is_own_booking=True):
+                success2 = EmailService._send_email(
+                    reservation.booked_by.email,
+                    template['subject'].format(**context),
+                    template['body'].format(recipient_name=reservation.booked_by.name, **context)
+                )
+            else:
+                logger.info(f"Skipping notification to {reservation.booked_by.email} (preferences)")
+
         return success1 and success2
     
     @staticmethod

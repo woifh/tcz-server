@@ -274,27 +274,10 @@ def member_create():
     return render_template('admin/member.html')
 
 
-@bp.route('/member/<int:member_id>')
+@bp.route('/member/<member_id>')
 @login_required
 @admin_required
 def member_edit(member_id):
     """Member edit page."""
-    member, error = MemberService.get_member(member_id)
-    if error:
-        return render_template('admin/member.html', error="Mitglied nicht gefunden")
-
-    edit_member_data = {
-        'id': member.id,
-        'firstname': member.firstname,
-        'lastname': member.lastname,
-        'email': member.email,
-        'street': member.street,
-        'city': member.city,
-        'zip_code': member.zip_code,
-        'phone': member.phone,
-        'role': member.role,
-        'membership_type': member.membership_type,
-        'fee_paid': member.fee_paid,
-        'is_active': member.is_active
-    }
-    return render_template('admin/member.html', edit_member_data=edit_member_data)
+    # Just pass the member_id; data will be fetched via API
+    return render_template('admin/member.html', member_id=member_id)

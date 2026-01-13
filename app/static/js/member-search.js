@@ -287,7 +287,7 @@ function handleKeyboardNavigation(e) {
             if (currentHighlightIndex >= 0 && currentHighlightIndex < results.length) {
                 const addButton = results[currentHighlightIndex].querySelector('button[data-member-id]');
                 if (addButton) {
-                    const memberId = parseInt(addButton.getAttribute('data-member-id'));
+                    const memberId = addButton.getAttribute('data-member-id');
                     addToFavourites(memberId);
                 }
             }

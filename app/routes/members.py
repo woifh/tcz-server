@@ -101,6 +101,13 @@ def favourites_page():
     return render_template('favourites.html')
 
 
+@bp.route('/profile', methods=['GET'])
+@login_required
+def profile_edit():
+    """Show profile edit page for current user."""
+    return render_template('profile.html', member=current_user)
+
+
 @bp.route('/', methods=['POST'])
 @login_required
 @admin_required
@@ -151,7 +158,7 @@ def create_member():
         return jsonify({'error': f'Unerwarteter Fehler: {str(e)}'}), 500
 
 
-@bp.route('/<int:id>', methods=['GET'])
+@bp.route('/<id>', methods=['GET'])
 @login_required
 @member_or_admin_required
 def get_member(id):
@@ -161,25 +168,38 @@ def get_member(id):
     if error:
         return jsonify({'error': error}), 404
 
-    return jsonify({
+    # Base response with fields accessible to all authenticated users
+    response = {
         'id': member.id,
         'firstname': member.firstname,
         'lastname': member.lastname,
         'name': member.name,
         'email': member.email,
-        'role': member.role,
-        'membership_type': member.membership_type,
-        'fee_paid': member.fee_paid,
-        'is_active': member.is_active,
         'street': member.street,
         'city': member.city,
         'zip_code': member.zip_code,
         'phone': member.phone,
-        'created_at': member.created_at.isoformat() if member.created_at else None
-    }), 200
+        'notifications_enabled': member.notifications_enabled,
+        'notify_own_bookings': member.notify_own_bookings,
+        'notify_other_bookings': member.notify_other_bookings,
+        'notify_court_blocked': member.notify_court_blocked,
+        'notify_booking_overridden': member.notify_booking_overridden
+    }
+
+    # Add admin-only fields
+    if current_user.is_admin():
+        response.update({
+            'role': member.role,
+            'membership_type': member.membership_type,
+            'fee_paid': member.fee_paid,
+            'is_active': member.is_active,
+            'created_at': member.created_at.isoformat() if member.created_at else None
+        })
+
+    return jsonify(response), 200
 
 
-@bp.route('/<int:id>', methods=['PUT'])
+@bp.route('/<id>', methods=['PUT'])
 @login_required
 def update_member(id):
     """Update member (user can update self, admin can update anyone)."""
@@ -228,6 +248,18 @@ def update_member(id):
         if 'phone' in data:
             updates['phone'] = data['phone']
 
+        # Notification preferences (can be updated by user or admin)
+        if 'notifications_enabled' in data:
+            updates['notifications_enabled'] = bool(data['notifications_enabled'])
+        if 'notify_own_bookings' in data:
+            updates['notify_own_bookings'] = bool(data['notify_own_bookings'])
+        if 'notify_other_bookings' in data:
+            updates['notify_other_bookings'] = bool(data['notify_other_bookings'])
+        if 'notify_court_blocked' in data:
+            updates['notify_court_blocked'] = bool(data['notify_court_blocked'])
+        if 'notify_booking_overridden' in data:
+            updates['notify_booking_overridden'] = bool(data['notify_booking_overridden'])
+
         # Update member via service
         member, error = MemberService.update_member(
             member_id=id,
@@ -252,7 +284,7 @@ def update_member(id):
         return jsonify({'error': f'Unerwarteter Fehler: {str(e)}'}), 500
 
 
-@bp.route('/<int:id>', methods=['DELETE'])
+@bp.route('/<id>', methods=['DELETE'])
 @login_required
 @admin_required
 def delete_member(id):
@@ -275,7 +307,7 @@ def delete_member(id):
         return jsonify({'error': f'Unerwarteter Fehler: {str(e)}'}), 500
 
 
-@bp.route('/<int:id>/deactivate', methods=['POST'])
+@bp.route('/<id>/deactivate', methods=['POST'])
 @login_required
 @admin_required
 def deactivate_member(id):
@@ -295,7 +327,7 @@ def deactivate_member(id):
         return jsonify({'error': f'Unerwarteter Fehler: {str(e)}'}), 500
 
 
-@bp.route('/<int:id>/reactivate', methods=['POST'])
+@bp.route('/<id>/reactivate', methods=['POST'])
 @login_required
 @admin_required
 def reactivate_member(id):
@@ -315,7 +347,7 @@ def reactivate_member(id):
         return jsonify({'error': f'Unerwarteter Fehler: {str(e)}'}), 500
 
 
-@bp.route('/<int:id>/favourites', methods=['POST'])
+@bp.route('/<id>/favourites', methods=['POST'])
 @login_required
 def add_favourite(id):
     """Add favourite (user can add to own favourites)."""
@@ -359,7 +391,7 @@ def add_favourite(id):
         return jsonify({'error': str(e)}), 500
 
 
-@bp.route('/<int:id>/favourites', methods=['GET'])
+@bp.route('/<id>/favourites', methods=['GET'])
 @login_required
 def get_favourites(id):
     """Get user's favourites."""
@@ -389,7 +421,7 @@ def get_favourites(id):
         return jsonify({'error': str(e)}), 500
 
 
-@bp.route('/<int:id>/favourites/<int:fav_id>', methods=['DELETE'])
+@bp.route('/<id>/favourites/<fav_id>', methods=['DELETE'])
 @login_required
 def remove_favourite(id, fav_id):
     """Remove favourite (user can remove from own favourites)."""

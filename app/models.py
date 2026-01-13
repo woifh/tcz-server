@@ -1,24 +1,30 @@
 """Database models for Tennis Club Reservation System."""
+import uuid
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app import db
 
 
+def generate_uuid():
+    """Generate a new UUID string."""
+    return str(uuid.uuid4())
+
+
 # Association table for many-to-many self-referential favourites relationship
 favourites = db.Table('favourite',
-    db.Column('member_id', db.Integer, db.ForeignKey('member.id'), primary_key=True),
-    db.Column('favourite_id', db.Integer, db.ForeignKey('member.id'), primary_key=True),
+    db.Column('member_id', db.String(36), db.ForeignKey('member.id'), primary_key=True),
+    db.Column('favourite_id', db.String(36), db.ForeignKey('member.id'), primary_key=True),
     db.CheckConstraint('member_id != favourite_id', name='check_not_self_favourite')
 )
 
 
 class Member(db.Model, UserMixin):
     """Member model representing club members with authentication."""
-    
+
     __tablename__ = 'member'
-    
-    id = db.Column(db.Integer, primary_key=True)
+
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     firstname = db.Column(db.String(50), nullable=False)
     lastname = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
@@ -27,14 +33,14 @@ class Member(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     deactivated_at = db.Column(db.DateTime, nullable=True)
-    deactivated_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=True)
+    deactivated_by_id = db.Column(db.String(36), db.ForeignKey('member.id'), nullable=True)
 
     # Membership type: 'full' (can reserve courts) or 'sustaining' (no access to booking system)
     membership_type = db.Column(db.String(20), nullable=False, default='full')
     # Annual fee payment tracking
     fee_paid = db.Column(db.Boolean, nullable=False, default=False)
     fee_paid_date = db.Column(db.Date, nullable=True)
-    fee_paid_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=True)
+    fee_paid_by_id = db.Column(db.String(36), db.ForeignKey('member.id'), nullable=True)
 
     # Address fields
     street = db.Column(db.String(100), nullable=True)
@@ -42,6 +48,13 @@ class Member(db.Model, UserMixin):
     zip_code = db.Column(db.String(10), nullable=True)
     # Contact
     phone = db.Column(db.String(20), nullable=True)
+
+    # Notification preferences (email)
+    notifications_enabled = db.Column(db.Boolean, nullable=False, default=True)
+    notify_own_bookings = db.Column(db.Boolean, nullable=False, default=True)
+    notify_other_bookings = db.Column(db.Boolean, nullable=False, default=True)
+    notify_court_blocked = db.Column(db.Boolean, nullable=False, default=True)
+    notify_booking_overridden = db.Column(db.Boolean, nullable=False, default=True)
     
     @property
     def name(self):
@@ -200,8 +213,8 @@ class Reservation(db.Model):
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
-    booked_for_id = db.Column(db.Integer, db.ForeignKey('member.id', ondelete='CASCADE'), nullable=False)
-    booked_by_id = db.Column(db.Integer, db.ForeignKey('member.id', ondelete='CASCADE'), nullable=False)
+    booked_for_id = db.Column(db.String(36), db.ForeignKey('member.id', ondelete='CASCADE'), nullable=False)
+    booked_by_id = db.Column(db.String(36), db.ForeignKey('member.id', ondelete='CASCADE'), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='active')
     is_short_notice = db.Column(db.Boolean, nullable=False, default=False)
     reason = db.Column(db.String(255), nullable=True)
@@ -226,7 +239,7 @@ class BlockReason(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     teamster_usable = db.Column(db.Boolean, nullable=False, default=False)
-    created_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    created_by_id = db.Column(db.String(36), db.ForeignKey('member.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
@@ -261,9 +274,9 @@ class BlockAuditLog(db.Model):
     operation = db.Column(db.String(20), nullable=False)  # 'create', 'update', 'delete'
     block_id = db.Column(db.Integer, nullable=True)  # for single block operations
     operation_data = db.Column(db.JSON, nullable=True)  # JSON data about the operation
-    admin_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    admin_id = db.Column(db.String(36), db.ForeignKey('member.id'), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
+
     # Relationships
     admin = db.relationship('Member', backref='block_audit_logs')
     
@@ -290,10 +303,10 @@ class MemberAuditLog(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    member_id = db.Column(db.Integer, nullable=False)  # Not FK because member might be deleted
+    member_id = db.Column(db.String(36), nullable=False)  # Not FK because member might be deleted
     operation = db.Column(db.String(20), nullable=False)  # 'create', 'update', 'delete', 'role_change', 'deactivate', 'reactivate'
     operation_data = db.Column(db.JSON, nullable=True)  # JSON data about the operation
-    performed_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    performed_by_id = db.Column(db.String(36), db.ForeignKey('member.id'), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
@@ -325,7 +338,7 @@ class ReasonAuditLog(db.Model):
     reason_id = db.Column(db.Integer, nullable=False)  # Not FK because reason might be deleted
     operation = db.Column(db.String(20), nullable=False)  # 'create', 'update', 'delete', 'deactivate'
     operation_data = db.Column(db.JSON, nullable=True)  # JSON data about the operation
-    performed_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    performed_by_id = db.Column(db.String(36), db.ForeignKey('member.id'), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
@@ -362,9 +375,9 @@ class Block(db.Model):
     details = db.Column(db.String(255), nullable=True)
     batch_id = db.Column(db.String(36), nullable=True, index=True)  # UUID for grouping multi-court blocks
     is_modified = db.Column(db.Boolean, nullable=False, default=False)
-    created_by_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    created_by_id = db.Column(db.String(36), db.ForeignKey('member.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
+
     # Relationships
     created_by = db.relationship('Member', backref='blocks_created')
     
@@ -389,7 +402,7 @@ class Notification(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    recipient_id = db.Column(db.Integer, db.ForeignKey('member.id', ondelete='CASCADE'), nullable=False)
+    recipient_id = db.Column(db.String(36), db.ForeignKey('member.id', ondelete='CASCADE'), nullable=False)
     type = db.Column(db.String(50), nullable=False)
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

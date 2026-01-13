@@ -180,7 +180,7 @@ function memberSearch(userId) {
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6">
     <!-- Member Search Component Wrapper (Alpine.js) -->
-    <div x-data="memberSearch({{ current_user.id }})">
+    <div x-data="memberSearch('{{ current_user.id }}')">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold">Meine Favoriten</h2>
             <button @click="open()" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
@@ -337,7 +337,7 @@ document.addEventListener('alpine:init', () => {
         items: [],
         loading: false,
         error: '',
-        currentUserId: {{ current_user.id }},
+        currentUserId: '{{ current_user.id }}',
         
         async load() {
             this.loading = true;

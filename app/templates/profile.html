@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Mein Profil - Tennisclub{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold">Mein Profil</h2>
+        <p class="text-gray-600 text-sm mt-1">Hier kannst du deine Kontaktdaten bearbeiten.</p>
+    </div>
+
+    <!-- Loading state -->
+    <div id="profile-loading" class="text-center py-8">
+        <span class="text-gray-500">Lade Profildaten...</span>
+    </div>
+
+    <form id="profile-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden" data-member-id="{{ member.id }}">
+
+        <!-- Row 1: Firstname | Lastname -->
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Vorname</label>
+            <input type="text" id="profile-firstname" class="w-full border border-gray-300 rounded px-3 py-2" required>
+        </div>
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Nachname</label>
+            <input type="text" id="profile-lastname" class="w-full border border-gray-300 rounded px-3 py-2" required>
+        </div>
+
+        <!-- Row 2: PLZ | City -->
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">PLZ</label>
+            <input type="text" id="profile-zip-code" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="PLZ">
+        </div>
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Stadt</label>
+            <input type="text" id="profile-city" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Stadt">
+        </div>
+
+        <!-- Row 3: Street (full width) -->
+        <div class="md:col-span-2">
+            <label class="block text-gray-700 font-semibold mb-2">Stra&szlig;e</label>
+            <input type="text" id="profile-street" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Stra&szlig;e und Hausnummer">
+        </div>
+
+        <!-- Row 4: Email | Phone -->
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">E-Mail</label>
+            <input type="email" id="profile-email" class="w-full border border-gray-300 rounded px-3 py-2" autocomplete="off" required>
+        </div>
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Telefon</label>
+            <input type="tel" id="profile-phone" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Telefonnummer">
+        </div>
+
+        <!-- Row 5: Password | Password Confirmation -->
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Neues Passwort (optional)</label>
+            <input type="password" id="profile-password" class="w-full border border-gray-300 rounded px-3 py-2"
+                   autocomplete="new-password" placeholder="Leer lassen, um beizubehalten">
+        </div>
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Passwort bestätigen</label>
+            <input type="password" id="profile-password-confirm" class="w-full border border-gray-300 rounded px-3 py-2"
+                   autocomplete="new-password" placeholder="Leer lassen, um beizubehalten">
+        </div>
+
+        <!-- Notification Preferences Section -->
+        <div class="md:col-span-2 border-t pt-6 mt-4">
+            <h3 class="text-lg font-semibold mb-4">E-Mail Benachrichtigungen</h3>
+
+            <!-- Master Toggle -->
+            <div class="mb-3">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notifications-enabled" class="mr-3 w-5 h-5 accent-green-600">
+                    <span class="font-medium text-gray-800">Benachrichtigungen aktiviert</span>
+                </label>
+            </div>
+
+            <!-- Sub-options with visual hierarchy -->
+            <div id="notification-options" class="ml-8 pl-4 border-l-2 border-green-400 space-y-2 py-2">
+                <p class="text-sm text-gray-500 mb-2">Benachrichtigen bei:</p>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notify-own-bookings" class="mr-3 w-4 h-4 accent-green-600">
+                    <span class="text-gray-700">Eigene Buchungen (erstellen, stornieren)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notify-other-bookings" class="mr-3 w-4 h-4 accent-green-600">
+                    <span class="text-gray-700">Buchungen durch andere Mitglieder</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notify-court-blocked" class="mr-3 w-4 h-4 accent-green-600">
+                    <span class="text-gray-700">Platzsperrungen (Turniere, Wartung, etc.)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="notify-booking-overridden" class="mr-3 w-4 h-4 accent-green-600">
+                    <span class="text-gray-700">Stornierung meiner Buchung durch Sperrung</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="md:col-span-2 flex justify-end gap-4 mt-4">
+            <a href="{{ url_for('dashboard.dashboard') }}" class="bg-gray-300 text-gray-700 py-2 px-6 rounded hover:bg-gray-400">
+                Abbrechen
+            </a>
+            <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700">
+                Speichern
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    const form = document.getElementById('profile-form');
+    const loadingDiv = document.getElementById('profile-loading');
+    const memberId = form.dataset.memberId;
+
+    // Notification elements
+    const notificationsEnabled = document.getElementById('notifications-enabled');
+    const notificationOptions = document.getElementById('notification-options');
+    const notifyOwnBookings = document.getElementById('notify-own-bookings');
+    const notifyOtherBookings = document.getElementById('notify-other-bookings');
+    const notifyCourtBlocked = document.getElementById('notify-court-blocked');
+    const notifyBookingOverridden = document.getElementById('notify-booking-overridden');
+
+    // Toggle notification options visibility based on master toggle
+    function updateNotificationOptionsVisibility() {
+        if (notificationsEnabled.checked) {
+            notificationOptions.classList.remove('opacity-50', 'pointer-events-none');
+        } else {
+            notificationOptions.classList.add('opacity-50', 'pointer-events-none');
+            // Auto-deselect sub-options when master toggle is disabled
+            notifyOwnBookings.checked = false;
+            notifyOtherBookings.checked = false;
+            notifyCourtBlocked.checked = false;
+            notifyBookingOverridden.checked = false;
+        }
+    }
+    notificationsEnabled.addEventListener('change', updateNotificationOptionsVisibility);
+
+    // Fetch profile data from API
+    try {
+        const response = await fetch(`/members/${memberId}`);
+        if (!response.ok) {
+            throw new Error('Fehler beim Laden der Profildaten');
+        }
+        const member = await response.json();
+
+        // Populate form fields
+        document.getElementById('profile-firstname').value = member.firstname || '';
+        document.getElementById('profile-lastname').value = member.lastname || '';
+        document.getElementById('profile-email').value = member.email || '';
+        document.getElementById('profile-street').value = member.street || '';
+        document.getElementById('profile-city').value = member.city || '';
+        document.getElementById('profile-zip-code').value = member.zip_code || '';
+        document.getElementById('profile-phone').value = member.phone || '';
+
+        // Notification preferences
+        notificationsEnabled.checked = member.notifications_enabled ?? true;
+        notifyOwnBookings.checked = member.notify_own_bookings ?? true;
+        notifyOtherBookings.checked = member.notify_other_bookings ?? true;
+        notifyCourtBlocked.checked = member.notify_court_blocked ?? true;
+        notifyBookingOverridden.checked = member.notify_booking_overridden ?? true;
+
+        // Update visibility based on loaded data
+        updateNotificationOptionsVisibility();
+
+        // Show form, hide loading
+        loadingDiv.classList.add('hidden');
+        form.classList.remove('hidden');
+
+    } catch (error) {
+        loadingDiv.innerHTML = '<span class="text-red-500">Fehler beim Laden der Profildaten</span>';
+        showToast('Fehler beim Laden der Profildaten', 'error');
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const profileData = {
+            firstname: document.getElementById('profile-firstname').value,
+            lastname: document.getElementById('profile-lastname').value,
+            email: document.getElementById('profile-email').value,
+            street: document.getElementById('profile-street').value,
+            city: document.getElementById('profile-city').value,
+            zip_code: document.getElementById('profile-zip-code').value,
+            phone: document.getElementById('profile-phone').value,
+            notifications_enabled: notificationsEnabled.checked,
+            notify_own_bookings: notifyOwnBookings.checked,
+            notify_other_bookings: notifyOtherBookings.checked,
+            notify_court_blocked: notifyCourtBlocked.checked,
+            notify_booking_overridden: notifyBookingOverridden.checked
+        };
+
+        const password = document.getElementById('profile-password').value;
+        const passwordConfirm = document.getElementById('profile-password-confirm').value;
+
+        // Validate password confirmation
+        if (password || passwordConfirm) {
+            if (password !== passwordConfirm) {
+                showToast('Passwörter stimmen nicht überein', 'error');
+                return;
+            }
+            profileData.password = password;
+        }
+
+        try {
+            const response = await fetch(`/members/${memberId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(profileData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                showToast(data.error || 'Fehler beim Speichern', 'error');
+                return;
+            }
+
+            showToast('Profil erfolgreich aktualisiert!');
+
+            // Clear password fields after successful update
+            document.getElementById('profile-password').value = '';
+            document.getElementById('profile-password-confirm').value = '';
+
+        } catch (error) {
+            showToast('Fehler beim Speichern des Profils', 'error');
+        }
+    });
+});
+</script>
+{% endblock %}
