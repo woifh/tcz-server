@@ -62,7 +62,7 @@ export function dashboard() {
             this.error = null;
 
             try {
-                const response = await fetch(`/courts/availability?date=${this.selectedDate}`);
+                const response = await fetch(`/api/courts/availability?date=${this.selectedDate}`);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -101,7 +101,7 @@ export function dashboard() {
         async refreshAvailability() {
             // Refresh availability without showing loading state (prevents table flicker)
             try {
-                const response = await fetch(`/courts/availability?date=${this.selectedDate}`);
+                const response = await fetch(`/api/courts/availability?date=${this.selectedDate}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -134,7 +134,7 @@ export function dashboard() {
 
         async loadUserReservations() {
             try {
-                const response = await fetch('/reservations/?format=json');
+                const response = await fetch('/api/reservations/');
 
                 if (response.ok) {
                     const data = await response.json();

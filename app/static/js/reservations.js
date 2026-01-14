@@ -21,7 +21,7 @@ export async function loadUserReservations() {
     if (!container) return;
     
     try {
-        const response = await fetch('/reservations/?format=json');
+        const response = await fetch('/api/reservations/');
         const data = await response.json();
         
         if (response.ok && data.reservations && data.reservations.length > 0) {
@@ -75,7 +75,7 @@ export async function loadUserReservations() {
  */
 export async function cancelReservationFromDashboard(reservationId, bookedFor, date, time) {
     try {
-        const response = await fetch(`/reservations/${reservationId}`, {
+        const response = await fetch(`/api/reservations/${reservationId}`, {
             method: 'DELETE',
             headers: { 'X-CSRFToken': getCsrfToken() }
         });
@@ -105,7 +105,7 @@ export async function cancelReservationFromDashboard(reservationId, bookedFor, d
  */
 export async function cancelReservation(reservationId) {
     try {
-        const response = await fetch(`/reservations/${reservationId}`, {
+        const response = await fetch(`/api/reservations/${reservationId}`, {
             method: 'DELETE',
             headers: { 'X-CSRFToken': getCsrfToken() }
         });

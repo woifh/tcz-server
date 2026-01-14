@@ -183,3 +183,4 @@ def reservation_status():
 # Import sub-modules to register their routes
 from . import members
 from . import admin
+from . import courts

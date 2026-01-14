@@ -207,7 +207,7 @@ export function bookingModal() {
             };
             
             try {
-                const response = await fetch('/reservations/', {
+                const response = await fetch('/api/reservations/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
