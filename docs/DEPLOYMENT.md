@@ -33,7 +33,7 @@ cd ~/tcz
 ### Step 3: Run Initial Setup Script
 
 ```bash
-./setup_pythonanywhere.sh
+./scripts/setup/setup_pythonanywhere.sh
 ```
 
 This will:
@@ -77,7 +77,7 @@ cd ~/tcz
 ### Step 3: Run Deployment Script
 
 ```bash
-./deploy_to_pythonanywhere.sh
+./scripts/deploy/pythonanywhere.sh
 ```
 
 This automatically:
@@ -243,11 +243,14 @@ flask db history
 
 ## Current Database Schema
 
-Latest migration: `7347717de84b` - Initial migration with member audit log
-
-To check current schema:
+To check current migration version:
 ```bash
 flask db current
+```
+
+To see migration history:
+```bash
+flask db history
 ```
 
 ## Environment Files on PythonAnywhere

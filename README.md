@@ -39,7 +39,7 @@ python wsgi.py
 - **Booking on Behalf**: Book courts for yourself or any of your favourite members
 - **Email Notifications**: Receive German-language emails for all booking events
 - **Responsive Design**: Access from desktop, tablet, or mobile devices
-- **Flexible Booking**: Reserve courts for 1-hour slots between 06:00-21:00
+- **Flexible Booking**: Reserve courts for 1-hour slots between 08:00-22:00
 - **Booking Management**: View, modify, and cancel your reservations from multiple locations
 
 ### For Administrators
@@ -413,14 +413,18 @@ For issues or questions:
 
 ## 🔄 Version History
 
-- **v1.1.0** - Enhanced User Experience (Current)
-  - ✨ One-click cancellation from dashboard grid
-  - ✨ Favourites management system with dedicated page
-  - ✨ Booking on behalf of favourite members
-  - ✨ Smart authorization for reservation actions
-  - ✨ Improved grid interactivity with visual feedback
-  - 🐛 Fixed unique constraint issue for cancelled reservations
-  - 📝 Enhanced documentation with user workflows
+See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
+
+**Current Version: v3.6.0** (2026-01-14)
+
+Recent highlights:
+- Mobile API with JWT authentication
+- Email notification preferences per member
+- Member profile editing
+- Teamster (Team Leader) role
+- CSRF protection for all forms
+- Performance optimizations
+- Enhanced admin dashboard with audit logging
 
 - **v1.0.0** - Initial release
   - Complete booking system

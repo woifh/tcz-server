@@ -37,7 +37,7 @@ The Tennis Club Reservation System is a web application for managing tennis cour
 
 ### Frontend
 - **Jinja2** - Server-side templating
-- **Bootstrap 5** - UI framework
+- **Tailwind CSS 3.0+** - Utility-first CSS framework
 - **JavaScript (Vanilla)** - Client-side interactivity
 - **HTML5/CSS3** - Modern web standards
 
@@ -139,9 +139,10 @@ Key models:
 
 #### Member
 - User accounts with authentication
-- Roles: `member`, `administrator`
+- Roles: `member`, `teamster` (Team Leader), `administrator`
 - Password hashing with Werkzeug
 - Relationships to reservations and audit logs
+- Notification preferences (own bookings, others' bookings, blocking, overrides)
 
 #### Court
 - Tennis court entities (numbered 1-6)
@@ -252,9 +253,10 @@ Member (1) ───< (N) Reservation (N) >─── (1) Court
 - **Remember me**: Optional persistent login
 
 ### Authorization
-- **Role-based access**: Member vs. Administrator roles
-- **Route protection**: `@login_required` and `@admin_required` decorators
+- **Role-based access**: Three roles - Member, Teamster (Team Leader), Administrator
+- **Route protection**: `@login_required`, `@teamster_required`, and `@admin_required` decorators
 - **Template-level checks**: `current_user.role` checks in Jinja2
+- **JWT authentication**: Mobile API uses JWT tokens for stateless authentication
 
 ### Input Validation
 - **WTForms validation**: All user input validated server-side
