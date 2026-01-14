@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [3.7.0] - 2026-01-14
+## [3.7] - 2026-01-14
 
 ### Performance
 - Court availability overview loads significantly faster (up to 95% less data transfer)
@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Court number now displays correctly in the active reservations list ("Platz 1" instead of "Platz undefined")
 
-## [3.6.0] - 2026-01-14
+## [3.6] - 2026-01-14
 
 ### Fixed
 - Block edit: updated blocks no longer disappear when date is changed beyond original 30-day view range
@@ -25,29 +25,39 @@ All notable changes to this project will be documented in this file.
 - Member updates now correctly track only actual changes (fixed false change detection for notification settings)
 - Removed redundant "Ausgeführt als: Administrator" from audit log
 
-## [3.5.0] - 2026-01-14
+## [3.5] - 2026-01-14
 
 ### Added
 - Complete mobile API for reservations, members, and admin features
 
-## [3.4.0] - 2026-01-14
+## [3.4] - 2026-01-14
 
 ### Added
 - Mobile app login support
 
-## [3.3.0] - 2026-01-13
+## [3.3] - 2026-01-13
 
 ### Performance
 - Flicker-free date navigation in court grid (static table structure)
 - Server-side pre-computation of slot styles and content
 - Smooth CSS transitions on slot state changes
 
-## [3.2.0] - 2026-01-13
+## [3.2] - 2026-01-13
 
 ### Security
 - Added CSRF protection for all form submissions and API requests
 
-## [3.1.1] - 2026-01-13
+## [3.1] - 2026-01-13
+
+### Added
+- Member profile page for editing personal information
+- Email notification preferences - members can control which notifications they receive:
+  - Master toggle to enable/disable all notifications
+  - Own bookings (create/cancel)
+  - Bookings by other members
+  - Court blocking notifications
+  - Booking override notifications
+- Admin can now edit member notification preferences
 
 ### Fixed
 - Booking form validation failed due to UUID parsing issue
@@ -62,37 +72,12 @@ All notable changes to this project will be documented in this file.
 ### Performance
 - Faster loading of members list and court availability pages
 
-## [3.1.0] - 2026-01-13
-
-### Added
-- Member profile page for editing personal information
-- Email notification preferences - members can control which notifications they receive:
-  - Master toggle to enable/disable all notifications
-  - Own bookings (create/cancel)
-  - Bookings by other members
-  - Court blocking notifications
-  - Booking override notifications
-- Admin can now edit member notification preferences
-
 ### Technical
 - Member IDs changed from integer to UUID for better security
 - Profile and admin member edit pages now fetch data via API
 - Email service respects member notification preferences before sending
 
-## [3.0.2] - 2026-01-11
-
-### Improved
-- Simplified navigation for anonymous users - login link now directly visible instead of hamburger menu
-
-## [3.0.1] - 2026-01-09
-
-### Improved
-- Smoother UI when creating or cancelling bookings - table no longer flickers
-
-### Technical
-- Partial slot updates instead of full table reload after booking changes
-
-## [3.0.0] - 2026-01-09
+## [3.0] - 2026-01-09
 
 ### Performance
 - Significantly improved booking performance with optimized database queries
@@ -100,58 +85,43 @@ All notable changes to this project will be documented in this file.
 - Added request-scoped caching for system settings
 - Emails are now sent asynchronously in background threads for faster API responses
 
+### Improved
+- Simplified navigation for anonymous users - login link now directly visible instead of hamburger menu
+- Smoother UI when creating or cancelling bookings - table no longer flickers
+
 ### Technical
 - SQLAlchemy eager loading with `joinedload` for reservation relationships
 - Member object passed through validation to avoid redundant lookups
 - Settings cache using Flask's `g` object for request-scoped storage
+- Partial slot updates instead of full table reload after booking changes
 
-## [2.2.5] - 2026-01-09
-
-### Improved
-- Court slots now show only the member name for own bookings instead of redundant "Name (von Name)"
-
-## [2.2.4] - 2026-01-09
-
-### Fixed
-- Supporting members are no longer visible in member search or favorites for booking
-
-## [2.2.3] - 2026-01-09
-
-### Added
-- New "Bookings for others" section on dashboard and reservations page
-- Bookings made for other members are now displayed separately from your own bookings
-
-### Fixed
-- Booking limit validation now correctly excludes bookings made for others
-
-## [2.2.2] - 2026-01-09
-
-### Fixed
-- When a member creates a booking for another member, it no longer counts toward their own booking limit
-
-## [2.2.1] - 2026-01-09
-
-### Fixed
-- Dashboard now loads court availability only once instead of twice
-
-## [2.2.0] - 2026-01-07
+## [2.2] - 2026-01-07
 
 ### Added
 - Unified activity log for blocks, members, and blocking reasons
 - Filter options in activity log (All/Blocks/Members/Blocking Reasons)
 - Tracking of changes to blocking reasons
+- New "Bookings for others" section on dashboard and reservations page
+- Bookings made for other members are now displayed separately from your own bookings
+
+### Fixed
+- Supporting members are no longer visible in member search or favorites for booking
+- Booking limit validation now correctly excludes bookings made for others
+- When a member creates a booking for another member, it no longer counts toward their own booking limit
+- Dashboard now loads court availability only once instead of twice
 
 ### Improved
 - Cleaner member list without email column
 - Consistent icons for edit, delete, and cancel actions
 - Better activity log display
+- Court slots now show only the member name for own bookings instead of redundant "Name (von Name)"
 
-## [2.1.0] - 2026-01-07
+## [2.1] - 2026-01-07
 
 ### Fixed
 - Member search in booking dialog now works in production
 
-## [2.0.0] - 2026-01-07
+## [2.0] - 2026-01-07
 
 ### Added
 - Version history with dedicated page in admin area
@@ -160,7 +130,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Version display now shows the correct version
 
-## [1.0.0] - 2026-01-07
+## [1.0] - 2026-01-07
 
 ### Added
 - Member search in booking dialog with automatic favorites
