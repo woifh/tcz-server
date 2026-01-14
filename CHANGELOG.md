@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [3.6.0] - 2026-01-14
 
+### Fixed
+- Block edit: updated blocks no longer disappear when date is changed beyond original 30-day view range
+
 ### Improved
 - Audit log now shows full details for block operations (date, time, courts, reason)
 - Block batch updates now log single entry per batch instead of individual entries per court

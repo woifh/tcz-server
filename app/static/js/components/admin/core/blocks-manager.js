@@ -36,11 +36,9 @@ export class BlocksManager {
 
         try {
             const today = dateUtils.getTodayString();
-            const nextMonth = dateUtils.getDatePlusDays(30);
 
             const result = await blocksAPI.load({
-                date_range_start: today,
-                date_range_end: nextMonth
+                date_range_start: today
             });
 
             if (result.success) {
