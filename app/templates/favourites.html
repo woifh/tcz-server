@@ -4,9 +4,6 @@
 
 {% block extra_js %}
 <script>
-// CSRF token for fetch requests
-const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
 // Alpine.js Member Search Component
 function memberSearch(userId) {
     return {

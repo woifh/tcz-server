@@ -117,9 +117,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const loadingDiv = document.getElementById('profile-loading');
     const memberId = form.dataset.memberId;
 
-    // CSRF token for fetch requests
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
     // Notification elements
     const notificationsEnabled = document.getElementById('notifications-enabled');
     const notificationOptions = document.getElementById('notification-options');

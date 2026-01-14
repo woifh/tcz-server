@@ -182,9 +182,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const errorContainer = document.getElementById('error-container');
     const notificationSection = document.getElementById('notification-section');
 
-    // CSRF token for fetch requests
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
     // Store original status for change detection
     let originalIsActive = true;
 

@@ -272,6 +272,9 @@
     <div id="sr-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
     
     <script>
+    // Global CSRF token for all fetch requests
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
     // Enhanced toast notification system
     class ToastManager {
         constructor() {

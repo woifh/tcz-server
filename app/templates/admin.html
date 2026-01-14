@@ -85,9 +85,6 @@
 
 <script type="module" src="{{ url_for('static', filename='js/components/admin/admin-main.js') }}"></script>
 <script>
-// CSRF token for fetch requests
-const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
 // Load version information
 document.addEventListener('DOMContentLoaded', async function() {
     try {

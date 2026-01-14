@@ -116,9 +116,6 @@
 </div>
 
 <script>
-// CSRF token for fetch requests
-const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
 async function deleteMember(memberId) {
     if (!confirm('Möchten Sie dieses Mitglied wirklich löschen?')) {
         return;
