@@ -182,6 +182,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     const errorContainer = document.getElementById('error-container');
     const notificationSection = document.getElementById('notification-section');
 
+    // CSRF token for fetch requests
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
     // Store original status for change detection
     let originalIsActive = true;
 
@@ -400,7 +403,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Update existing member
                 response = await fetch(`/members/${memberId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
                     body: JSON.stringify(memberData)
                 });
             } else {
@@ -411,7 +417,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
                 response = await fetch('/members/', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
                     body: JSON.stringify(memberData)
                 });
             }
@@ -430,7 +439,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (currentStatus === 'inactive' && originalIsActive) {
                     // Deactivate the member
                     const deactivateResponse = await fetch(`/members/${memberId}/deactivate`, {
-                        method: 'POST'
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken }
                     });
                     if (!deactivateResponse.ok) {
                         const deactivateData = await deactivateResponse.json();
@@ -440,7 +450,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 } else if (currentStatus === 'active' && !originalIsActive) {
                     // Reactivate the member
                     const reactivateResponse = await fetch(`/members/${memberId}/reactivate`, {
-                        method: 'POST'
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken }
                     });
                     if (!reactivateResponse.ok) {
                         const reactivateData = await reactivateResponse.json();

@@ -4,6 +4,9 @@
 
 {% block extra_js %}
 <script>
+// CSRF token for fetch requests
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
 // Alpine.js Member Search Component
 function memberSearch(userId) {
     return {
@@ -85,11 +88,14 @@ function memberSearch(userId) {
         async addToFavourites(memberId) {
             // Clear any previous errors
             this.error = '';
-            
+
             try {
                 const response = await fetch(`/members/${this.currentUserId}/favourites`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
                     body: JSON.stringify({ favourite_id: memberId })
                 });
                 
@@ -363,7 +369,8 @@ document.addEventListener('alpine:init', () => {
         async remove(favouriteId) {
             try {
                 const response = await fetch(`/members/${this.currentUserId}/favourites/${favouriteId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
                 });
                 
                 const data = await response.json();

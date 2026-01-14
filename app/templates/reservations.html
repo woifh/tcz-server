@@ -141,6 +141,9 @@
 </div>
 
 <script>
+// CSRF token for fetch requests
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
 // Alpine.js Reservations List Component
 function reservationsList() {
     return {
@@ -189,7 +192,8 @@ function reservationsList() {
 
             try {
                 const response = await fetch(`/reservations/${reservationId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
                 });
 
                 const data = await response.json();

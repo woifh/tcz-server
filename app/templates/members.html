@@ -116,6 +116,9 @@
 </div>
 
 <script>
+// CSRF token for fetch requests
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
 async function deleteMember(memberId) {
     if (!confirm('Möchten Sie dieses Mitglied wirklich löschen?')) {
         return;
@@ -123,7 +126,8 @@ async function deleteMember(memberId) {
 
     try {
         const response = await fetch(`/members/${memberId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrfToken }
         });
 
         const data = await response.json();
@@ -137,7 +141,8 @@ async function deleteMember(memberId) {
                 if (confirm(data.error + '\n\nMöchten Sie das Mitglied trotzdem löschen? Alle Buchungen werden storniert.')) {
                     // Force delete
                     const forceResponse = await fetch(`/members/${memberId}?force=true`, {
-                        method: 'DELETE'
+                        method: 'DELETE',
+                        headers: { 'X-CSRFToken': csrfToken }
                     });
                     const forceData = await forceResponse.json();
 

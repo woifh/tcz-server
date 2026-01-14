@@ -678,6 +678,9 @@
 
 {% block extra_js %}
 <script>
+// CSRF token for fetch requests
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
 function reasonsManager() {
     return {
         // State management
@@ -1018,7 +1021,8 @@ function reasonsManager() {
                 const response = await fetch(`/admin/block-reasons/${this.editingReason.id}`, {
                     method: 'PUT',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(requestData)
                 });
@@ -1123,7 +1127,8 @@ function reasonsManager() {
                 const response = await fetch(`/admin/block-reasons/${this.deletingReason.id}`, {
                     method: 'DELETE',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     }
                 });
                 
@@ -1364,7 +1369,8 @@ function reasonsManager() {
                 const response = await fetch('/admin/block-reasons', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify(requestData)
                 });
