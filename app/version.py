@@ -386,29 +386,27 @@ def parse_semantic_version(version_str: str) -> tuple[int, int, int, str]:
         logger.error(f"Failed to parse semantic version '{version_str}': {e}")
         return (0, 0, 0, "")
 
-def increment_minor_version(base_version: str, increment: int) -> str:
-    """Increment the minor version by the specified amount.
-    
+def increment_patch_version(base_version: str, increment: int) -> str:
+    """Increment the patch version by the specified amount.
+
     Args:
         base_version: Base version string like "1.2.3"
-        increment: Number to add to the minor version
-        
+        increment: Number to add to the patch version
+
     Returns:
-        New version string with incremented minor version
-        
-    Requirements: 2.1, 2.2
+        New version string with incremented patch version
     """
     if increment <= 0:
         return base_version
-    
+
     major, minor, patch, suffix = parse_semantic_version(base_version)
-    
-    # Increment the minor version
-    new_minor = minor + increment
-    
+
+    # Increment the patch version
+    new_patch = patch + increment
+
     # Build the new version string (without suffix for clean versioning)
-    new_version = f"{major}.{new_minor}.{patch}"
-    
+    new_version = f"{major}.{minor}.{new_patch}"
+
     logger.debug(f"Incremented version '{base_version}' by {increment} to '{new_version}'")
     return new_version
 
@@ -533,8 +531,8 @@ def calculate_version_from_git() -> str:
             commit_count = count_commits_since_tag(latest_tag)
 
             if commit_count > 0:
-                # Increment minor version by commit count
-                calculated_version = increment_minor_version(base_version, commit_count)
+                # Increment patch version by commit count
+                calculated_version = increment_patch_version(base_version, commit_count)
                 logger.info(f"Calculated version: {calculated_version} (base: {base_version}, commits: {commit_count})")
                 return calculated_version
             else:
