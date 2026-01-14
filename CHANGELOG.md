@@ -5,14 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [3.7.0] - 2026-01-14
 
 ### Performance
-- Court availability API now uses sparse response format (85-95% bandwidth reduction)
-- Only occupied slots (reservations/blocks) are returned; available slots computed client-side
-- Reduced server-side computation by removing pre-computed CSS classes and content
+- Court availability overview loads significantly faster (up to 95% less data transfer)
 
-### Technical
-- New response format: `courts[].occupied[]` replaces dense `grid[].slots[]`
-- Client-side `transformSparseResponse()` for template compatibility
-- Updated security validation tests for new response structure
+### Fixed
+- Court number now displays correctly in the active reservations list ("Platz 1" instead of "Platz undefined")
 
 ## [3.6.0] - 2026-01-14
 
