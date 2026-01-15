@@ -42,6 +42,7 @@ export class BlocksManager {
             });
 
             if (result.success) {
+                this.currentBlocks = result.blocks;
                 this.displayUpcomingBlocks(result.blocks);
             } else {
                 blocksList.innerHTML = `
@@ -197,39 +198,22 @@ export class BlocksManager {
     /**
      * Delete a batch of blocks with confirmation
      */
-    async deleteBatch(batchId) {
+    deleteBatch(batchId) {
         if (!batchId) {
             showToast('Fehler: Keine Batch-ID gefunden', 'error');
             return;
         }
 
-        try {
-            // Load batch details
-            const today = dateUtils.getTodayString();
-            const nextMonth = dateUtils.getDatePlusDays(30);
+        // Use cached blocks instead of making another API call
+        const batchBlocks = this.currentBlocks.filter(block => block.batch_id === batchId);
 
-            const response = await fetch(`/api/admin/blocks?date_range_start=${today}&date_range_end=${nextMonth}`);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Fehler beim Laden der Sperrungen');
-            }
-
-            // Find all blocks with this batch_id
-            const batchBlocks = data.blocks.filter(block => block.batch_id === batchId);
-
-            if (batchBlocks.length === 0) {
-                showToast('Keine Sperrungen mit dieser Batch-ID gefunden', 'error');
-                return;
-            }
-
-            // Show confirmation modal
-            this.showBatchDeleteConfirmation(batchId, batchBlocks);
-
-        } catch (error) {
-            console.error('Error loading batch details:', error);
-            showToast('Fehler beim Laden der Sperrungsdetails', 'error');
+        if (batchBlocks.length === 0) {
+            showToast('Keine Sperrungen mit dieser Batch-ID gefunden', 'error');
+            return;
         }
+
+        // Show confirmation modal
+        this.showBatchDeleteConfirmation(batchId, batchBlocks);
     }
 
     /**

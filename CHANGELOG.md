@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Consistent API endpoint paths across all pages
+- Delete block confirmation no longer makes unnecessary server requests
 
 ## [3.7] - 2026-01-14
 
