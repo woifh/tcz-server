@@ -157,3 +157,4 @@ This codebase prioritizes flow, clarity, and fast iteration.
 - **NEVER break existing functionality** - preserve working behavior at all costs
 - **When in doubt, ask the user** - don't guess or assume; clarify before proceeding
 - **Respect software development principles** - follow SOLID, DRY, KISS
+- **Never mention Claude Code** - no references to Claude, AI, or this tool in changelogs, commits, or any project files
