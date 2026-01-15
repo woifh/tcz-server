@@ -5,8 +5,9 @@ Court availability for authenticated users (web and mobile).
 """
 
 from datetime import date, time
-from flask import request, jsonify
-from flask_login import current_user
+from flask import request, jsonify, current_app
+from flask_login import current_user, login_user
+import jwt
 
 from app.models import Court
 from app.services.reservation_service import ReservationService
@@ -51,6 +52,24 @@ def get_availability():
         query_date = date.fromisoformat(date_str)
     except ValueError:
         return jsonify({'error': 'Ungültiges Datumsformat'}), 400
+
+    # Check for JWT Bearer token authentication (for mobile app)
+    # This allows mobile users to see member names in availability view
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        token = auth_header[7:]
+        try:
+            payload = jwt.decode(
+                token,
+                current_app.config['JWT_SECRET_KEY'],
+                algorithms=[current_app.config['JWT_ALGORITHM']]
+            )
+            from app.models import Member
+            member = Member.query.get(payload['user_id'])
+            if member and member.is_active:
+                login_user(member, remember=False)
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+            pass  # Invalid/expired token - continue as anonymous
 
     current_time = get_current_berlin_time()
     courts = Court.query.order_by(Court.number).all()
