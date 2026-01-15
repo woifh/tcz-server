@@ -345,9 +345,9 @@ class MemberAuditLog(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     member_id = db.Column(db.String(36), nullable=False)  # Not FK because member might be deleted
-    operation = db.Column(db.String(20), nullable=False)  # 'create', 'update', 'delete', 'role_change', 'deactivate', 'reactivate'
+    operation = db.Column(db.String(20), nullable=False)  # 'create', 'update', 'delete', 'role_change', 'deactivate', 'reactivate', 'add_favourite', 'remove_favourite', 'csv_import', 'annual_fee_reset'
     operation_data = db.Column(db.JSON, nullable=True)  # JSON data about the operation
-    performed_by_id = db.Column(db.String(36), db.ForeignKey('member.id'), nullable=False)
+    performed_by_id = db.Column(db.String(36), db.ForeignKey('member.id'), nullable=True)  # Nullable for system-initiated actions
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
@@ -356,7 +356,7 @@ class MemberAuditLog(db.Model):
     def __init__(self, **kwargs):
         """Initialize audit log with validation."""
         super(MemberAuditLog, self).__init__(**kwargs)
-        valid_operations = ['create', 'update', 'delete', 'role_change', 'deactivate', 'reactivate', 'membership_change', 'payment_update']
+        valid_operations = ['create', 'update', 'delete', 'role_change', 'deactivate', 'reactivate', 'membership_change', 'payment_update', 'add_favourite', 'remove_favourite', 'csv_import', 'annual_fee_reset']
         if self.operation and self.operation not in valid_operations:
             raise ValueError(f"Operation must be one of: {', '.join(valid_operations)}")
 

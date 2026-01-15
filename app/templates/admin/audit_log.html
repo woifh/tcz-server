@@ -10,8 +10,9 @@
 
     <p class="text-gray-600 mb-6">Verlauf aller administrativen Operationen (Sperrungen, Mitglieder, Sperrungsgründe).</p>
 
-    <!-- Filter Buttons -->
-    <div class="flex flex-wrap gap-2 mb-6">
+    <!-- Type Filter Buttons -->
+    <div class="flex flex-wrap gap-2 mb-4">
+        <span class="text-sm text-gray-500 font-medium self-center mr-2">Typ:</span>
         <button id="filter-all" class="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white">
             Alle
         </button>
@@ -26,6 +27,23 @@
         </button>
     </div>
 
+    <!-- Actor Filter Buttons -->
+    <div class="flex flex-wrap gap-2 mb-6">
+        <span class="text-sm text-gray-500 font-medium self-center mr-2">Akteur:</span>
+        <button id="actor-all" class="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white">
+            Alle Akteure
+        </button>
+        <button id="actor-admin" class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+            Admin-Aktionen
+        </button>
+        <button id="actor-member" class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+            Mitglieder-Aktionen
+        </button>
+        <button id="actor-system" class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+            System-Aktionen
+        </button>
+    </div>
+
     <!-- Audit Log Container -->
     <div id="audit-log-container" class="bg-white border border-gray-200 rounded-lg">
         <div class="p-8 text-center text-gray-500">
@@ -36,32 +54,63 @@
 </div>
 
 <script type="module">
-    let currentFilter = null;
+    let currentTypeFilter = null;
+    let currentActorFilter = null;
     let allLogs = [];
 
-    // Filter button handlers
-    document.getElementById('filter-all').addEventListener('click', () => setFilter(null));
-    document.getElementById('filter-block').addEventListener('click', () => setFilter('block'));
-    document.getElementById('filter-member').addEventListener('click', () => setFilter('member'));
-    document.getElementById('filter-reason').addEventListener('click', () => setFilter('reason'));
+    // Type filter button handlers
+    document.getElementById('filter-all').addEventListener('click', () => setTypeFilter(null));
+    document.getElementById('filter-block').addEventListener('click', () => setTypeFilter('block'));
+    document.getElementById('filter-member').addEventListener('click', () => setTypeFilter('member'));
+    document.getElementById('filter-reason').addEventListener('click', () => setTypeFilter('reason'));
 
-    function setFilter(type) {
-        currentFilter = type;
+    // Actor filter button handlers
+    document.getElementById('actor-all').addEventListener('click', () => setActorFilter(null));
+    document.getElementById('actor-admin').addEventListener('click', () => setActorFilter('admin'));
+    document.getElementById('actor-member').addEventListener('click', () => setActorFilter('member'));
+    document.getElementById('actor-system').addEventListener('click', () => setActorFilter('system'));
+
+    function setTypeFilter(type) {
+        currentTypeFilter = type;
+        updateFilterButtons();
+        renderLogs();
+    }
+
+    function setActorFilter(actor) {
+        currentActorFilter = actor;
         updateFilterButtons();
         renderLogs();
     }
 
     function updateFilterButtons() {
-        const buttons = {
+        // Type filter buttons
+        const typeButtons = {
             'filter-all': null,
             'filter-block': 'block',
             'filter-member': 'member',
             'filter-reason': 'reason'
         };
 
-        Object.entries(buttons).forEach(([id, filterType]) => {
+        Object.entries(typeButtons).forEach(([id, filterType]) => {
             const btn = document.getElementById(id);
-            if (filterType === currentFilter) {
+            if (filterType === currentTypeFilter) {
+                btn.className = 'px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white';
+            } else {
+                btn.className = 'px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200';
+            }
+        });
+
+        // Actor filter buttons
+        const actorButtons = {
+            'actor-all': null,
+            'actor-admin': 'admin',
+            'actor-member': 'member',
+            'actor-system': 'system'
+        };
+
+        Object.entries(actorButtons).forEach(([id, filterActor]) => {
+            const btn = document.getElementById(id);
+            if (filterActor === currentActorFilter) {
                 btn.className = 'px-4 py-2 rounded-lg text-sm font-medium bg-green-600 text-white';
             } else {
                 btn.className = 'px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200';
@@ -78,7 +127,11 @@
             'membership_change': { label: 'Mitgliedschaft', class: 'bg-indigo-100 text-indigo-800' },
             'payment_update': { label: 'Beitrag', class: 'bg-yellow-100 text-yellow-800' },
             'deactivate': { label: 'Deaktiviert', class: 'bg-orange-100 text-orange-800' },
-            'reactivate': { label: 'Reaktiviert', class: 'bg-teal-100 text-teal-800' }
+            'reactivate': { label: 'Reaktiviert', class: 'bg-teal-100 text-teal-800' },
+            'add_favourite': { label: 'Favorit +', class: 'bg-pink-100 text-pink-800' },
+            'remove_favourite': { label: 'Favorit -', class: 'bg-pink-100 text-pink-800' },
+            'csv_import': { label: 'CSV-Import', class: 'bg-cyan-100 text-cyan-800' },
+            'annual_fee_reset': { label: 'Beitrags-Reset', class: 'bg-amber-100 text-amber-800' }
         };
         return actionMap[action] || { label: action, class: 'bg-gray-100 text-gray-800' };
     }
@@ -310,9 +363,27 @@
 
     function renderLogs() {
         const container = document.getElementById('audit-log-container');
-        const filteredLogs = currentFilter
-            ? allLogs.filter(log => log.type === currentFilter)
-            : allLogs;
+        let filteredLogs = allLogs;
+
+        // Apply type filter
+        if (currentTypeFilter) {
+            filteredLogs = filteredLogs.filter(log => log.type === currentTypeFilter);
+        }
+
+        // Apply actor filter
+        if (currentActorFilter) {
+            filteredLogs = filteredLogs.filter(log => {
+                const role = log.performer_role || 'system';
+                if (currentActorFilter === 'admin') {
+                    return role === 'administrator' || role === 'teamster';
+                } else if (currentActorFilter === 'member') {
+                    return role === 'member';
+                } else if (currentActorFilter === 'system') {
+                    return role === 'system';
+                }
+                return true;
+            });
+        }
 
         if (filteredLogs.length > 0) {
             container.innerHTML = `
@@ -359,9 +430,6 @@
         } else {
             container.innerHTML = `
                 <div class="p-8 text-center text-gray-500">
-                    <svg class="mx-auto h-12 w-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
                     <p class="text-lg font-medium">Keine Einträge gefunden</p>
                     <p class="text-sm mt-1">Es wurden noch keine administrativen Operationen durchgeführt.</p>
                 </div>

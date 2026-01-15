@@ -184,6 +184,26 @@ def format_member_details(operation, data, member_id=None):
     elif operation == 'reactivate':
         return f"Mitglied reaktiviert: {name}"
 
+    elif operation == 'add_favourite':
+        member_name = data.get('member_name', '')
+        favourite_name = data.get('favourite_name', '')
+        return f"Favorit hinzugefügt: {member_name} → {favourite_name}"
+
+    elif operation == 'remove_favourite':
+        member_name = data.get('member_name', '')
+        favourite_name = data.get('favourite_name', '')
+        return f"Favorit entfernt: {member_name} → {favourite_name}"
+
+    elif operation == 'csv_import':
+        imported = data.get('imported', 0)
+        skipped = data.get('skipped', 0)
+        return f"CSV-Import: {imported} importiert, {skipped} übersprungen"
+
+    elif operation == 'annual_fee_reset':
+        members_reset = data.get('members_reset', 0)
+        year = data.get('year', '')
+        return f"Jährlicher Beitrags-Reset ({year}): {members_reset} Mitglieder zurückgesetzt"
+
     return '-'
 
 
@@ -248,36 +268,49 @@ def get_audit_log():
         if log_type in (None, 'block'):
             block_logs = BlockAuditLog.query.order_by(BlockAuditLog.timestamp.desc()).limit(limit).all()
             for log in block_logs:
+                # Block logs are always admin actions
+                performer_role = log.admin.role if log.admin else 'system'
                 logs.append({
                     'timestamp': log.timestamp.isoformat(),
                     'action': log.operation,
                     'user': log.admin.name if log.admin else 'System',
                     'details': format_block_details(log.operation, log.operation_data),
-                    'type': 'block'
+                    'type': 'block',
+                    'performer_role': performer_role
                 })
 
         # Query MemberAuditLog if not filtered to other types only
         if log_type in (None, 'member'):
             member_logs = MemberAuditLog.query.order_by(MemberAuditLog.timestamp.desc()).limit(limit).all()
             for log in member_logs:
+                # Get performer role from operation_data or from the performer
+                performer_role = 'system'
+                if log.operation_data and 'performer_role' in log.operation_data:
+                    performer_role = log.operation_data['performer_role']
+                elif log.performed_by:
+                    performer_role = log.performed_by.role
                 logs.append({
                     'timestamp': log.timestamp.isoformat(),
                     'action': log.operation,
                     'user': log.performed_by.name if log.performed_by else 'System',
                     'details': format_member_details(log.operation, log.operation_data, log.member_id),
-                    'type': 'member'
+                    'type': 'member',
+                    'performer_role': performer_role
                 })
 
         # Query ReasonAuditLog if not filtered to other types only
         if log_type in (None, 'reason'):
             reason_logs = ReasonAuditLog.query.order_by(ReasonAuditLog.timestamp.desc()).limit(limit).all()
             for log in reason_logs:
+                # Reason logs are always admin actions
+                performer_role = log.performed_by.role if log.performed_by else 'system'
                 logs.append({
                     'timestamp': log.timestamp.isoformat(),
                     'action': log.operation,
                     'user': log.performed_by.name if log.performed_by else 'System',
                     'details': format_reason_details(log.operation, log.operation_data, log.reason_id),
-                    'type': 'reason'
+                    'type': 'reason',
+                    'performer_role': performer_role
                 })
 
         # Sort combined logs by timestamp descending

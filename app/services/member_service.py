@@ -586,36 +586,36 @@ class MemberService:
             return False, f"Fehler beim Reaktivieren des Mitglieds: {str(e)}"
 
     @staticmethod
-    def log_member_operation(operation, member_id, operation_data, performed_by_id):
+    def log_member_operation(operation, member_id, operation_data, performed_by_id=None):
         """
         Log a member operation for audit purposes.
 
         Args:
-            operation: Type of operation ('create', 'update', 'delete', 'role_change', 'deactivate', 'reactivate')
-            member_id: ID of the member being operated on
+            operation: Type of operation ('create', 'update', 'delete', 'role_change', 'deactivate', 'reactivate',
+                       'add_favourite', 'remove_favourite', 'csv_import', 'annual_fee_reset')
+            member_id: ID of the member being operated on (can be 'system' for batch operations)
             operation_data: Dictionary containing operation details
-            performed_by_id: ID of user performing the operation
+            performed_by_id: ID of user performing the operation (None for system-initiated actions)
         """
         try:
-            # Ensure performed_by_id is not None
-            if performed_by_id is None:
-                logger.warning("performed_by_id is None for member operation logging, skipping audit log")
-                return
-
-            # Get user to include role information
-            performer = Member.query.get(performed_by_id)
-
             # Add role to operation data for audit trail
             if operation_data is None:
                 operation_data = {}
-            if performer:
-                operation_data['performer_role'] = performer.role
+
+            if performed_by_id is not None:
+                # Get user to include role information
+                performer = Member.query.get(performed_by_id)
+                if performer:
+                    operation_data['performer_role'] = performer.role
+            else:
+                # System-initiated action
+                operation_data['performer_role'] = 'system'
 
             safe_operation_data = MemberService._serialize_for_json(operation_data) if operation_data else None
 
             audit_log = MemberAuditLog(
                 operation=operation,
-                member_id=member_id,
+                member_id=str(member_id),
                 operation_data=safe_operation_data,
                 performed_by_id=performed_by_id
             )
@@ -623,7 +623,8 @@ class MemberService:
             db.session.add(audit_log)
             db.session.commit()
 
-            logger.info(f"Member operation logged: {operation} on member {member_id} by {performer.role if performer else 'unknown'} {performed_by_id}")
+            performer_desc = operation_data.get('performer_role', 'system')
+            logger.info(f"Member operation logged: {operation} on member {member_id} by {performer_desc} {performed_by_id or 'system'}")
 
         except Exception as e:
             logger.error(f"Failed to log member operation: {str(e)}")
@@ -808,6 +809,19 @@ class MemberService:
 
             logger.info(f"CSV import completed by admin {admin_id}: {results['imported']} imported, {results['skipped']} skipped")
 
+            # Log the CSV import operation summary
+            if results['imported'] > 0 or results['skipped'] > 0:
+                MemberService.log_member_operation(
+                    operation='csv_import',
+                    member_id='system',
+                    operation_data={
+                        'imported': results['imported'],
+                        'skipped': results['skipped'],
+                        'error_count': len(results['errors'])
+                    },
+                    performed_by_id=admin_id
+                )
+
             return results, None
 
         except Exception as e:
@@ -815,10 +829,13 @@ class MemberService:
             return None, f"CSV-Import fehlgeschlagen: {str(e)}"
 
     @staticmethod
-    def reset_all_payment_status():
+    def reset_all_payment_status(admin_id=None):
         """
         Reset payment status for all members (for annual fee reset).
         This is called on January 1st each year.
+
+        Args:
+            admin_id: ID of admin performing the reset (None for system/CLI-initiated)
 
         Returns:
             tuple: (count of members reset, error message or None)
@@ -839,6 +856,17 @@ class MemberService:
             }, synchronize_session=False)
 
             db.session.commit()
+
+            # Log the operation
+            MemberService.log_member_operation(
+                operation='annual_fee_reset',
+                member_id='system',
+                operation_data={
+                    'members_reset': count,
+                    'year': datetime.now().year
+                },
+                performed_by_id=admin_id
+            )
 
             logger.info(f"Reset payment status for {count} members (annual reset)")
 

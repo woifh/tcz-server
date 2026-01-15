@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.9] - 2026-01-15
+
+### Added
+- Audit log now tracks favourites, CSV imports, and annual fee resets
+- Filter audit log by actor type (Admin, Member, System)
+
+### Improved
+- Updated CLAUDE.md with vibe coding principles and mandatory rules
+- Cleaner empty state in audit log (removed large icon)
+
 ## [3.8] - 2026-01-15
 
 ### Performance

@@ -359,6 +359,18 @@ def add_favourite(id):
         member.favourites.append(favourite)
         db.session.commit()
 
+        # Log the operation
+        MemberService.log_member_operation(
+            operation='add_favourite',
+            member_id=member.id,
+            operation_data={
+                'member_name': member.name,
+                'favourite_name': favourite.name,
+                'favourite_id': favourite.id
+            },
+            performed_by_id=current_user.id
+        )
+
         return jsonify({
             'message': 'Favorit erfolgreich hinzugefügt',
             'favourite': {
@@ -422,6 +434,18 @@ def remove_favourite(id, fav_id):
 
         member.favourites.remove(favourite)
         db.session.commit()
+
+        # Log the operation
+        MemberService.log_member_operation(
+            operation='remove_favourite',
+            member_id=member.id,
+            operation_data={
+                'member_name': member.name,
+                'favourite_name': favourite.name,
+                'favourite_id': favourite.id
+            },
+            performed_by_id=current_user.id
+        )
 
         return jsonify({'message': 'Favorit erfolgreich entfernt'}), 200
 

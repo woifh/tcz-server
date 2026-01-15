@@ -4,34 +4,34 @@ This file provides guidance to Claude Code when working in this repository.
 
 ## Build & Development Commands
 
-```bash
-# Start development server
-flask run --debug
+**IMPORTANT**: All Python commands must be run using the virtual environment at `.venv/`:
 
-# Run all tests
-pytest
+```bash
+# Run all tests (ALWAYS use this exact command)
+source .venv/bin/activate && pytest
 
 # Run tests with coverage
-pytest --cov=app --cov-report=html
+source .venv/bin/activate && pytest --cov=app --cov-report=html
 
 # Run specific test file
-pytest tests/test_reservations.py -v
+source .venv/bin/activate && pytest tests/test_reservations.py -v
 
 # Run property-based tests
-pytest tests/property/ -v
+source .venv/bin/activate && pytest tests/property/ -v
 
-# Lint and format
+# Start development server
+source .venv/bin/activate && flask run --debug
+
+# Run Flask CLI commands
+source .venv/bin/activate && flask <command>
+
+# Lint and format (JavaScript)
 npm run lint          # ESLint for JavaScript
 npm run format        # Prettier formatting
 
 # Build CSS (Tailwind)
 npm run build:css
 npm run watch:css     # Watch mode
-
-# Run Python/Flask commands locally
-python3 -m flask run --debug
-python3 -m pytest
-python3 script.py
 ```
 
 ## Project Architecture
@@ -121,3 +121,39 @@ UI text is in German. Common terms:
 - Sperrung = Block (court blocking)
 - Buchung = Booking/Reservation
 - Mitglied = Member
+
+## Vibe Coding Principles
+
+This codebase prioritizes flow, clarity, and fast iteration.
+
+### General Guidelines
+- Prefer simple, readable code over clever abstractions
+- Optimize for local reasoning: a reader should understand code in under a minute
+- Keep changes small, reversible, and easy to delete
+- Avoid premature abstraction; duplicate a little before extracting
+- Make failures loud and obvious—no silent magic
+
+### Naming & Structure
+- Use clear, descriptive names; naming is more important than comments
+- Keep related logic close together
+- Avoid deep inheritance or excessive indirection
+
+### Comments & Intent
+- Comment *why* something exists, not *what the code does*
+- Explain tradeoffs, constraints, or non-obvious decisions
+
+### Testing Philosophy
+- Write tests that increase confidence without slowing momentum
+- Focus on behavior, not implementation details
+- Prefer a few high-signal tests over exhaustive coverage
+
+### Refactoring
+- Refactor opportunistically when it improves clarity
+- Do not refactor solely for architectural purity
+- It should feel safe to rewrite or delete code
+
+## Mandatory Rules
+
+- **NEVER break existing functionality** - preserve working behavior at all costs
+- **When in doubt, ask the user** - don't guess or assume; clarify before proceeding
+- **Respect software development principles** - follow SOLID, DRY, KISS
