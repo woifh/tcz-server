@@ -108,10 +108,10 @@ Hosted on PythonAnywhere. Reload after changes:
 
 - **NEVER push to GitHub without explicit user request** - always wait for the user to ask before pushing commits
 - **When pushing to GitHub**:
-  - Always create a meaningful commit message
-  - Always add a short, non-technical changelog entry to CHANGELOG.md
   - Ask the user whether to increase major or minor version
-  - Keep CHANGELOG.md version in sync with git tags (major.minor format)
+  - Add a short, non-technical changelog entry to CHANGELOG.md (keep version in sync with git tags, major.minor format)
+  - Create a meaningful commit message
+  - Push to GitHub
 
 ## German Language
 

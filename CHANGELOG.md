@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.9] - 2026-01-15
+
+### Fixed
+- Active reservations page now displays bookings correctly
+
 ## [3.8] - 2026-01-15
 
 ### Performance
