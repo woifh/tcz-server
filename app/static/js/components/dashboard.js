@@ -303,7 +303,7 @@ export function dashboard() {
             }
             
             try {
-                const response = await fetch(`/reservations/${reservationId}`, {
+                const response = await fetch(`/api/reservations/${reservationId}`, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
