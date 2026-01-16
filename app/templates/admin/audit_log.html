@@ -203,6 +203,7 @@
             'payment_update': { label: 'Beitrag', class: 'bg-yellow-100 text-yellow-800' },
             'deactivate': { label: 'Deaktiviert', class: 'bg-orange-100 text-orange-800' },
             'reactivate': { label: 'Reaktiviert', class: 'bg-teal-100 text-teal-800' },
+            'permanent_delete': { label: 'Endgültig gelöscht', class: 'bg-red-100 text-red-800' },
             'add_favourite': { label: 'Favorit +', class: 'bg-pink-100 text-pink-800' },
             'remove_favourite': { label: 'Favorit -', class: 'bg-pink-100 text-pink-800' },
             'csv_import': { label: 'CSV-Import', class: 'bg-cyan-100 text-cyan-800' },
@@ -361,7 +362,7 @@
             }
 
             // Handle create/delete actions - show key fields
-            if (action === 'create' || action === 'delete' || action === 'deactivate' || action === 'reactivate') {
+            if (action === 'create' || action === 'delete' || action === 'deactivate' || action === 'reactivate' || action === 'permanent_delete') {
                 lines.push('<div class="space-y-0.5">');
 
                 // For members: show name and email
@@ -384,10 +385,16 @@
                 // For block reasons: show name
                 if (logType === 'reason') {
                     if (details.name) {
-                        lines.push(`<div><span class="font-medium text-gray-700">Name:</span> ${escapeHtml(details.name)}</div>`);
+                        lines.push(`<div><span class="font-medium text-gray-700">Sperrungsgrund:</span> ${escapeHtml(details.name)}</div>`);
                     }
                     if (details.teamster_usable !== undefined) {
                         lines.push(`<div><span class="font-medium text-gray-700">Für Mannschaftsführer:</span> ${details.teamster_usable ? 'Ja' : 'Nein'}</div>`);
+                    }
+                    if (details.future_blocks_deleted !== undefined && details.future_blocks_deleted > 0) {
+                        lines.push(`<div><span class="font-medium text-gray-700">Zukünftige Sperrungen gelöscht:</span> ${details.future_blocks_deleted}</div>`);
+                    }
+                    if (details.blocks_deleted !== undefined && details.blocks_deleted > 0) {
+                        lines.push(`<div><span class="font-medium text-gray-700">Sperrungen gelöscht:</span> ${details.blocks_deleted}</div>`);
                     }
                 }
 

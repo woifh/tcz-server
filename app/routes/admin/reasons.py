@@ -37,16 +37,16 @@ def log_reason_operation(operation, reason_id, operation_data, performed_by_id):
 def list_block_reasons():
     """
     List block reasons based on user role.
-    - Admins see all active reasons with full details
-    - Teamsters see only teamster-usable reasons
+    - Admins see all reasons (including inactive) with full details
+    - Teamsters see only active teamster-usable reasons
     """
     try:
         # Get reasons based on user role
         if current_user.is_admin():
-            # Admins see all active reasons
-            reasons = BlockReasonService.get_all_block_reasons()
+            # Admins see all reasons including inactive
+            reasons = BlockReasonService.get_all_block_reasons(include_inactive=True)
         else:
-            # Teamsters only see teamster-usable reasons
+            # Teamsters only see active teamster-usable reasons
             reasons = BlockReasonService.get_reasons_for_user(current_user)
 
         reasons_data = []
@@ -235,11 +235,67 @@ def get_reason_usage(reason_id):
     """Get usage count for a block reason (admin only)."""
     try:
         usage_count = BlockReasonService.get_reason_usage_count(reason_id)
-        
+
         return jsonify({
             'reason_id': reason_id,
             'usage_count': usage_count
         }), 200
-        
+
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/block-reasons/<int:reason_id>/reactivate', methods=['POST'])
+@login_required
+@admin_required
+def reactivate_block_reason(reason_id):
+    """Reactivate an inactive block reason (admin only)."""
+    try:
+        reason = BlockReason.query.get(reason_id)
+        if not reason:
+            return jsonify({'error': 'Sperrungsgrund nicht gefunden'}), 404
+
+        success, error = BlockReasonService.reactivate_block_reason(reason_id, current_user.id)
+
+        if not success:
+            return jsonify({'error': error}), 400
+
+        return jsonify({
+            'message': 'Sperrungsgrund erfolgreich reaktiviert',
+            'reason': {
+                'id': reason.id,
+                'name': reason.name,
+                'is_active': True,
+                'teamster_usable': reason.teamster_usable
+            }
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/block-reasons/<int:reason_id>/permanent', methods=['DELETE'])
+@login_required
+@admin_required
+def permanently_delete_block_reason(reason_id):
+    """Permanently delete a block reason (admin only)."""
+    try:
+        reason = BlockReason.query.get(reason_id)
+        if not reason:
+            return jsonify({'error': 'Sperrungsgrund nicht gefunden'}), 404
+
+        reason_name = reason.name
+        success, error = BlockReasonService.permanently_delete_block_reason(reason_id, current_user.id)
+
+        if not success:
+            return jsonify({'error': error}), 400
+
+        return jsonify({
+            'message': f"Sperrungsgrund '{reason_name}' wurde endgültig gelöscht",
+            'deleted': True
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500

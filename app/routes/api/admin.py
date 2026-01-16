@@ -527,7 +527,8 @@ def list_block_reasons():
 
     try:
         if current_user.is_admin():
-            reasons = BlockReasonService.get_all_block_reasons()
+            # Admins see all reasons including inactive
+            reasons = BlockReasonService.get_all_block_reasons(include_inactive=True)
         else:
             reasons = BlockReasonService.get_reasons_for_user(current_user)
 
@@ -636,6 +637,56 @@ def delete_block_reason(reason_id):
         return jsonify({'message': error_or_message, 'deactivated': True})
 
     return jsonify({'message': 'Sperrungsgrund erfolgreich gelöscht'})
+
+
+@bp.route('/admin/block-reasons/<int:reason_id>/reactivate', methods=['POST'])
+@admin_required
+def reactivate_block_reason(reason_id):
+    """Reactivate an inactive block reason (admin only)."""
+    from app.services.block_reason_service import BlockReasonService
+    from app.models import BlockReason
+
+    reason = BlockReason.query.get(reason_id)
+    if not reason:
+        return jsonify({'error': 'Sperrungsgrund nicht gefunden'}), 404
+
+    success, error = BlockReasonService.reactivate_block_reason(reason_id, current_user.id)
+
+    if not success:
+        return jsonify({'error': error}), 400
+
+    return jsonify({
+        'message': 'Sperrungsgrund erfolgreich reaktiviert',
+        'reason': {
+            'id': reason.id,
+            'name': reason.name,
+            'is_active': True,
+            'teamster_usable': reason.teamster_usable
+        }
+    })
+
+
+@bp.route('/admin/block-reasons/<int:reason_id>/permanent', methods=['DELETE'])
+@admin_required
+def permanently_delete_block_reason(reason_id):
+    """Permanently delete a block reason (admin only)."""
+    from app.services.block_reason_service import BlockReasonService
+    from app.models import BlockReason
+
+    reason = BlockReason.query.get(reason_id)
+    if not reason:
+        return jsonify({'error': 'Sperrungsgrund nicht gefunden'}), 404
+
+    reason_name = reason.name
+    success, error = BlockReasonService.permanently_delete_block_reason(reason_id, current_user.id)
+
+    if not success:
+        return jsonify({'error': error}), 400
+
+    return jsonify({
+        'message': f"Sperrungsgrund '{reason_name}' wurde endgültig gelöscht",
+        'deleted': True
+    })
 
 
 # ----- Conflict Preview Route -----

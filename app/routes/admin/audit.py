@@ -247,7 +247,19 @@ def format_reason_details(operation, data, reason_id=None):
         return f"Sperrungsgrund gelöscht: {name}"
 
     elif operation == 'deactivate':
+        future_blocks_deleted = data.get('future_blocks_deleted', 0)
+        if future_blocks_deleted > 0:
+            return f"Sperrungsgrund deaktiviert: {name} ({future_blocks_deleted} zukünftige Sperrungen gelöscht)"
         return f"Sperrungsgrund deaktiviert: {name}"
+
+    elif operation == 'reactivate':
+        return f"Sperrungsgrund reaktiviert: {name}"
+
+    elif operation == 'permanent_delete':
+        blocks_deleted = data.get('blocks_deleted', 0)
+        if blocks_deleted > 0:
+            return f"Sperrungsgrund endgültig gelöscht: {name} ({blocks_deleted} Sperrungen gelöscht)"
+        return f"Sperrungsgrund endgültig gelöscht: {name}"
 
     return '-'
 

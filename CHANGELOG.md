@@ -9,9 +9,11 @@ All notable changes to this project will be documented in this file.
 - New "Buchungen" filter in audit log
 - Audit log tracks bookings cancelled by admin blocks
 - Audit log search: filter by member name, details, and date range
+- Inactive (soft-deleted) block reasons now visible in admin UI with option to reactivate or permanently delete
 
 ### Fixed
 - Audit log timestamps now display in user's local timezone
+- Block reason reactivation and permanent deletion now properly logged in audit log
 
 ## [3.9] - 2026-01-15
 

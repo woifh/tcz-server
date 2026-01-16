@@ -283,7 +283,7 @@ def test_block_reason_service_basic_functionality(app):
         assert 'Test Reason' in reason_names
         
         # Test update_block_reason
-        success, error = BlockReasonService.update_block_reason(reason.id, 'Updated Reason', admin.id)
+        success, error = BlockReasonService.update_block_reason(reason.id, name='Updated Reason', admin_id=admin.id)
         assert error is None, f"Error updating reason: {error}"
         assert success is True
         

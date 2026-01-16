@@ -388,7 +388,7 @@ class ReasonAuditLog(db.Model):
     def __init__(self, **kwargs):
         """Initialize audit log with validation."""
         super(ReasonAuditLog, self).__init__(**kwargs)
-        valid_operations = ['create', 'update', 'delete', 'deactivate']
+        valid_operations = ['create', 'update', 'delete', 'deactivate', 'reactivate', 'permanent_delete']
         if self.operation and self.operation not in valid_operations:
             raise ValueError(f"Operation must be one of: {', '.join(valid_operations)}")
 

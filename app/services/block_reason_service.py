@@ -214,13 +214,18 @@ class BlockReasonService:
             return False, f"Fehler beim Löschen des Sperrungsgrundes: {str(e)}"
     
     @staticmethod
-    def get_all_block_reasons() -> List[BlockReason]:
+    def get_all_block_reasons(include_inactive: bool = False) -> List[BlockReason]:
         """
-        Get all active block reasons.
+        Get all block reasons.
+
+        Args:
+            include_inactive: If True, include inactive (soft-deleted) reasons
 
         Returns:
-            list: List of active BlockReason objects
+            list: List of BlockReason objects
         """
+        if include_inactive:
+            return BlockReason.query.order_by(BlockReason.is_active.desc(), BlockReason.name).all()
         return BlockReason.query.filter_by(is_active=True).order_by(BlockReason.name).all()
 
     @staticmethod
@@ -348,8 +353,104 @@ class BlockReasonService:
             
             logger.info(f"Cleaned up {deleted_count} future blocks with reason '{reason_name}'")
             return deleted_count
-            
+
         except Exception as e:
             db.session.rollback()
             logger.error(f"Failed to cleanup future blocks with reason '{reason_name}': {str(e)}")
             return 0
+
+    @staticmethod
+    def reactivate_block_reason(reason_id: int, admin_id: int) -> Tuple[bool, Optional[str]]:
+        """
+        Reactivate an inactive block reason.
+
+        Args:
+            reason_id: ID of the reason to reactivate
+            admin_id: ID of the administrator reactivating the reason
+
+        Returns:
+            tuple: (success boolean, error message or None)
+        """
+        try:
+            reason = BlockReason.query.get(reason_id)
+            if not reason:
+                return False, "Sperrungsgrund nicht gefunden"
+
+            if reason.is_active:
+                return False, "Sperrungsgrund ist bereits aktiv"
+
+            reason.is_active = True
+
+            audit_log = ReasonAuditLog(
+                reason_id=reason_id,
+                operation='reactivate',
+                operation_data={'name': reason.name},
+                performed_by_id=admin_id
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+
+            logger.info(f"Block reason '{reason.name}' reactivated by admin {admin_id}")
+            return True, None
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to reactivate block reason {reason_id}: {str(e)}")
+            return False, f"Fehler beim Reaktivieren des Sperrungsgrundes: {str(e)}"
+
+    @staticmethod
+    def permanently_delete_block_reason(reason_id: int, admin_id: int) -> Tuple[bool, Optional[str]]:
+        """
+        Permanently delete a block reason from the database.
+        Only allowed for inactive reasons or reasons with no usage.
+        If there are blocks using this reason, they will be deleted as well.
+
+        Args:
+            reason_id: ID of the reason to permanently delete
+            admin_id: ID of the administrator deleting the reason
+
+        Returns:
+            tuple: (success boolean, error message or None)
+        """
+        try:
+            reason = BlockReason.query.get(reason_id)
+            if not reason:
+                return False, "Sperrungsgrund nicht gefunden"
+
+            reason_name = reason.name
+            usage_count = BlockReasonService.get_reason_usage_count(reason_id)
+
+            if reason.is_active and usage_count > 0:
+                return False, "Aktive Sperrungsgründe mit Verwendungen können nicht endgültig gelöscht werden. Bitte zuerst deaktivieren."
+
+            # Delete all blocks referencing this reason first
+            blocks_deleted = 0
+            if usage_count > 0:
+                blocks_to_delete = Block.query.filter_by(reason_id=reason_id).all()
+                blocks_deleted = len(blocks_to_delete)
+                for block in blocks_to_delete:
+                    db.session.delete(block)
+
+            audit_log = ReasonAuditLog(
+                reason_id=reason_id,
+                operation='permanent_delete',
+                operation_data={
+                    'name': reason_name,
+                    'was_active': reason.is_active,
+                    'usage_count': usage_count,
+                    'blocks_deleted': blocks_deleted
+                },
+                performed_by_id=admin_id
+            )
+            db.session.add(audit_log)
+
+            db.session.delete(reason)
+            db.session.commit()
+
+            logger.info(f"Block reason '{reason_name}' permanently deleted by admin {admin_id}, {blocks_deleted} blocks also deleted")
+            return True, None
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to permanently delete block reason {reason_id}: {str(e)}")
+            return False, f"Fehler beim endgültigen Löschen des Sperrungsgrundes: {str(e)}"
