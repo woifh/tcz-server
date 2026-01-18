@@ -70,7 +70,7 @@ class ErrorMessages:
 
     # Payment deadline errors
     PAYMENT_DEADLINE_PASSED = "Die Zahlungsfrist ist abgelaufen. Bitte zahl deinen Beitrag, um wieder buchen zu können."
-    PAYMENT_CONFIRMATION_PENDING = "Deine Zahlungsbestätigung wird gerade vom Vorstand geprüft. Buchungen sind bis zur Bestätigung gesperrt."
+    PAYMENT_CONFIRMATION_PENDING = "Deine Zahlungsbestätigung wird geprüft. Buchungen sind bis zur Bestätigung gesperrt."
     PAYMENT_DEADLINE_INVALID_DATE = "Ungültiges Datum für Zahlungsfrist"
 
 class SuccessMessages:

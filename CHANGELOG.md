@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 - Test suite compatibility with updated validation return formats
 - Reduced unnecessary API calls for pending payment badge on dashboard
 - Fixed duplicate favourites API call on dashboard page load
-- Audit log now shows when admin changes a member's password
+- Audit log formating improvements
 
 ## [3.14] - 2026-01-18
 

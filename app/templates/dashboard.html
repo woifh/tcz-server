@@ -33,7 +33,6 @@
             <span class="material-icons text-blue-600 mr-3">hourglass_empty</span>
             <div>
                 <p class="text-blue-800 font-semibold">Zahlungsbestätigung wird geprüft</p>
-                <p class="text-blue-700 text-sm">Deine Zahlungsbestätigung wird gerade vom Vorstand geprüft.</p>
                 {% if is_past_deadline %}
                 <p class="text-blue-600 text-xs mt-1">Buchungen sind bis zur Bestätigung weiterhin gesperrt.</p>
                 {% endif %}
@@ -75,7 +74,6 @@
                         Noch <strong>{{ days_until_deadline }} Tage</strong> bis zur Zahlungsfrist am {{ payment_deadline.strftime('%d.%m.%Y') }}
                         {% endif %}
                     </p>
-                    <p class="text-yellow-600 text-xs mt-1">Wende dich an den Vorstand, um deinen Beitrag zu bezahlen.</p>
                 </div>
             </div>
             <button onclick="confirmPayment()"
@@ -93,7 +91,7 @@
                 <span class="material-icons text-yellow-600 mr-3">warning</span>
                 <div>
                     <p class="text-yellow-800 font-semibold">Mitgliedsbeitrag offen</p>
-                    <p class="text-yellow-700 text-sm">Dein Mitgliedsbeitrag ist noch nicht bezahlt. Bitte wende dich an den Vorstand.</p>
+                    <p class="text-yellow-700 text-sm">Dein Mitgliedsbeitrag ist noch nicht bezahlt.</p>
                 </div>
             </div>
             <button onclick="confirmPayment()"
