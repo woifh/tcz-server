@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Test suite compatibility with updated validation return formats
+- Reduced unnecessary API calls for pending payment badge on dashboard
 
 ## [3.14] - 2026-01-18
 

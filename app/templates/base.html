@@ -393,22 +393,24 @@
         return toastManager.show(message, 'info', options);
     }
 
+    // Shared promise for pending payment count (prevents concurrent fetches)
+    let pendingPaymentPromise = null;
+
     // Pending payment confirmation badge component for admin nav
     function pendingPaymentBadge() {
         return {
             pendingCount: 0,
 
             async init() {
-                try {
-                    const response = await fetch('/api/admin/members/pending-confirmations');
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.pendingCount = data.count || 0;
-                    }
-                } catch (error) {
-                    // Silently fail - badge just won't show
-                    console.debug('Could not fetch pending confirmations count');
+                // Share a single fetch across all component instances
+                if (!pendingPaymentPromise) {
+                    pendingPaymentPromise = fetch('/api/admin/members/pending-confirmations')
+                        .then(response => response.ok ? response.json() : { count: 0 })
+                        .then(data => data.count || 0)
+                        .catch(() => 0);
                 }
+
+                this.pendingCount = await pendingPaymentPromise;
             }
         };
     }
