@@ -100,9 +100,59 @@ fetch('/api/courts/availability', { ... })
 
 ## Deployment
 
-Hosted on PythonAnywhere. Reload after changes:
-- Web app reload via PythonAnywhere dashboard
-- Or use MCP tool: `mcp__pythonanywhere__reload_webapp`
+### Production Environment (PythonAnywhere)
+
+| Setting | Value |
+|---------|-------|
+| Domain | woifh.pythonanywhere.com |
+| Python Version | 3.10 |
+| Virtualenv | `/home/woifh/.virtualenvs/tennisclub` |
+| Project Path | `/home/woifh/tcz` |
+| WSGI Entry | `/home/woifh/tcz/wsgi.py` |
+
+### Production Commands (PythonAnywhere Console)
+
+**IMPORTANT**: Always activate the virtualenv first, or commands will fail with import errors.
+
+```bash
+# Activate virtualenv (REQUIRED before any Python/Flask command)
+source ~/.virtualenvs/tennisclub/bin/activate
+
+# Pull latest code
+cd /home/woifh/tcz && git pull origin main
+
+# Run database migrations
+cd /home/woifh/tcz && flask db upgrade
+
+# Install new dependencies
+pip install -r /home/woifh/tcz/requirements.txt
+
+# Full deployment (pull + migrate + reload)
+cd /home/woifh/tcz && git pull origin main && flask db upgrade
+# Then reload webapp via MCP or dashboard
+```
+
+### Using MCP Tools
+
+```
+# Reload webapp after code changes
+mcp__pythonanywhere__reload_webapp with domain="woifh.pythonanywhere.com"
+
+# Read production files
+mcp__pythonanywhere__read_file_or_directory with path="/home/woifh/tcz/..."
+
+# List deployed webapps
+mcp__pythonanywhere__list_webapps
+```
+
+### Deployment Scripts (on PythonAnywhere)
+
+The project includes deployment scripts in `scripts/deploy/`:
+- `pythonanywhere.sh` - Full deployment (git pull, pip install, migrate, instructions)
+
+Run from project root: `./scripts/deploy/pythonanywhere.sh`
+
+**IMPORTANT**: Never create scheduled tasks on PythonAnywhere. Ask the user to run deployment commands manually via the PythonAnywhere Bash console.
 
 ## Important Rules
 
