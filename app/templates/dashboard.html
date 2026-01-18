@@ -3,6 +3,27 @@
 {% block title %}Übersicht - Tennisclub{% endblock %}
 
 {% block content %}
+<style>
+    /* Floating time column - shown only when scrolled */
+    #floating-time-column {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 20;
+        background: white;
+        border-right: 1px solid #d1d5db;
+        box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+    }
+    #floating-time-column table {
+        border-collapse: collapse;
+    }
+    #floating-time-column th,
+    #floating-time-column td {
+        border: 1px solid #d1d5db;
+        border-right: none;
+    }
+</style>
 <!-- Payment Reminder Banner -->
 {% if current_user.has_unpaid_fee() %}
     {% if is_past_deadline %}
@@ -74,7 +95,7 @@
     <!-- Legend -->
     <div class="hidden lg:flex gap-6 mb-4 text-sm">
         <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-green-500 rounded"></div>
+            <div class="w-4 h-4 bg-white border border-gray-300 rounded"></div>
             <span>Verfügbar</span>
         </div>
         <div class="flex items-center gap-2">
@@ -96,11 +117,14 @@
     </div>
 
     <!-- Court Availability Grid -->
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto relative" id="grid-container">
+        <!-- Floating time column (created by JS when scrolling) -->
+        <div id="floating-time-column"></div>
+
         <table class="min-w-full border-collapse" id="availability-grid">
             <thead>
                 <tr class="bg-gray-100">
-                    <th class="border border-gray-300 px-4 py-2 text-left font-semibold">Uhrzeit</th>
+                    <th class="border border-gray-300 px-2 py-2 text-center font-semibold text-sm w-16 bg-gray-100">Uhrzeit</th>
                     <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 1</th>
                     <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 2</th>
                     <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 3</th>
@@ -123,13 +147,13 @@
                 <!-- Grid data - static structure, dynamic content (no DOM recreation) -->
                 {% for time_idx in range(14) %}
                 <tr x-show="!error" :class="{ 'opacity-50': loading }">
-                    <td class="border border-gray-300 px-4 py-2 font-semibold"
+                    <td class="border border-gray-300 px-2 py-2 font-semibold text-center text-sm w-16 bg-white"
                         x-text="timeSlots[{{ time_idx }}] || '{{ '%02d:00'|format(8 + time_idx) }}'"></td>
                     {% for court_idx in range(6) %}
                     <td id="slot-{{ court_idx }}-{{ time_idx }}"
                         :class="courts[{{ court_idx }}]?.slots[{{ time_idx }}]?.cssClass || defaultCellClass"
                         @click="handleSlotClickPrecomputed({{ court_idx }}, {{ time_idx }})"
-                        x-html="courts[{{ court_idx }}]?.slots[{{ time_idx }}]?.content || 'Frei'">
+                        x-html="courts[{{ court_idx }}]?.slots[{{ time_idx }}]?.content ?? 'Frei'">
                     </td>
                     {% endfor %}
                 </tr>
@@ -368,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeBookingModal();
         }
     });
-    
+
     // Close modal on background click
     const modal = document.getElementById('booking-modal');
     if (modal) {
@@ -377,6 +401,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeBookingModal();
             }
         });
+    }
+
+    // Floating time column on horizontal scroll
+    const gridContainer = document.getElementById('grid-container');
+    const floatingCol = document.getElementById('floating-time-column');
+    const table = document.getElementById('availability-grid');
+
+    if (gridContainer && floatingCol && table) {
+        function updateFloatingColumn() {
+            const scrollLeft = gridContainer.scrollLeft;
+
+            if (scrollLeft > 0) {
+                // Build floating column from current table data
+                const rows = table.querySelectorAll('tbody tr:not([style*="display: none"])');
+                const headerRow = table.querySelector('thead tr');
+                let html = '<table>';
+
+                // Add header
+                if (headerRow) {
+                    const headerCell = headerRow.querySelector('th');
+                    if (headerCell) {
+                        const height = headerCell.offsetHeight;
+                        html += `<tr><th class="px-2 py-2 font-semibold text-center text-sm bg-gray-100" style="height:${height}px">${headerCell.textContent}</th></tr>`;
+                    }
+                }
+
+                // Add body rows
+                rows.forEach((row) => {
+                    const firstCell = row.querySelector('td');
+                    if (firstCell && row.offsetHeight > 0) {
+                        const height = firstCell.offsetHeight;
+                        html += `<tr><td class="px-2 py-2 font-semibold text-center text-sm bg-white" style="height:${height}px">${firstCell.textContent}</td></tr>`;
+                    }
+                });
+
+                html += '</table>';
+                floatingCol.innerHTML = html;
+                floatingCol.style.display = 'block';
+            } else {
+                floatingCol.style.display = 'none';
+            }
+        }
+
+        gridContainer.addEventListener('scroll', updateFloatingColumn);
     }
 });
 </script>

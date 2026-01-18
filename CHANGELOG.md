@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.12] - 2026-01-18
+
+### Improved
+- Cleaner visual design for court availability grid (available slots now white instead of green)
+- Past time slots now appear more muted for better focus on current availability
+- Time column stays visible when scrolling horizontally on mobile devices
+
+### Fixed
+- Past dates now correctly display all reservations from that day
+
 ## [3.11] - 2026-01-17
 
 ### Fixed

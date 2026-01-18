@@ -34,29 +34,29 @@ def _compute_slot_class(slot, is_past, is_authenticated, current_user_id=None):
         if is_past:
             classes += ' bg-gray-200 text-gray-500'
         else:
-            classes += ' bg-green-500 text-white'
+            classes += ' bg-white text-gray-700'
             if is_authenticated:
-                classes += ' cursor-pointer hover:opacity-80'
+                classes += ' cursor-pointer hover:bg-gray-50'
     elif status == 'short_notice':
-        classes += ' bg-orange-500 text-white'
+        classes += ' bg-orange-400 text-white'
         if is_past:
-            classes += ' opacity-75'
+            classes += ' opacity-60'
         elif is_authenticated and _can_cancel_slot(slot, current_user_id):
             classes += ' cursor-pointer hover:opacity-80'
     elif status == 'reserved':
         details = slot.get('details')
         if details and details.get('is_short_notice'):
-            classes += ' bg-orange-500 text-white'
+            classes += ' bg-orange-400 text-white'
         else:
             classes += ' bg-red-500 text-white'
         if is_past:
-            classes += ' opacity-75'
+            classes += ' opacity-60'
         elif is_authenticated and _can_cancel_slot(slot, current_user_id):
             classes += ' cursor-pointer hover:opacity-80'
     elif status == 'blocked':
         classes += ' bg-gray-400 text-white min-h-16'
         if is_past:
-            classes += ' opacity-75'
+            classes += ' opacity-60'
 
     return classes
 
@@ -90,7 +90,7 @@ def _compute_slot_content(slot, is_past, is_authenticated):
     status = slot['status']
 
     if status == 'available':
-        return 'Vergangen' if is_past else 'Frei'
+        return '' if is_past else 'Frei'
 
     if status in ('short_notice', 'reserved'):
         details = slot.get('details')

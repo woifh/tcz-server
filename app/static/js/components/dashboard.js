@@ -140,7 +140,7 @@ export function dashboard() {
                             status: 'available',
                             details: null,
                             cssClass: this.getAvailableSlotClass(isPast),
-                            content: isPast ? 'Vergangen' : 'Frei',
+                            content: isPast ? '' : 'Frei',
                             isPast,
                             canCancel: false
                         };
@@ -164,9 +164,9 @@ export function dashboard() {
                 return `${base} bg-gray-200 text-gray-500`;
             }
             if (this.isAuthenticated) {
-                return `${base} bg-green-500 text-white cursor-pointer hover:opacity-80`;
+                return `${base} bg-white text-gray-700 cursor-pointer hover:bg-gray-50`;
             }
-            return `${base} bg-green-500 text-white`;
+            return `${base} bg-white text-gray-700`;
         },
 
         async refreshAvailability() {
@@ -344,29 +344,29 @@ export function dashboard() {
                 if (isPast) {
                     classes += ' bg-gray-200 text-gray-500';
                 } else {
-                    classes += ' bg-green-500 text-white';
+                    classes += ' bg-white text-gray-700';
                     if (this.isAuthenticated) {
-                        classes += ' cursor-pointer hover:opacity-80';
+                        classes += ' cursor-pointer hover:bg-gray-50';
                     }
                 }
             } else if (slot.status === 'short_notice') {
-                classes += ' bg-orange-500 text-white';
+                classes += ' bg-orange-400 text-white';
                 if (!isPast && this.isAuthenticated && this.canCancelSlot(slot)) {
                     classes += ' cursor-pointer hover:opacity-80';
                 } else if (isPast) {
-                    classes += ' opacity-75';
+                    classes += ' opacity-60';
                 }
             } else if (slot.status === 'reserved') {
                 const reservation = slot.reservation || slot.details;
                 if (reservation && reservation.is_short_notice) {
-                    classes += ' bg-orange-500 text-white';
+                    classes += ' bg-orange-400 text-white';
                 } else {
                     classes += ' bg-red-500 text-white';
                 }
                 if (!isPast && this.isAuthenticated && this.canCancelSlot(slot)) {
                     classes += ' cursor-pointer hover:opacity-80';
                 } else if (isPast) {
-                    classes += ' opacity-75';
+                    classes += ' opacity-60';
                 }
             } else if (slot.status === 'blocked') {
                 classes += ' bg-gray-400 text-white min-h-16';
@@ -486,7 +486,7 @@ export function dashboard() {
 
             // Compute content from status
             if (slot.status === 'available') {
-                return this.isSlotInPast(time) ? 'Vergangen' : 'Frei';
+                return this.isSlotInPast(time) ? '' : 'Frei';
             }
 
             if (slot.status === 'short_notice' || slot.status === 'reserved') {
