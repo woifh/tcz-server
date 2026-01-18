@@ -257,7 +257,7 @@ def create_reservation():
         # Create reservation
         # Pass current_user as booked_for_member when booking for self to avoid redundant query
         booked_for_member = current_user if booked_for_id == current_user.id else None
-        reservation, error = ReservationService.create_reservation(
+        reservation, error, active_sessions = ReservationService.create_reservation(
             court_id=court_id,
             date=reservation_date,
             start_time=start_time,
@@ -265,10 +265,19 @@ def create_reservation():
             booked_by_id=current_user.id,
             booked_for_member=booked_for_member
         )
-        
+
         if error:
             if request.is_json:
-                return jsonify({'error': error}), 400
+                response = {'error': error}
+                if active_sessions:
+                    response['active_sessions'] = [
+                        {
+                            'date': s.date.isoformat(),
+                            'start_time': s.start_time.strftime('%H:%M'),
+                            'court_number': s.court.number if s.court else None
+                        } for s in active_sessions
+                    ]
+                return jsonify(response), 400
             flash(error, 'error')
             return redirect(url_for('dashboard.index'))
         else:

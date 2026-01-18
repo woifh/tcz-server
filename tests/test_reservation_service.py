@@ -56,7 +56,7 @@ def test_property_33_one_hour_duration_enforcement(app, court_num, booking_date,
         from datetime import datetime
         fixed_current_time = datetime.combine(booking_date, time(6, 0))  # 6:00 AM on the booking date
         
-        reservation, error = ReservationService.create_reservation(
+        reservation, error, _ = ReservationService.create_reservation(
             court_id=court.id,
             date=booking_date,
             start_time=start,

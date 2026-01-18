@@ -59,7 +59,7 @@ def test_property_14_blocks_cascade_cancel_existing_reservations(app, court_num,
         db.session.commit()
         
         # Create a reservation that will conflict with the block
-        reservation, error = ReservationService.create_reservation(
+        reservation, error, _ = ReservationService.create_reservation(
             court_id=court.id,
             date=booking_date,
             start_time=start,
@@ -173,7 +173,7 @@ def test_property_15_block_cancellations_include_reason_in_notification(app, cou
         db.session.commit()
         
         # Create a reservation with different booked_for and booked_by members
-        reservation, error = ReservationService.create_reservation(
+        reservation, error, _ = ReservationService.create_reservation(
             court_id=court.id,
             date=booking_date,
             start_time=start,

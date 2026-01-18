@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Improved
 - App language now uses friendly informal "du" instead of formal "Sie"
 - Email notifications feel more personal with casual greetings and sign-offs
+- Booking limit error now shows your existing reservations with date, time, and court
 
 ## [3.13] - 2026-01-18
 

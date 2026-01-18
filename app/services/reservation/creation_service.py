@@ -40,7 +40,8 @@ class ReservationCreationService:
             booked_for_member: Optional pre-loaded Member object (booked_for) to avoid redundant query
 
         Returns:
-            tuple: (Reservation object or None, error message or None)
+            tuple: (Reservation object or None, error message or None, active_sessions or None)
+                   active_sessions is only populated when reservation limit is exceeded
         """
         try:
             # Use provided current_time or default to Berlin time
@@ -55,13 +56,13 @@ class ReservationCreationService:
 
             # Validate all constraints (pass short notice flag and current_time for proper validation)
             # Pass pre-loaded member to avoid redundant query
-            is_valid, error_msg = ValidationService.validate_all_booking_constraints(
+            is_valid, error_msg, active_sessions = ValidationService.validate_all_booking_constraints(
                 court_id, date, start_time, booked_for_id, is_short_notice, berlin_time, member=booked_for_member
             )
 
             if not is_valid:
                 logger.warning(f"Reservation validation failed: {error_msg}")
-                return None, error_msg
+                return None, error_msg, active_sessions
 
             # Calculate end time (1 hour after start)
             end_time = time(start_time.hour + 1, start_time.minute)
@@ -118,7 +119,7 @@ class ReservationCreationService:
                     performed_by_id=booked_by_id
                 )
 
-                return reservation, None
+                return reservation, None, None
 
             except Exception as db_error:
                 db.session.rollback()
@@ -126,8 +127,8 @@ class ReservationCreationService:
 
                 # Check if it's a duplicate booking error
                 if 'Duplicate entry' in str(db_error) and 'unique_booking' in str(db_error):
-                    return None, ErrorMessages.RESERVATION_ALREADY_BOOKED
-                return None, f"Fehler beim Erstellen der Buchung: {str(db_error)}"
+                    return None, ErrorMessages.RESERVATION_ALREADY_BOOKED, None
+                return None, f"Fehler beim Erstellen der Buchung: {str(db_error)}", None
 
         except Exception as e:
             # Enhanced error handling with comprehensive logging
@@ -147,7 +148,7 @@ class ReservationCreationService:
 
             # Return user-friendly error message
             error_messages = get_time_based_error_messages()
-            return None, error_messages.get('TIME_CALCULATION_ERROR', "Ein unerwarteter Fehler ist beim Erstellen der Buchung aufgetreten. Bitte versuchen Sie es erneut.")
+            return None, error_messages.get('TIME_CALCULATION_ERROR', "Ein unerwarteter Fehler ist beim Erstellen der Buchung aufgetreten. Bitte versuchen Sie es erneut."), None
 
     @staticmethod
     def update_reservation(reservation_id, **updates):

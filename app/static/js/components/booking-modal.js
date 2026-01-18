@@ -223,11 +223,32 @@ export function bookingModal() {
                 if (response.ok) {
                     this.close();
                     this.showSuccess('Buchung erfolgreich erstellt!');
-                    
+
                     // Trigger dashboard reload
                     this.reloadDashboard();
                 } else {
-                    this.error = data.error || 'Fehler beim Erstellen der Buchung';
+                    // Build error message, including active sessions if available
+                    let errorMsg = data.error || 'Fehler beim Erstellen der Buchung';
+
+                    if (data.active_sessions && data.active_sessions.length > 0) {
+                        const sessionLines = data.active_sessions.map(s => {
+                            const dateObj = new Date(s.date);
+                            const formattedDate = dateObj.toLocaleDateString('de-DE', {
+                                weekday: 'short',
+                                day: '2-digit',
+                                month: '2-digit'
+                            });
+                            // Calculate end time (1 hour after start)
+                            const [startHour] = s.start_time.split(':');
+                            const endHour = (parseInt(startHour) + 1).toString().padStart(2, '0');
+                            const endTime = `${endHour}:00`;
+                            return `• ${formattedDate}, ${s.start_time}-${endTime}, Platz ${s.court_number}`;
+                        });
+
+                        errorMsg += '\n' + sessionLines.join('\n');
+                    }
+
+                    this.error = errorMsg;
                 }
             } catch (err) {
                 console.error('Error creating booking:', err);

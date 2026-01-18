@@ -6,8 +6,7 @@ class ErrorMessages:
 
     # Reservation errors
     RESERVATION_LIMIT_REGULAR = (
-        "Du hast bereits 2 aktive Buchungen (zukünftige oder laufende Reservierungen). "
-        "Aktive Buchungen sind solche, die noch nicht beendet sind."
+        "Du hast bereits 2 aktive Buchungen. "
     )
     RESERVATION_LIMIT_SHORT_NOTICE = (
         "Du hast bereits eine aktive kurzfristige Buchung (zukünftige oder laufende Reservierung). "

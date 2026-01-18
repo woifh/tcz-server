@@ -43,41 +43,45 @@ class ValidationService:
         Validate member has not exceeded the 2-reservation limit using time-based logic.
         Only counts active booking sessions (future or currently in progress).
         Short notice bookings are excluded from the limit.
-        
+
         Args:
             member_id: ID of the member
             is_short_notice: Whether this is a short notice booking (default False)
             current_time: Current datetime for testing (defaults to Europe/Berlin now)
-            
+
         Returns:
-            bool: True if member can make another reservation, False otherwise
+            tuple: (bool, list|None) - (can_make_reservation, active_sessions_if_limit_exceeded)
+                   Returns (True, None) if member can book
+                   Returns (False, [list of active reservations]) if limit exceeded
         """
         try:
             # Short notice bookings are always allowed regardless of limit
             if is_short_notice:
-                return True
-            
+                return True, None
+
             # Ensure consistent Europe/Berlin timezone handling
             berlin_time = ensure_berlin_timezone(current_time)
             log_timezone_operation("validate_member_reservation_limit", current_time, berlin_time)
-            
+
             from app.services.reservation_service import ReservationService
             from app.utils.error_handling import handle_time_calculation_error, get_fallback_active_reservations_date_based
-            
+
             max_reservations = current_app.config.get('MAX_ACTIVE_RESERVATIONS', 2)
-            
+
             # Use the enhanced ReservationService to get active booking sessions
             # This uses time-based logic instead of date-only comparison
             active_booking_sessions = ReservationService.get_member_active_booking_sessions(
-                member_id, 
+                member_id,
                 include_short_notice=False,  # Exclude short notice bookings from count
                 current_time=berlin_time
             )
-            
+
             active_count = len(active_booking_sessions)
-            
-            return active_count < max_reservations
-            
+
+            if active_count >= max_reservations:
+                return False, active_booking_sessions
+            return True, None
+
         except Exception as e:
             # Use enhanced error handling with fallback
             context = {
@@ -85,26 +89,28 @@ class ValidationService:
                 'is_short_notice': is_short_notice,
                 'current_time': current_time
             }
-            
+
             try:
                 # Attempt fallback to date-based logic
                 logger.warning("validate_member_reservation_limit: Falling back to date-based logic")
                 fallback_reservations = get_fallback_active_reservations_date_based(member_id, include_short_notice=False)
                 fallback_count = len(fallback_reservations)
                 max_reservations = current_app.config.get('MAX_ACTIVE_RESERVATIONS', 2)
-                
+
                 logger.info(f"Fallback validation successful: {fallback_count} active reservations")
-                return fallback_count < max_reservations
-                
+                if fallback_count >= max_reservations:
+                    return False, fallback_reservations
+                return True, None
+
             except Exception as fallback_error:
                 # Log both errors
                 logger.error(f"Primary validation error: {e}")
                 logger.error(f"Fallback validation error: {fallback_error}")
                 logger.error(f"Context: {context}")
-                
+
                 # Ultimate fallback: allow the reservation to be safe (better to allow than block)
                 logger.warning("Ultimate fallback: allowing reservation due to validation errors")
-                return True
+                return True, None
     
     @staticmethod
     def validate_member_short_notice_limit(member_id, current_time=None):
@@ -266,7 +272,8 @@ class ValidationService:
             member: Optional pre-loaded Member object to avoid redundant query
 
         Returns:
-            tuple: (bool, str) - (is_valid, error_message)
+            tuple: (bool, str, list|None) - (is_valid, error_message, active_sessions)
+                   active_sessions is only populated when reservation limit is exceeded
         """
         try:
             from datetime import datetime, timedelta
@@ -286,56 +293,57 @@ class ValidationService:
             if member is None:
                 member = Member.query.get(member_id)
             if not member:
-                return False, ErrorMessages.MEMBER_NOT_FOUND
+                return False, ErrorMessages.MEMBER_NOT_FOUND, None
             if not member.can_reserve_courts():
-                return False, ErrorMessages.SUSTAINING_MEMBER_NO_ACCESS
+                return False, ErrorMessages.SUSTAINING_MEMBER_NO_ACCESS, None
 
             # Check if member is restricted due to unpaid fee past deadline
             if member.is_payment_restricted():
                 # Use different message if member has pending confirmation
                 if member.has_pending_payment_confirmation():
-                    return False, ErrorMessages.PAYMENT_CONFIRMATION_PENDING
-                return False, ErrorMessages.PAYMENT_DEADLINE_PASSED
+                    return False, ErrorMessages.PAYMENT_CONFIRMATION_PENDING, None
+                return False, ErrorMessages.PAYMENT_DEADLINE_PASSED, None
 
             # Validate not in the past (with special handling for short notice bookings)
             booking_datetime = datetime.combine(date, start_time)
-            
+
             # Validate not in the past (with special handling for short notice bookings)
             if is_short_notice:
                 # For short notice bookings, allow as long as the slot hasn't ended yet
                 # (booking end time = start time + 1 hour)
                 booking_end_datetime = datetime.combine(date, time(start_time.hour + 1, start_time.minute))
                 if berlin_time >= booking_end_datetime:
-                    return False, error_messages['BOOKING_PAST_ENDED']
+                    return False, error_messages['BOOKING_PAST_ENDED'], None
             else:
                 # For regular bookings, don't allow past bookings
                 if booking_datetime < berlin_time:
-                    return False, error_messages['BOOKING_PAST_REGULAR']
-            
+                    return False, error_messages['BOOKING_PAST_REGULAR'], None
+
             # Validate booking time
             if not ValidationService.validate_booking_time(start_time):
-                return False, "Buchungen sind nur zu vollen Stunden zwischen 08:00 und 22:00 Uhr möglich"
-            
+                return False, "Buchungen sind nur zu vollen Stunden zwischen 08:00 und 22:00 Uhr möglich", None
+
             # Validate member reservation limit (short notice bookings are exempt)
             # Pass berlin_time for time-based validation
-            if not ValidationService.validate_member_reservation_limit(member_id, is_short_notice, berlin_time):
-                return False, error_messages['RESERVATION_LIMIT_REGULAR']
-            
+            can_book, active_sessions = ValidationService.validate_member_reservation_limit(member_id, is_short_notice, berlin_time)
+            if not can_book:
+                return False, error_messages['RESERVATION_LIMIT_REGULAR'], active_sessions
+
             # Validate short notice booking limit (only for short notice bookings)
             # Pass berlin_time for time-based validation
             if is_short_notice and not ValidationService.validate_member_short_notice_limit(member_id, berlin_time):
-                return False, error_messages['RESERVATION_LIMIT_SHORT_NOTICE']
-            
+                return False, error_messages['RESERVATION_LIMIT_SHORT_NOTICE'], None
+
             # Validate no conflict using time-based logic
             if not ValidationService.validate_no_conflict_with_time_logic(court_id, date, start_time, berlin_time):
-                return False, "Dieser Platz ist bereits für diese Zeit gebucht"
-            
+                return False, "Dieser Platz ist bereits für diese Zeit gebucht", None
+
             # Validate not blocked
             if not ValidationService.validate_not_blocked(court_id, date, start_time):
-                return False, "Dieser Platz ist für diese Zeit gesperrt"
-            
-            return True, ""
-            
+                return False, "Dieser Platz ist für diese Zeit gesperrt", None
+
+            return True, "", None
+
         except Exception as e:
             # Enhanced error handling with comprehensive logging
             context = {
@@ -347,10 +355,10 @@ class ValidationService:
                 'current_time': current_time
             }
             log_error_with_context(e, context, "validate_all_booking_constraints")
-            
+
             # Try to provide a more specific error message
             error_messages = get_time_based_error_messages()
-            return False, error_messages['TIME_CALCULATION_ERROR']
+            return False, error_messages['TIME_CALCULATION_ERROR'], None
     
     @staticmethod
     def validate_cancellation_allowed(reservation_id, current_time=None):

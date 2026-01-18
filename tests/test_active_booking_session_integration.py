@@ -60,7 +60,7 @@ class TestActiveBookingSessionIntegration:
             current_time = datetime.now()
             
             # Create reservation
-            reservation, error = ReservationService.create_reservation(
+            reservation, error, _ = ReservationService.create_reservation(
                 court_id=test_court.id,
                 date=tomorrow,
                 start_time=start_time,
@@ -101,7 +101,7 @@ class TestActiveBookingSessionIntegration:
             test_current_time = datetime.combine(tomorrow, time(9, 50))
             
             # Create reservation
-            reservation, error = ReservationService.create_reservation(
+            reservation, error, _ = ReservationService.create_reservation(
                 court_id=test_court.id,
                 date=tomorrow,
                 start_time=start_time,
@@ -158,7 +158,7 @@ class TestActiveBookingSessionIntegration:
             
             # Try to create another regular reservation (should fail)
             future_date = date.today() + timedelta(days=5)
-            reservation, error = ReservationService.create_reservation(
+            reservation, error, _ = ReservationService.create_reservation(
                 court_id=test_court.id,
                 date=future_date,
                 start_time=time(12, 0),
@@ -263,7 +263,7 @@ class TestActiveBookingSessionIntegration:
             tomorrow = date.today() + timedelta(days=1)
             current_time = datetime.now()
             
-            reservation, error = ReservationService.create_reservation(
+            reservation, error, _ = ReservationService.create_reservation(
                 court_id=test_court.id,
                 date=tomorrow,
                 start_time=time(10, 0),
@@ -381,7 +381,7 @@ class TestActiveBookingSessionIntegration:
             tomorrow = date(2024, 1, 16)
             
             # Create reservation
-            reservation, error = ReservationService.create_reservation(
+            reservation, error, _ = ReservationService.create_reservation(
                 court_id=test_court.id,
                 date=tomorrow,
                 start_time=time(10, 0),

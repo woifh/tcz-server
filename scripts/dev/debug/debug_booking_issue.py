@@ -61,7 +61,7 @@ def debug_booking_issue():
         
         # Test full validation
         print("Step 3: Testing full validation...")
-        is_valid, error_msg = ValidationService.validate_all_booking_constraints(
+        is_valid, error_msg, _ = ValidationService.validate_all_booking_constraints(
             court_id, booking_date, start_time, booked_for_id, is_short_notice
         )
         print(f"  Validation result: {is_valid}")
@@ -70,7 +70,7 @@ def debug_booking_issue():
         
         # Step 4: Test the full reservation creation
         print("Step 4: Testing full reservation creation...")
-        reservation, error = ReservationService.create_reservation(
+        reservation, error, _ = ReservationService.create_reservation(
             court_id=court_id,
             date=booking_date,
             start_time=start_time,
