@@ -162,34 +162,46 @@ def list_reservations():
 def reservation_status():
     """
     Get reservation status information for the current user.
-    
+
     This endpoint provides real-time status information about the user's reservations,
     including active booking session counts and limit usage. Useful for dashboard
     widgets and real-time availability displays.
-    
+
     Returns:
         JSON response with reservation status and limit information
     """
     # Use consistent Europe/Berlin timezone
     from app.utils.timezone_utils import get_current_berlin_time
+    from app.services.settings_service import SettingsService
     current_time = get_current_berlin_time()
-    
+
     # Get active booking sessions (regular reservations for limit enforcement)
     active_regular_sessions = ReservationService.get_member_active_booking_sessions(
         current_user.id, include_short_notice=False, current_time=current_time
     )
-    
+
     # Get active short notice bookings
     active_short_notice = ReservationService.get_member_active_short_notice_bookings(
         current_user.id, current_time=current_time
     )
-    
+
     # Get all active reservations (including short notice)
     all_active_reservations = ReservationService.get_member_active_booking_sessions(
         current_user.id, include_short_notice=True, current_time=current_time
     )
-    
-    return jsonify({
+
+    # Get payment deadline info for users with unpaid fees
+    payment_info = None
+    if current_user.has_unpaid_fee():
+        payment_deadline = SettingsService.get_payment_deadline()
+        if payment_deadline:
+            payment_info = {
+                'deadline': payment_deadline.isoformat(),
+                'days_until': SettingsService.days_until_deadline(),
+                'is_past': SettingsService.is_past_payment_deadline()
+            }
+
+    response = {
         'current_time': current_time.isoformat(),
         'user_id': current_user.id,
         'limits': {
@@ -226,9 +238,14 @@ def reservation_status():
         'metadata': {
             'uses_time_based_logic': True,
             'timezone': 'Europe/Berlin',
-            'api_version': '1.1'
+            'api_version': '1.2'
         }
-    })
+    }
+
+    if payment_info:
+        response['payment_deadline'] = payment_info
+
+    return jsonify(response)
 
 
 @bp.route('/', methods=['POST'])

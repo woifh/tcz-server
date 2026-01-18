@@ -111,7 +111,7 @@ def test_property_2_two_reservation_limit_allows_under_limit(app, existing_reser
         db.session.commit()
         
         # Validate member can make another reservation
-        result = ValidationService.validate_member_reservation_limit(member.id)
+        result, _ = ValidationService.validate_member_reservation_limit(member.id)
         assert result is True, f"Member with {existing_reservations} reservations should be allowed to book"
         
         # Cleanup
@@ -155,8 +155,10 @@ def test_property_2_two_reservation_limit_blocks_at_limit(app, _):
         db.session.commit()
         
         # Validate member cannot make another reservation
-        result = ValidationService.validate_member_reservation_limit(member.id)
+        result, active_sessions = ValidationService.validate_member_reservation_limit(member.id)
         assert result is False, "Member with 2 reservations should not be allowed to book"
+        assert active_sessions is not None, "Active sessions should be returned when limit exceeded"
+        assert len(active_sessions) == 2, "Should return 2 active sessions"
         
         # Cleanup
         Reservation.query.filter_by(booked_for_id=member.id).delete()
@@ -422,11 +424,11 @@ def test_property_41_short_notice_bookings_excluded_from_limit(app, existing_reg
         db.session.commit()
         
         # Test that short notice bookings are always allowed regardless of regular limit
-        result_short_notice = ValidationService.validate_member_reservation_limit(member.id, is_short_notice=True)
+        result_short_notice, _ = ValidationService.validate_member_reservation_limit(member.id, is_short_notice=True)
         assert result_short_notice is True, "Short notice bookings should always be allowed"
-        
+
         # Test that regular booking limit only counts regular reservations
-        result_regular = ValidationService.validate_member_reservation_limit(member.id, is_short_notice=False)
+        result_regular, _ = ValidationService.validate_member_reservation_limit(member.id, is_short_notice=False)
         expected = existing_regular < 2
         assert result_regular == expected, f"Regular booking should be {'allowed' if expected else 'blocked'} with {existing_regular} existing regular reservations"
         
@@ -602,8 +604,8 @@ def test_property_42a_short_notice_booking_limit_enforcement(app, existing_short
         # Test that the limit is enforced in validate_all_booking_constraints
         booking_date = date.today() + timedelta(days=20)
         start_time = time(14, 0)
-        
-        is_valid, error_msg = ValidationService.validate_all_booking_constraints(
+
+        is_valid, error_msg, _ = ValidationService.validate_all_booking_constraints(
             court_id=court.id,
             date=booking_date,
             start_time=start_time,

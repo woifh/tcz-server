@@ -151,6 +151,7 @@ def delete_reservation(id):
 def reservation_status():
     """Get reservation status and limits for current user."""
     from app.utils.timezone_utils import get_current_berlin_time
+    from app.services.settings_service import SettingsService
 
     current_time = get_current_berlin_time()
 
@@ -164,7 +165,18 @@ def reservation_status():
         current_user.id, include_short_notice=True, current_time=current_time
     )
 
-    return jsonify({
+    # Get payment deadline info for users with unpaid fees
+    payment_info = None
+    if current_user.has_unpaid_fee():
+        payment_deadline = SettingsService.get_payment_deadline()
+        if payment_deadline:
+            payment_info = {
+                'deadline': payment_deadline.isoformat(),
+                'days_until': SettingsService.days_until_deadline(),
+                'is_past': SettingsService.is_past_payment_deadline()
+            }
+
+    response = {
         'current_time': current_time.isoformat(),
         'user_id': current_user.id,
         'limits': {
@@ -186,7 +198,12 @@ def reservation_status():
             'regular': len(active_regular),
             'short_notice': len(active_short_notice)
         }
-    })
+    }
+
+    if payment_info:
+        response['payment_deadline'] = payment_info
+
+    return jsonify(response)
 
 
 # Import sub-modules to register their routes

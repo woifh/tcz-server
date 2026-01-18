@@ -128,7 +128,7 @@ def test_book_cancel_rebook_same_slot(app):
         test_time = time(10, 0)
         
         # Step 1: Create initial reservation
-        reservation1, error1 = ReservationService.create_reservation(
+        reservation1, error1, _ = ReservationService.create_reservation(
             court_id=court.id,
             date=test_date,
             start_time=test_time,
@@ -157,7 +157,7 @@ def test_book_cancel_rebook_same_slot(app):
         assert cancelled_res.reason == "Test cancellation"
         
         # Step 3: Book the same slot again
-        reservation2, error3 = ReservationService.create_reservation(
+        reservation2, error3, _ = ReservationService.create_reservation(
             court_id=court.id,
             date=test_date,
             start_time=test_time,

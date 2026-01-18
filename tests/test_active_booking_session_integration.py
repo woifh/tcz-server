@@ -151,7 +151,7 @@ class TestActiveBookingSessionIntegration:
             db.session.commit()
             
             # Verify member is at the limit
-            can_book = ValidationService.validate_member_reservation_limit(
+            can_book, _ = ValidationService.validate_member_reservation_limit(
                 test_member.id, is_short_notice=False, current_time=current_time
             )
             assert can_book is False, "Member should be at reservation limit"
@@ -172,7 +172,7 @@ class TestActiveBookingSessionIntegration:
             assert "bereits 2 aktive Buchungen" in error or "reservation limit" in error.lower()
             
             # But short notice booking should still be allowed
-            can_book_short_notice = ValidationService.validate_member_reservation_limit(
+            can_book_short_notice, _ = ValidationService.validate_member_reservation_limit(
                 test_member.id, is_short_notice=True, current_time=current_time
             )
             assert can_book_short_notice is True, "Short notice bookings should be allowed even at regular limit"

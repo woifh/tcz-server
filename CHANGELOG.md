@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.15] - 2026-01-18
+
+### Fixed
+- Test suite compatibility with updated validation return formats
+
 ## [3.14] - 2026-01-18
 
 ### Improved

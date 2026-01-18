@@ -152,19 +152,19 @@ class TestActiveBookingSessionPerformance:
                 start_time = time.time()
                 
                 # Test regular reservation limit validation
-                can_book_regular = ValidationService.validate_member_reservation_limit(
+                can_book_regular, _ = ValidationService.validate_member_reservation_limit(
                     member_id, is_short_notice=False, current_time=current_time
                 )
-                
+
                 # Test short notice reservation limit validation
                 can_book_short_notice = ValidationService.validate_member_short_notice_limit(
                     member_id, current_time=current_time
                 )
-                
+
                 end_time = time.time()
                 query_time = end_time - start_time
                 performance_results.append(query_time)
-                
+
                 # Verify results are boolean
                 assert isinstance(can_book_regular, bool)
                 assert isinstance(can_book_short_notice, bool)
@@ -204,10 +204,10 @@ class TestActiveBookingSessionPerformance:
                     member_id, current_time=current_time
                 )
                 
-                can_book = ValidationService.validate_member_reservation_limit(
+                can_book, _ = ValidationService.validate_member_reservation_limit(
                     member_id, current_time=current_time
                 )
-                
+
                 results.append({
                     'active_sessions': len(active_sessions),
                     'short_notice_bookings': len(short_notice_bookings),
