@@ -98,7 +98,7 @@ def create_app(config_name=None):
     
     # Configure Flask-Login
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Bitte melden Sie sich an, um auf diese Seite zuzugreifen.'
+    login_manager.login_message = 'Bitte melde dich an, um diese Seite zu sehen.'
     login_manager.login_message_category = 'info'
     
     # Import and register blueprints

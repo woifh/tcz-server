@@ -306,9 +306,9 @@ def delete_reservation(id):
         reservation = Reservation.query.get_or_404(id)
         
         # Check authorization: only booked_for or booked_by can cancel
-        if (reservation.booked_for_id != current_user.id and 
+        if (reservation.booked_for_id != current_user.id and
             reservation.booked_by_id != current_user.id):
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
         
         success, error = ReservationService.cancel_reservation(id, cancelled_by_id=current_user.id)
 

@@ -59,7 +59,7 @@ function memberSearch(userId) {
                 }
             } catch (error) {
                 console.error('Search error:', error);
-                this.error = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.';
+                this.error = 'Netzwerkfehler. Bitte prüfe deine Verbindung.';
                 this.results = [];
             } finally {
                 this.loading = false;
@@ -110,7 +110,7 @@ function memberSearch(userId) {
                 }
             } catch (error) {
                 console.error('Add to favourites network error:', error);
-                this.error = 'Netzwerkfehler. Bitte versuchen Sie es erneut.';
+                this.error = 'Netzwerkfehler. Bitte versuch es nochmal.';
             }
         },
         
@@ -192,7 +192,7 @@ function memberSearch(userId) {
         </div>
         
         <p class="text-gray-600 mb-6">
-            Fügen Sie Mitglieder zu Ihren Favoriten hinzu, um schnell Buchungen für sie zu erstellen.
+            Füge Mitglieder zu deinen Favoriten hinzu, um schnell Buchungen für sie zu erstellen.
         </p>
         
         <!-- Member Search Component -->

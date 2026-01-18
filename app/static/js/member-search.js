@@ -73,7 +73,7 @@ async function searchMembers(query) {
         // Display network error
         resultsContainer.innerHTML = `
             <div class="text-red-600 p-4 text-center">
-                Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.
+                Netzwerkfehler. Bitte prüfe deine Verbindung.
             </div>
         `;
     }
@@ -181,7 +181,7 @@ async function addToFavourites(memberId) {
             showErrorMessage(data.error || 'Fehler beim Hinzufügen');
         }
     } catch (error) {
-        showErrorMessage('Netzwerkfehler. Bitte versuchen Sie es erneut.');
+        showErrorMessage('Netzwerkfehler. Bitte versuch es nochmal.');
     }
 }
 

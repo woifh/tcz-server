@@ -33,7 +33,7 @@
             <span class="material-icons text-blue-600 mr-3">hourglass_empty</span>
             <div>
                 <p class="text-blue-800 font-semibold">Zahlungsbestätigung wird geprüft</p>
-                <p class="text-blue-700 text-sm">Ihre Zahlungsbestätigung wird derzeit vom Vorstand überprüft.</p>
+                <p class="text-blue-700 text-sm">Deine Zahlungsbestätigung wird gerade vom Vorstand geprüft.</p>
                 {% if is_past_deadline %}
                 <p class="text-blue-600 text-xs mt-1">Buchungen sind bis zur Bestätigung weiterhin gesperrt.</p>
                 {% endif %}
@@ -48,7 +48,7 @@
                 <span class="material-icons text-red-600 mr-3">block</span>
                 <div>
                     <p class="text-red-800 font-semibold">Buchungen gesperrt</p>
-                    <p class="text-red-700 text-sm">Die Zahlungsfrist ist abgelaufen. Bitte bezahlen Sie Ihren Mitgliedsbeitrag, um wieder buchen zu können.</p>
+                    <p class="text-red-700 text-sm">Die Zahlungsfrist ist abgelaufen. Bitte zahl deinen Beitrag, um wieder buchen zu können.</p>
                 </div>
             </div>
             <button onclick="confirmPayment()"
@@ -75,7 +75,7 @@
                         Noch <strong>{{ days_until_deadline }} Tage</strong> bis zur Zahlungsfrist am {{ payment_deadline.strftime('%d.%m.%Y') }}
                         {% endif %}
                     </p>
-                    <p class="text-yellow-600 text-xs mt-1">Bitte kontaktieren Sie den Vorstand, um Ihren Beitrag zu bezahlen.</p>
+                    <p class="text-yellow-600 text-xs mt-1">Wende dich an den Vorstand, um deinen Beitrag zu bezahlen.</p>
                 </div>
             </div>
             <button onclick="confirmPayment()"
@@ -93,7 +93,7 @@
                 <span class="material-icons text-yellow-600 mr-3">warning</span>
                 <div>
                     <p class="text-yellow-800 font-semibold">Mitgliedsbeitrag offen</p>
-                    <p class="text-yellow-700 text-sm">Ihr Mitgliedsbeitrag ist noch nicht bezahlt. Bitte kontaktieren Sie den Vorstand.</p>
+                    <p class="text-yellow-700 text-sm">Dein Mitgliedsbeitrag ist noch nicht bezahlt. Bitte wende dich an den Vorstand.</p>
                 </div>
             </div>
             <button onclick="confirmPayment()"
@@ -395,7 +395,7 @@
 
                     <!-- Help text -->
                     <p class="mt-2 text-xs text-gray-500">
-                        Ausgewählte Mitglieder werden automatisch zu Ihren Favoriten hinzugefügt.
+                        Ausgewählte Mitglieder werden automatisch zu deinen Favoriten hinzugefügt.
                     </p>
                 </div>
             </div>
@@ -421,7 +421,7 @@
 <script>
 // Payment confirmation function
 async function confirmPayment() {
-    if (!confirm('Haben Sie Ihren Mitgliedsbeitrag bereits bezahlt? Mit dieser Bestätigung informieren Sie den Vorstand, dass Ihre Zahlung erfolgt ist.')) {
+    if (!confirm('Hast du deinen Mitgliedsbeitrag bereits bezahlt? Mit dieser Bestätigung informierst du den Vorstand, dass deine Zahlung erfolgt ist.')) {
         return;
     }
 

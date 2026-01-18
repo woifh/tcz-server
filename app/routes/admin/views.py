@@ -56,7 +56,7 @@ def edit_court_blocking(batch_id):
         if current_user.is_teamster():
             if not all(block.created_by_id == current_user.id for block in blocks):
                 return render_template('admin/court_blocking.html',
-                                     error="Sie können nur Ihre eigenen Sperrungen bearbeiten")
+                                     error="Du kannst nur deine eigenen Sperrungen bearbeiten")
 
         # Use the first block as the representative for the batch
         first_block = blocks[0]
@@ -172,7 +172,7 @@ def import_members():
         }), 200
 
     except UnicodeDecodeError:
-        return jsonify({'error': 'Datei konnte nicht gelesen werden. Bitte stellen Sie sicher, dass die Datei UTF-8 kodiert ist.'}), 400
+        return jsonify({'error': 'Datei konnte nicht gelesen werden. Bitte stell sicher, dass die Datei UTF-8 kodiert ist.'}), 400
     except Exception as e:
         return jsonify({'error': f'{ErrorMessages.CSV_IMPORT_FAILED}: {str(e)}'}), 500
 

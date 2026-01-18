@@ -50,7 +50,7 @@ def jwt_or_session_required(f):
 
         if member:
             if not member.is_active:
-                return jsonify({'error': 'Ihr Konto wurde deaktiviert'}), 403
+                return jsonify({'error': 'Dein Konto wurde deaktiviert'}), 403
             if member.is_sustaining_member():
                 return jsonify({'error': 'Fördermitglieder haben keinen Zugang zum Buchungssystem'}), 403
             login_user(member, remember=False)
@@ -179,7 +179,7 @@ def login_required_json(f):
         if not current_user.is_authenticated:
             if request.is_json or request.accept_mimetypes.accept_json:
                 return jsonify({'error': 'Authentifizierung erforderlich'}), 401
-            flash('Bitte melden Sie sich an, um auf diese Seite zuzugreifen.', 'info')
+            flash('Bitte melde dich an, um diese Seite zu sehen.', 'info')
             return redirect(url_for('auth.login', next=request.url))
         return f(*args, **kwargs)
     return decorated_function
@@ -195,15 +195,15 @@ def admin_required(f):
         if not current_user.is_authenticated:
             if request.is_json or request.accept_mimetypes.accept_json:
                 return jsonify({'error': 'Authentifizierung erforderlich'}), 401
-            flash('Bitte melden Sie sich an, um auf diese Seite zuzugreifen.', 'info')
+            flash('Bitte melde dich an, um diese Seite zu sehen.', 'info')
             return redirect(url_for('auth.login', next=request.url))
-        
+
         if not current_user.is_admin():
             if request.is_json or request.accept_mimetypes.accept_json:
-                return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
-            flash('Sie haben keine Berechtigung für diese Aktion', 'error')
+                return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
+            flash('Du hast keine Berechtigung für diese Aktion', 'error')
             return redirect(url_for('dashboard.index')), 403
-        
+
         return f(*args, **kwargs)
     return decorated_function
 
@@ -218,14 +218,14 @@ def member_or_admin_required(f):
         if not current_user.is_authenticated:
             if request.is_json or request.accept_mimetypes.accept_json:
                 return jsonify({'error': 'Authentifizierung erforderlich'}), 401
-            flash('Bitte melden Sie sich an, um auf diese Seite zuzugreifen.', 'info')
+            flash('Bitte melde dich an, um diese Seite zu sehen.', 'info')
             return redirect(url_for('auth.login', next=request.url))
 
         member_id = kwargs.get('id')
         if member_id and current_user.id != member_id and not current_user.is_admin():
             if request.is_json or request.accept_mimetypes.accept_json:
-                return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
-            flash('Sie haben keine Berechtigung für diese Aktion', 'error')
+                return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
+            flash('Du hast keine Berechtigung für diese Aktion', 'error')
             return redirect(url_for('dashboard.index')), 403
 
         return f(*args, **kwargs)
@@ -243,13 +243,13 @@ def teamster_or_admin_required(f):
         if not current_user.is_authenticated:
             if request.is_json or request.accept_mimetypes.accept_json:
                 return jsonify({'error': 'Authentifizierung erforderlich'}), 401
-            flash('Bitte melden Sie sich an, um auf diese Seite zuzugreifen.', 'info')
+            flash('Bitte melde dich an, um diese Seite zu sehen.', 'info')
             return redirect(url_for('auth.login', next=request.url))
 
         if not current_user.can_manage_blocks():
             if request.is_json or request.accept_mimetypes.accept_json:
-                return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
-            flash('Sie haben keine Berechtigung für diese Aktion', 'error')
+                return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
+            flash('Du hast keine Berechtigung für diese Aktion', 'error')
             return redirect(url_for('dashboard.index')), 403
 
         return f(*args, **kwargs)
@@ -267,7 +267,7 @@ def block_owner_or_admin_required(f):
         if not current_user.is_authenticated:
             if request.is_json or request.accept_mimetypes.accept_json:
                 return jsonify({'error': 'Authentifizierung erforderlich'}), 401
-            flash('Bitte melden Sie sich an, um auf diese Seite zuzugreifen.', 'info')
+            flash('Bitte melde dich an, um diese Seite zu sehen.', 'info')
             return redirect(url_for('auth.login', next=request.url))
 
         # Get block_id from route parameters
@@ -277,7 +277,7 @@ def block_owner_or_admin_required(f):
             block = Block.query.get_or_404(block_id)
 
             if not current_user.can_edit_block(block):
-                error_message = 'Sie können nur Ihre eigenen Sperrungen bearbeiten'
+                error_message = 'Du kannst nur deine eigenen Sperrungen bearbeiten'
                 if request.is_json or request.accept_mimetypes.accept_json:
                     return jsonify({'error': error_message}), 403
                 flash(error_message, 'error')

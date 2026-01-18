@@ -167,7 +167,7 @@ function membersList() {
         },
 
         async deleteMember(memberId) {
-            if (!confirm('Möchten Sie dieses Mitglied wirklich löschen?')) {
+            if (!confirm('Möchtest du dieses Mitglied wirklich löschen?')) {
                 return;
             }
 
@@ -184,7 +184,7 @@ function membersList() {
                     await this.loadMembers();
                 } else {
                     if (data.error && data.error.includes('aktive Buchungen')) {
-                        if (confirm(data.error + '\n\nMöchten Sie das Mitglied trotzdem löschen? Alle Buchungen werden storniert.')) {
+                        if (confirm(data.error + '\n\nMöchtest du das Mitglied trotzdem löschen? Alle Buchungen werden storniert.')) {
                             const forceResponse = await fetch(`/api/members/${memberId}?force=true`, {
                                 method: 'DELETE',
                                 headers: { 'X-CSRFToken': csrfToken }

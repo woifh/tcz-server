@@ -68,7 +68,7 @@ def search_members():
 
     except Exception as e:
         # Handle errors (500)
-        return jsonify({'error': 'Suchfehler. Bitte versuchen Sie es erneut.'}), 500
+        return jsonify({'error': 'Suchfehler. Bitte versuch es nochmal.'}), 500
 
 
 @bp.route('/favourites', methods=['GET'])
@@ -188,7 +188,7 @@ def update_member(id):
     try:
         # Check authorization: user can update self, admin can update anyone
         if id != current_user.id and not current_user.is_admin():
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
 
         data = request.get_json() if request.is_json else request.form
 
@@ -338,7 +338,7 @@ def add_favourite(id):
 
         # Check authorization: user can only modify own favourites
         if member.id != current_user.id:
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
 
         data = request.get_json() if request.is_json else request.form
         favourite_id = data.get('favourite_id')
@@ -350,7 +350,7 @@ def add_favourite(id):
 
         # Prevent adding self as favourite
         if favourite.id == member.id:
-            return jsonify({'error': 'Sie können sich nicht selbst als Favorit hinzufügen'}), 400
+            return jsonify({'error': 'Du kannst dich nicht selbst als Favorit hinzufügen'}), 400
 
         # Check if already a favourite
         if favourite in member.favourites.all():
@@ -394,7 +394,7 @@ def get_favourites(id):
 
         # Check authorization: user can only view own favourites
         if member.id != current_user.id:
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
 
         favourites = member.favourites.all()
 
@@ -424,7 +424,7 @@ def remove_favourite(id, fav_id):
 
         # Check authorization: user can only modify own favourites
         if member.id != current_user.id:
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
 
         favourite = Member.query.get_or_404(fav_id)
 

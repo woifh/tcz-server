@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 class EmailService:
     """Service for sending email notifications in German."""
     
-    # German email templates
+    # German email templates (informal "du" style for club members)
     TEMPLATES = {
         'booking_created': {
             'subject': 'Buchungsbestätigung - Tennisplatz {court_number}',
-            'body': '''Guten Tag {recipient_name},
+            'body': '''Hallo {recipient_name},
 
-Ihre Buchung wurde erfolgreich erstellt:
+deine Buchung wurde erstellt:
 
 Platz: {court_number}
 Datum: {date}
@@ -25,14 +25,14 @@ Uhrzeit: {start_time} - {end_time}
 Gebucht für: {booked_for_name}
 Gebucht von: {booked_by_name}
 
-Mit freundlichen Grüßen
-Ihr Tennisclub-Team'''
+Viele Grüße
+Dein TCZ-Team'''
         },
         'booking_modified': {
             'subject': 'Buchungsänderung - Tennisplatz {court_number}',
-            'body': '''Guten Tag {recipient_name},
+            'body': '''Hallo {recipient_name},
 
-Ihre Buchung wurde geändert:
+deine Buchung wurde geändert:
 
 Platz: {court_number}
 Datum: {date}
@@ -40,36 +40,36 @@ Uhrzeit: {start_time} - {end_time}
 Gebucht für: {booked_for_name}
 Gebucht von: {booked_by_name}
 
-Mit freundlichen Grüßen
-Ihr Tennisclub-Team'''
+Viele Grüße
+Dein TCZ-Team'''
         },
         'booking_cancelled': {
             'subject': 'Buchungsstornierung - Tennisplatz {court_number}',
-            'body': '''Guten Tag {recipient_name},
+            'body': '''Hallo {recipient_name},
 
-Ihre Buchung wurde storniert:
+deine Buchung wurde storniert:
 
 Platz: {court_number}
 Datum: {date}
 Uhrzeit: {start_time} - {end_time}
 {reason_text}
 
-Mit freundlichen Grüßen
-Ihr Tennisclub-Team'''
+Viele Grüße
+Dein TCZ-Team'''
         },
         'admin_override': {
             'subject': 'Buchungsstornierung durch Administrator',
-            'body': '''Guten Tag {recipient_name},
+            'body': '''Hallo {recipient_name},
 
-Ihre Buchung wurde durch einen Administrator storniert:
+deine Buchung wurde durch einen Administrator storniert:
 
 Platz: {court_number}
 Datum: {date}
 Uhrzeit: {start_time} - {end_time}
 Grund: {reason}
 
-Mit freundlichen Grüßen
-Ihr Tennisclub-Team'''
+Viele Grüße
+Dein TCZ-Team'''
         }
     }
     

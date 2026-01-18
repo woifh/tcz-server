@@ -90,7 +90,7 @@ def create_blocks():
             if not reason:
                 return jsonify({'error': 'Ungültiger Sperrungsgrund'}), 400
             if not reason.teamster_usable:
-                return jsonify({'error': 'Sie haben keine Berechtigung, diesen Sperrungsgrund zu verwenden'}), 403
+                return jsonify({'error': 'Du hast keine Berechtigung, diesen Sperrungsgrund zu verwenden'}), 403
 
         block_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         start_time = datetime.strptime(start_time_str, '%H:%M').time()
@@ -188,7 +188,7 @@ def update_batch(batch_id):
         # Teamsters can only update their own batches
         if current_user.is_teamster() and not current_user.is_admin():
             if not all(block.created_by_id == current_user.id for block in existing_blocks):
-                return jsonify({'error': 'Sie können nur Ihre eigenen Sperrungen bearbeiten'}), 403
+                return jsonify({'error': 'Du kannst nur deine eigenen Sperrungen bearbeiten'}), 403
 
         existing_court_ids = [block.court_id for block in existing_blocks]
         courts_to_keep = set(existing_court_ids) & set(new_court_ids)
@@ -275,7 +275,7 @@ def delete_batch(batch_id):
         # Teamsters can only delete their own batches
         if current_user.is_teamster() and not current_user.is_admin():
             if not all(block.created_by_id == current_user.id for block in blocks):
-                return jsonify({'error': 'Sie können nur Ihre eigenen Sperrungen löschen'}), 403
+                return jsonify({'error': 'Du kannst nur deine eigenen Sperrungen löschen'}), 403
 
         success, error = BlockService.delete_batch(batch_id, current_user.id)
 

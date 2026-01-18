@@ -128,7 +128,7 @@
                                     <span class="material-icons text-4xl text-gray-300" aria-hidden="true">category</span>
                                     <div>
                                         <p class="text-lg font-medium">Keine Sperrungsgründe gefunden</p>
-                                        <p class="text-sm">Erstellen Sie den ersten Grund, um zu beginnen.</p>
+                                        <p class="text-sm">Erstelle den ersten Grund, um zu beginnen.</p>
                                     </div>
                                 </div>
                             </td>
@@ -310,7 +310,7 @@
                         <span class="material-icons text-4xl text-gray-300" aria-hidden="true">category</span>
                         <div>
                             <p class="text-lg font-medium">Keine Sperrungsgründe gefunden</p>
-                            <p class="text-sm">Erstellen Sie den ersten Grund, um zu beginnen.</p>
+                            <p class="text-sm">Erstelle den ersten Grund, um zu beginnen.</p>
                         </div>
                     </div>
                 </div>
@@ -855,11 +855,11 @@ function reasonsManager() {
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        throw new Error('Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.');
+                        throw new Error('Deine Sitzung ist abgelaufen. Bitte melde dich neu an.');
                     } else if (response.status === 403) {
-                        throw new Error('Sie haben keine Berechtigung für diese Aktion.');
+                        throw new Error('Du hast keine Berechtigung für diese Aktion.');
                     } else if (response.status >= 500) {
-                        throw new Error('Serverfehler. Bitte versuchen Sie es später erneut.');
+                        throw new Error('Serverfehler. Bitte versuch es später nochmal.');
                     } else {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -873,7 +873,7 @@ function reasonsManager() {
 
                 // Handle different types of errors
                 if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    this.error = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+                    this.error = 'Netzwerkfehler. Bitte prüfe deine Internetverbindung und versuch es nochmal.';
                 } else if (error.message.includes('abgelaufen')) {
                     this.error = error.message;
                     // Redirect to login after a delay
@@ -1093,7 +1093,7 @@ function reasonsManager() {
             
             // Check if sanitization changed the input significantly
             if (sanitizedName !== this.editForm.name.trim()) {
-                this.editForm.errors.name = 'Name wurde bereinigt. Bitte überprüfen Sie die Eingabe.';
+                this.editForm.errors.name = 'Name wurde bereinigt. Bitte prüfe die Eingabe.';
                 this.editForm.name = sanitizedName;
                 return;
             }
@@ -1134,16 +1134,16 @@ function reasonsManager() {
                             this.editForm.errors.general = data.error;
                         }
                     } else if (response.status === 401) {
-                        this.editForm.errors.general = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
+                        this.editForm.errors.general = 'Deine Sitzung ist abgelaufen. Bitte melde dich neu an.';
                         setTimeout(() => window.location.href = '/login', 3000);
                     } else if (response.status === 403) {
-                        this.editForm.errors.general = 'Sie haben keine Berechtigung für diese Aktion.';
+                        this.editForm.errors.general = 'Du hast keine Berechtigung für diese Aktion.';
                     } else if (response.status === 404) {
                         this.editForm.errors.general = 'Der Sperrungsgrund wurde nicht gefunden. Möglicherweise wurde er bereits gelöscht.';
                         // Refresh the list to reflect current state
                         setTimeout(() => this.loadReasons(), 2000);
                     } else if (response.status >= 500) {
-                        this.editForm.errors.general = 'Serverfehler. Bitte versuchen Sie es später erneut.';
+                        this.editForm.errors.general = 'Serverfehler. Bitte versuch es später nochmal.';
                     } else {
                         throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -1173,14 +1173,14 @@ function reasonsManager() {
                 
                 // Handle network errors
                 if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    this.editForm.errors.general = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
+                    this.editForm.errors.general = 'Netzwerkfehler. Bitte prüfe deine Internetverbindung und versuch es nochmal.';
                 } else {
                     this.editForm.errors.general = 'Fehler beim Aktualisieren des Grundes: ' + error.message;
                 }
                 
                 // Show error toast for network issues
                 if (error.name === 'TypeError') {
-                    this.showErrorMessage('Netzwerkfehler beim Speichern. Bitte versuchen Sie es erneut.');
+                    this.showErrorMessage('Netzwerkfehler beim Speichern. Bitte versuch es nochmal.');
                 }
             } finally {
                 this.editForm.submitting = false;
@@ -1235,10 +1235,10 @@ function reasonsManager() {
                     if (response.status === 400) {
                         this.deleteForm.errors.general = data.error || 'Ungültige Anfrage. Der Grund kann nicht gelöscht werden.';
                     } else if (response.status === 401) {
-                        this.deleteForm.errors.general = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
+                        this.deleteForm.errors.general = 'Deine Sitzung ist abgelaufen. Bitte melde dich neu an.';
                         setTimeout(() => window.location.href = '/login', 3000);
                     } else if (response.status === 403) {
-                        this.deleteForm.errors.general = 'Sie haben keine Berechtigung für diese Aktion.';
+                        this.deleteForm.errors.general = 'Du hast keine Berechtigung für diese Aktion.';
                     } else if (response.status === 404) {
                         this.deleteForm.errors.general = 'Der Sperrungsgrund wurde nicht gefunden. Möglicherweise wurde er bereits gelöscht.';
                         // Close modal and refresh list
@@ -1249,7 +1249,7 @@ function reasonsManager() {
                     } else if (response.status === 409) {
                         this.deleteForm.errors.general = 'Der Grund kann nicht gelöscht werden, da er derzeit verwendet wird.';
                     } else if (response.status >= 500) {
-                        this.deleteForm.errors.general = 'Serverfehler. Bitte versuchen Sie es später erneut.';
+                        this.deleteForm.errors.general = 'Serverfehler. Bitte versuch es später nochmal.';
                     } else {
                         throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -1279,8 +1279,8 @@ function reasonsManager() {
                 
                 // Handle network errors
                 if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    this.deleteForm.errors.general = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
-                    this.showErrorMessage('Netzwerkfehler beim Löschen. Bitte versuchen Sie es erneut.');
+                    this.deleteForm.errors.general = 'Netzwerkfehler. Bitte prüfe deine Internetverbindung und versuch es nochmal.';
+                    this.showErrorMessage('Netzwerkfehler beim Löschen. Bitte versuch es nochmal.');
                 } else {
                     this.deleteForm.errors.general = 'Fehler beim Löschen des Grundes: ' + error.message;
                 }
@@ -1323,7 +1323,7 @@ function reasonsManager() {
 
             } catch (error) {
                 console.error('Error reactivating reason:', error);
-                this.showErrorMessage('Netzwerkfehler beim Reaktivieren. Bitte versuchen Sie es erneut.');
+                this.showErrorMessage('Netzwerkfehler beim Reaktivieren. Bitte versuch es nochmal.');
             } finally {
                 this.loading = false;
             }
@@ -1371,7 +1371,7 @@ function reasonsManager() {
 
             } catch (error) {
                 console.error('Error permanently deleting reason:', error);
-                this.deleteForm.errors.general = 'Netzwerkfehler beim Löschen. Bitte versuchen Sie es erneut.';
+                this.deleteForm.errors.general = 'Netzwerkfehler beim Löschen. Bitte versuch es nochmal.';
             } finally {
                 this.deleteForm.submitting = false;
             }
@@ -1535,13 +1535,13 @@ function reasonsManager() {
                 
                 // Check if sanitization changed the input significantly
                 if (sanitizedName !== this.createForm.name.trim()) {
-                    this.createForm.errors.name = 'Name wurde bereinigt. Bitte überprüfen Sie die Eingabe.';
+                    this.createForm.errors.name = 'Name wurde bereinigt. Bitte prüfe die Eingabe.';
                     this.createForm.name = sanitizedName;
                     return;
                 }
                 
                 if (sanitizedDescription && sanitizedDescription !== this.createForm.description.trim()) {
-                    this.createForm.errors.general = 'Beschreibung wurde bereinigt. Bitte überprüfen Sie die Eingabe.';
+                    this.createForm.errors.general = 'Beschreibung wurde bereinigt. Bitte prüfe die Eingabe.';
                     this.createForm.description = sanitizedDescription;
                     return;
                 }
@@ -1566,14 +1566,14 @@ function reasonsManager() {
                             this.createForm.errors.general = data.error;
                         }
                     } else if (response.status === 401) {
-                        this.createForm.errors.general = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
+                        this.createForm.errors.general = 'Deine Sitzung ist abgelaufen. Bitte melde dich neu an.';
                         setTimeout(() => window.location.href = '/login', 3000);
                     } else if (response.status === 403) {
-                        this.createForm.errors.general = 'Sie haben keine Berechtigung für diese Aktion.';
+                        this.createForm.errors.general = 'Du hast keine Berechtigung für diese Aktion.';
                     } else if (response.status === 422) {
-                        this.createForm.errors.general = 'Ungültige Eingabedaten. Bitte überprüfen Sie Ihre Eingaben.';
+                        this.createForm.errors.general = 'Ungültige Eingabedaten. Bitte prüfe deine Eingaben.';
                     } else if (response.status >= 500) {
-                        this.createForm.errors.general = 'Serverfehler. Bitte versuchen Sie es später erneut.';
+                        this.createForm.errors.general = 'Serverfehler. Bitte versuch es später nochmal.';
                     } else {
                         throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -1611,8 +1611,8 @@ function reasonsManager() {
                 
                 // Handle network errors
                 if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    this.createForm.errors.general = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.';
-                    this.showErrorMessage('Netzwerkfehler beim Erstellen. Bitte versuchen Sie es erneut.');
+                    this.createForm.errors.general = 'Netzwerkfehler. Bitte prüfe deine Internetverbindung und versuch es nochmal.';
+                    this.showErrorMessage('Netzwerkfehler beim Erstellen. Bitte versuch es nochmal.');
                 } else {
                     this.createForm.errors.general = 'Fehler beim Erstellen des Grundes: ' + error.message;
                 }

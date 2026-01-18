@@ -141,7 +141,7 @@ def ratelimit_handler(e):
             f"Endpoint: {request.endpoint}, User-Agent: {request.headers.get('User-Agent', 'Unknown')}"
         )
         return jsonify({
-            'error': 'Zu viele Anfragen. Bitte versuchen Sie es später erneut.',
+            'error': 'Zu viele Anfragen. Versuch es später nochmal.',
             'retry_after': e.retry_after
         }), 429
     return jsonify({'error': 'Rate limit exceeded'}), 429

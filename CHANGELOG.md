@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.14] - 2026-01-18
+
+### Improved
+- App language now uses friendly informal "du" instead of formal "Sie"
+- Email notifications feel more personal with casual greetings and sign-offs
+
 ## [3.13] - 2026-01-18
 
 ### Added

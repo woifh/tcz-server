@@ -46,7 +46,7 @@ def login():
         if member and member.check_password(password):
             # Check if account is deactivated
             if not member.is_active:
-                flash('Ihr Konto wurde deaktiviert. Bitte kontaktieren Sie den Administrator.', 'error')
+                flash('Dein Konto wurde deaktiviert. Bitte wende dich an den Administrator.', 'error')
                 return render_template('login.html')
 
             # Check if sustaining member (no access to booking system)
@@ -82,7 +82,7 @@ def login_api():
 
     if member and member.check_password(password):
         if not member.is_active:
-            return jsonify({'error': 'Ihr Konto wurde deaktiviert'}), 403
+            return jsonify({'error': 'Dein Konto wurde deaktiviert'}), 403
         if member.is_sustaining_member():
             return jsonify({'error': ErrorMessages.SUSTAINING_MEMBER_NO_ACCESS}), 403
 

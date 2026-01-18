@@ -6,11 +6,11 @@ class ErrorMessages:
 
     # Reservation errors
     RESERVATION_LIMIT_REGULAR = (
-        "Sie haben bereits 2 aktive Buchungen (zukünftige oder laufende Reservierungen). "
+        "Du hast bereits 2 aktive Buchungen (zukünftige oder laufende Reservierungen). "
         "Aktive Buchungen sind solche, die noch nicht beendet sind."
     )
     RESERVATION_LIMIT_SHORT_NOTICE = (
-        "Sie haben bereits eine aktive kurzfristige Buchung (zukünftige oder laufende Reservierung). "
+        "Du hast bereits eine aktive kurzfristige Buchung (zukünftige oder laufende Reservierung). "
         "Nur eine kurzfristige Buchung pro Mitglied ist erlaubt."
     )
     RESERVATION_NOT_FOUND = "Buchung nicht gefunden"
@@ -26,10 +26,10 @@ class ErrorMessages:
     BOOKING_PAST_REGULAR = "Buchungen in der Vergangenheit sind nicht möglich"
 
     # System errors
-    TIME_CALCULATION_ERROR = "Fehler bei der Zeitberechnung. Bitte versuchen Sie es erneut."
-    TIMEZONE_ERROR = "Zeitzonenfehler aufgetreten. Bitte versuchen Sie es erneut."
-    VALIDATION_ERROR = "Validierungsfehler aufgetreten. Bitte überprüfen Sie Ihre Eingaben."
-    UNEXPECTED_ERROR = "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+    TIME_CALCULATION_ERROR = "Fehler bei der Zeitberechnung. Bitte versuch es nochmal."
+    TIMEZONE_ERROR = "Zeitzonenfehler aufgetreten. Bitte versuch es nochmal."
+    VALIDATION_ERROR = "Validierungsfehler aufgetreten. Bitte prüfe deine Eingaben."
+    UNEXPECTED_ERROR = "Ein unerwarteter Fehler ist aufgetreten. Bitte versuch es nochmal."
     SYSTEM_ERROR = "Ein Systemfehler ist aufgetreten."
     FALLBACK_ACTIVE = "System verwendet vereinfachte Zeitlogik aufgrund technischer Probleme"
 
@@ -50,8 +50,8 @@ class ErrorMessages:
     MEMBER_LASTNAME_REQUIRED = "Nachname ist erforderlich"
     MEMBER_EMAIL_REQUIRED = "E-Mail ist erforderlich"
     MEMBER_INVALID_ROLE = "Ungültige Rolle"
-    MEMBER_CANNOT_DELETE_SELF = "Sie können sich nicht selbst löschen"
-    MEMBER_CANNOT_DEACTIVATE_SELF = "Sie können sich nicht selbst deaktivieren"
+    MEMBER_CANNOT_DELETE_SELF = "Du kannst dich nicht selbst löschen"
+    MEMBER_CANNOT_DEACTIVATE_SELF = "Du kannst dich nicht selbst deaktivieren"
     MEMBER_ALREADY_DEACTIVATED = "Mitglied ist bereits deaktiviert"
     MEMBER_NOT_DEACTIVATED = "Mitglied ist nicht deaktiviert"
     MEMBER_HAS_ACTIVE_RESERVATIONS = "Mitglied hat aktive Buchungen und kann nicht gelöscht werden"
@@ -67,11 +67,11 @@ class ErrorMessages:
     CSV_IMPORT_FAILED = "CSV-Import fehlgeschlagen"
 
     # Payment errors
-    MEMBER_FEE_UNPAID_BOOKING_WARNING = "Hinweis: Ihr Mitgliedsbeitrag ist noch nicht bezahlt."
+    MEMBER_FEE_UNPAID_BOOKING_WARNING = "Hinweis: Dein Mitgliedsbeitrag ist noch nicht bezahlt."
 
     # Payment deadline errors
-    PAYMENT_DEADLINE_PASSED = "Die Zahlungsfrist ist abgelaufen. Bitte bezahlen Sie Ihren Mitgliedsbeitrag, um wieder buchen zu können."
-    PAYMENT_CONFIRMATION_PENDING = "Ihre Zahlungsbestätigung wird derzeit vom Vorstand geprüft. Buchungen sind bis zur Bestätigung gesperrt."
+    PAYMENT_DEADLINE_PASSED = "Die Zahlungsfrist ist abgelaufen. Bitte zahl deinen Beitrag, um wieder buchen zu können."
+    PAYMENT_CONFIRMATION_PENDING = "Deine Zahlungsbestätigung wird gerade vom Vorstand geprüft. Buchungen sind bis zur Bestätigung gesperrt."
     PAYMENT_DEADLINE_INVALID_DATE = "Ungültiges Datum für Zahlungsfrist"
 
 class SuccessMessages:

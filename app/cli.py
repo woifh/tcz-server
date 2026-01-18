@@ -95,18 +95,18 @@ def test_email_command(recipient):
             recipients=[recipient],
             body='''Hallo,
 
-Dies ist eine Test-E-Mail vom Tennisclub-Reservierungssystem.
+dies ist eine Test-E-Mail vom Tennisclub-Reservierungssystem.
 
-Wenn Sie diese E-Mail erhalten, funktioniert die E-Mail-Konfiguration korrekt.
+Wenn du diese E-Mail erhältst, funktioniert die E-Mail-Konfiguration korrekt.
 
 SMTP Server: {server}:{port}
 TLS: {tls}
 From: {sender}
 
-Weitere Informationen zur E-Mail-Konfiguration finden Sie in docs/EMAIL_SETUP.md
+Weitere Informationen zur E-Mail-Konfiguration findest du in docs/EMAIL_SETUP.md
 
-Mit freundlichen Grüßen
-Ihr Tennisclub-Team
+Viele Grüße
+Dein TCZ-Team
 '''.format(
                 server=current_app.config.get('MAIL_SERVER'),
                 port=current_app.config.get('MAIL_PORT'),

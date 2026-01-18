@@ -3,8 +3,8 @@
 # Validation errors
 VALIDATION_ERRORS = {
     'BOOKING_CONFLICT': 'Dieser Platz ist bereits für diese Zeit gebucht',
-    'RESERVATION_LIMIT': 'Sie haben bereits 2 aktive Buchungen (zukünftige oder laufende Reservierungen). Aktive Buchungen sind solche, die noch nicht beendet sind.',
-    'RESERVATION_LIMIT_SHORT_NOTICE': 'Sie haben bereits eine aktive kurzfristige Buchung (zukünftige oder laufende Reservierung). Nur eine kurzfristige Buchung pro Mitglied ist erlaubt.',
+    'RESERVATION_LIMIT': 'Du hast bereits 2 aktive Buchungen (zukünftige oder laufende Reservierungen). Aktive Buchungen sind solche, die noch nicht beendet sind.',
+    'RESERVATION_LIMIT_SHORT_NOTICE': 'Du hast bereits eine aktive kurzfristige Buchung (zukünftige oder laufende Reservierung). Nur eine kurzfristige Buchung pro Mitglied ist erlaubt.',
     'BLOCKED_SLOT': 'Dieser Platz ist für diese Zeit gesperrt',
     'INVALID_TIME': 'Buchungen sind nur zwischen 08:00 und 22:00 Uhr möglich',
     'INVALID_DURATION': 'Buchungen müssen genau eine Stunde dauern',
@@ -18,16 +18,16 @@ VALIDATION_ERRORS = {
     'CANCELLATION_STARTED': 'Diese Buchung kann nicht mehr storniert werden (Spielzeit bereits begonnen)',
     'CANCELLATION_TOO_LATE': 'Diese Buchung kann nicht mehr storniert werden (weniger als 15 Minuten bis Spielbeginn)',
     'SHORT_NOTICE_NO_CANCEL': 'Kurzfristige Buchungen können nicht storniert werden',
-    'TIME_CALCULATION_ERROR': 'Fehler bei der Zeitberechnung. Bitte versuchen Sie es erneut.',
+    'TIME_CALCULATION_ERROR': 'Fehler bei der Zeitberechnung. Bitte versuch es nochmal.',
     'FALLBACK_ACTIVE': 'System verwendet vereinfachte Zeitlogik aufgrund technischer Probleme',
 }
 
 # Authentication errors
 AUTH_ERRORS = {
     'INVALID_CREDENTIALS': 'E-Mail oder Passwort ist falsch',
-    'UNAUTHORIZED': 'Sie haben keine Berechtigung für diese Aktion',
-    'LOGIN_REQUIRED': 'Bitte melden Sie sich an, um auf diese Seite zuzugreifen',
-    'SESSION_EXPIRED': 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an',
+    'UNAUTHORIZED': 'Du hast keine Berechtigung für diese Aktion',
+    'LOGIN_REQUIRED': 'Bitte melde dich an, um diese Seite zu sehen',
+    'SESSION_EXPIRED': 'Deine Sitzung ist abgelaufen. Bitte melde dich neu an',
 }
 
 # Resource errors
@@ -64,7 +64,7 @@ SUCCESS_MESSAGES = {
 
 # Info messages
 INFO_MESSAGES = {
-    'NO_RESERVATIONS': 'Sie haben derzeit keine aktiven Buchungen',
+    'NO_RESERVATIONS': 'Du hast gerade keine aktiven Buchungen',
     'NO_MEMBERS': 'Keine Mitglieder gefunden',
     'NO_BLOCKS': 'Keine Sperrungen für dieses Datum',
     'AVAILABILITY_INFO': 'Verfügbare Buchungsplätze: {available_slots} von 2 (basierend auf aktueller Zeit)',

@@ -83,7 +83,7 @@ def search_members():
             'count': len(results)
         })
     except Exception:
-        return jsonify({'error': 'Suchfehler. Bitte versuchen Sie es erneut.'}), 500
+        return jsonify({'error': 'Suchfehler. Bitte versuch es nochmal.'}), 500
 
 
 @bp.route('/members/<id>/favourites', methods=['GET'])
@@ -94,7 +94,7 @@ def get_favourites(id):
         member = Member.query.get_or_404(id)
 
         if member.id != current_user.id:
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
 
         favourites = member.favourites.all()
 
@@ -117,7 +117,7 @@ def add_favourite(id):
         member = Member.query.get_or_404(id)
 
         if member.id != current_user.id:
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
 
         data = request.get_json()
         if not data:
@@ -130,7 +130,7 @@ def add_favourite(id):
         favourite = Member.query.get_or_404(favourite_id)
 
         if favourite.id == member.id:
-            return jsonify({'error': 'Sie können sich nicht selbst als Favorit hinzufügen'}), 400
+            return jsonify({'error': 'Du kannst dich nicht selbst als Favorit hinzufügen'}), 400
 
         if favourite in member.favourites.all():
             return jsonify({'error': 'Mitglied ist bereits ein Favorit'}), 400
@@ -167,7 +167,7 @@ def remove_favourite(id, fav_id):
         member = Member.query.get_or_404(id)
 
         if member.id != current_user.id:
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
 
         favourite = Member.query.get_or_404(fav_id)
 
@@ -206,7 +206,7 @@ def get_member_profile(id):
 
         # Users can only view their own profile (admins use /api/admin/members/<id>)
         if member.id != current_user.id and not current_user.is_admin():
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
 
         include_admin = current_user.is_admin()
         return jsonify(member.to_dict(include_admin_fields=include_admin))
@@ -223,7 +223,7 @@ def update_member_profile(id):
 
         # Users can only update their own profile
         if member.id != current_user.id and not current_user.is_admin():
-            return jsonify({'error': 'Sie haben keine Berechtigung für diese Aktion'}), 403
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
 
         data = request.get_json()
         if not data:
