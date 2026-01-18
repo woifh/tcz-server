@@ -47,6 +47,7 @@ class ReservationCancellationService:
 
             # Log audit trail
             from app.services.reservation import ReservationService
+            cancelled_for_someone_else = bool(cancelled_by_id and cancelled_by_id != reservation.booked_for_id)
             ReservationService.log_reservation_operation(
                 operation='cancel',
                 reservation_id=reservation.id,
@@ -56,7 +57,9 @@ class ReservationCancellationService:
                     'start_time': str(reservation.start_time),
                     'reason': reason,
                     'booked_for_id': reservation.booked_for_id,
-                    'cancelled_by_admin': cancelled_by_id and cancelled_by_id != reservation.booked_for_id
+                    'cancelled_by_id': cancelled_by_id or reservation.booked_for_id,
+                    'cancelled_by_admin': cancelled_for_someone_else,
+                    'is_admin_action': cancelled_for_someone_else
                 },
                 performed_by_id=cancelled_by_id or reservation.booked_for_id
             )

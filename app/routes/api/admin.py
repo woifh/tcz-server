@@ -715,13 +715,15 @@ def get_audit_log():
                 performer_role = log.operation_data['performer_role']
             elif log.performed_by:
                 performer_role = log.performed_by.role
+            is_admin_action = log.operation_data.get('is_admin_action', False) if log.operation_data else False
             logs.append({
                 'timestamp': log.timestamp.isoformat(),
                 'action': log.operation,
                 'user': log.performed_by.name if log.performed_by else 'System',
                 'details': format_reservation_details(log.operation, log.operation_data, log.reservation_id),
                 'type': 'reservation',
-                'performer_role': performer_role
+                'performer_role': performer_role,
+                'is_admin_action': is_admin_action
             })
 
     # Sort by timestamp descending

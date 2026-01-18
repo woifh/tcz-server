@@ -111,7 +111,9 @@ class ReservationCreationService:
                         'start_time': str(start_time),
                         'end_time': str(end_time),
                         'booked_for_id': booked_for_id,
-                        'is_short_notice': is_short_notice
+                        'booked_by_id': booked_by_id,
+                        'is_short_notice': is_short_notice,
+                        'is_admin_action': booked_by_id != booked_for_id
                     },
                     performed_by_id=booked_by_id
                 )

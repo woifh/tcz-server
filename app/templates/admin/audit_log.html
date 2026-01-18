@@ -462,8 +462,18 @@
             filteredLogs = filteredLogs.filter(log => {
                 const role = log.performer_role || 'system';
                 if (currentActorFilter === 'admin') {
+                    // For reservations, use is_admin_action flag
+                    if (log.type === 'reservation') {
+                        return log.is_admin_action === true;
+                    }
+                    // For other types (block, member, reason), check performer role
                     return role === 'administrator' || role === 'teamster';
                 } else if (currentActorFilter === 'member') {
+                    // For reservations, use is_admin_action flag (false = member action)
+                    if (log.type === 'reservation') {
+                        return log.is_admin_action === false;
+                    }
+                    // Other types with member role
                     return role === 'member';
                 } else if (currentActorFilter === 'system') {
                     return role === 'system';

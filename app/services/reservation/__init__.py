@@ -150,6 +150,10 @@ class ReservationService:
                 performer = Member.query.get(performed_by_id)
                 if performer:
                     operation_data['performer_role'] = performer.role
+                    # Only mark as admin action if performer has elevated role
+                    if 'is_admin_action' in operation_data:
+                        is_elevated_user = performer.role in ['administrator', 'teamster']
+                        operation_data['is_admin_action'] = operation_data['is_admin_action'] and is_elevated_user
 
             safe_data = serialize_for_json(operation_data) if operation_data else None
 
