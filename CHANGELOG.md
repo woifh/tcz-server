@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1] - 2026-01-19
+
+### Improved
+- Simplified temporary block implementation with cleaner code structure
+- Reduced code duplication in block suspension/restoration logic
+
 ## [4.0] - 2026-01-19
 
 ### Added

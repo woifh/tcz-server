@@ -133,16 +133,15 @@ def get_availability():
             # Check for block first (blocks take priority)
             if key in block_map:
                 block = block_map[key]
-                is_temporary = block.reason_obj.is_temporary if block.reason_obj else False
                 block_details = {
                     'reason': block.reason_obj.name if block.reason_obj else 'Unbekannt',
                     'details': block.details if block.details else '',
                     'block_id': block.id,
-                    'is_temporary': is_temporary
+                    'is_temporary': block.is_temporary_block
                 }
 
                 # For temporary blocks, include suspended reservation info if exists
-                if is_temporary and key in suspended_map and current_user.is_authenticated:
+                if block.is_temporary_block and key in suspended_map and current_user.is_authenticated:
                     suspended_res = suspended_map[key]
                     block_details['suspended_reservation'] = {
                         'booked_for': f"{suspended_res.booked_for.firstname} {suspended_res.booked_for.lastname}",
@@ -152,7 +151,7 @@ def get_availability():
 
                 court_data['occupied'].append({
                     'time': slot_time.strftime('%H:%M'),
-                    'status': 'blocked_temporary' if is_temporary else 'blocked',
+                    'status': 'blocked_temporary' if block.is_temporary_block else 'blocked',
                     'details': block_details
                 })
             # Check for reservation

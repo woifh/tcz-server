@@ -203,10 +203,8 @@ def update_batch(batch_id):
         # For temporary blocks, restore suspended reservations first
         for block in existing_blocks:
             if block.court_id in courts_to_delete:
-                # Check if the EXISTING block's reason is temporary
-                existing_is_temporary = block.reason_obj.is_temporary if block.reason_obj else False
-                if existing_is_temporary:
-                    BlockService.restore_suspended_reservations(block, current_user.id)
+                if block.is_temporary_block:
+                    BlockService.handle_suspended_reservations(block, current_user.id)
                 db.session.delete(block)
 
         # Update existing blocks (skip individual audit logs)

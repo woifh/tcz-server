@@ -12,6 +12,12 @@ import uuid
 logger = logging.getLogger(__name__)
 
 
+# Suspension fate constants
+FATE_RESTORE = 'restore'
+FATE_CANCEL = 'cancel'
+FATE_TRANSFER = 'transfer'
+
+
 class BlockService:
     """Service for managing court blocks."""
     
@@ -169,209 +175,141 @@ class BlockService:
         return conflicting_reservations
 
     @staticmethod
-    def restore_suspended_reservations(block, admin_id):
+    def _determine_suspension_fate(reservation, block_being_removed):
         """
-        Restore reservations that were suspended by a specific block.
-        Only restores if no other blocks cover the same slot.
+        Determine what happens to a suspended reservation when a block is removed.
 
         Args:
-            block: Block object being removed
-            admin_id: ID of admin performing the deletion
+            reservation: The suspended Reservation object
+            block_being_removed: The Block being deleted or modified
 
         Returns:
-            list: List of restored Reservation objects
+            tuple: (fate, context) where fate is FATE_RESTORE/FATE_CANCEL/FATE_TRANSFER
+                   and context is None, reason string, or new block_id respectively
         """
-        # Find all reservations suspended by this block
-        suspended_reservations = Reservation.query.filter(
-            Reservation.suspended_by_block_id == block.id,
-            Reservation.status == 'suspended'
+        # Check if any OTHER blocks still cover this slot
+        overlapping = Block.query.filter(
+            Block.id != block_being_removed.id,
+            Block.court_id == reservation.court_id,
+            Block.date == reservation.date,
+            Block.start_time <= reservation.start_time,
+            Block.end_time > reservation.start_time
         ).all()
 
-        restored = []
+        if not overlapping:
+            return (FATE_RESTORE, None)
 
-        for reservation in suspended_reservations:
-            # Check if any OTHER blocks still cover this slot
-            other_blocks = Block.query.filter(
-                Block.id != block.id,
-                Block.court_id == reservation.court_id,
-                Block.date == reservation.date,
-                Block.start_time <= reservation.start_time,
-                Block.end_time > reservation.start_time
-            ).all()
+        # Check for permanent blocks among overlapping
+        permanent = next((b for b in overlapping if not b.is_temporary_block), None)
+        if permanent:
+            return (FATE_CANCEL, "Storniert wegen permanenter Platzsperre")
 
-            if other_blocks:
-                # Check if any of these blocks are permanent
-                permanent_blocks = [b for b in other_blocks if not b.reason_obj.is_temporary]
-                if permanent_blocks:
-                    # Permanent block exists - cancel the reservation instead
-                    reservation.status = 'cancelled'
-                    reservation.reason = "Storniert wegen permanenter Platzsperre"
-                    reservation.suspended_by_block_id = None
-
-                    from app.services.reservation import ReservationService
-                    ReservationService.log_reservation_operation(
-                        operation='cancel',
-                        reservation_id=reservation.id,
-                        operation_data={
-                            'court_id': reservation.court_id,
-                            'date': str(reservation.date),
-                            'start_time': str(reservation.start_time),
-                            'reason': 'Permanent block placed over suspended reservation',
-                            'booked_for_id': reservation.booked_for_id,
-                            'cancelled_by_admin': True,
-                            'cancelled_by_block': True
-                        },
-                        performed_by_id=admin_id
-                    )
-
-                    try:
-                        EmailService.send_booking_cancelled(reservation, reservation.reason)
-                    except Exception as e:
-                        logger.error(f"Failed to send cancellation email for reservation {reservation.id}: {str(e)}")
-                    continue
-                else:
-                    # Other temporary blocks exist - transfer suspension to first one
-                    reservation.suspended_by_block_id = other_blocks[0].id
-                    continue
-
-            # No other blocks - restore the reservation
-            reservation.status = 'active'
-            reservation.reason = None
-            reservation.suspended_by_block_id = None
-            restored.append(reservation)
-
-            # Log restoration
-            from app.services.reservation import ReservationService
-            ReservationService.log_reservation_operation(
-                operation='restore',
-                reservation_id=reservation.id,
-                operation_data={
-                    'court_id': reservation.court_id,
-                    'date': str(reservation.date),
-                    'start_time': str(reservation.start_time),
-                    'booked_for_id': reservation.booked_for_id,
-                    'restored_after_block_removal': True,
-                    'block_id': block.id
-                },
-                performed_by_id=admin_id
-            )
-
-            # Send restoration notification
-            try:
-                EmailService.send_booking_restored(reservation)
-            except Exception as e:
-                logger.error(f"Failed to send restoration email for reservation {reservation.id}: {str(e)}")
-
-        return restored
+        # Transfer to another temporary block
+        return (FATE_TRANSFER, overlapping[0].id)
 
     @staticmethod
-    def restore_suspended_reservations_after_update(block, old_date, old_start_time, old_end_time, old_court_id, admin_id):
+    def _restore_reservation(reservation, block, admin_id):
+        """Restore a suspended reservation to active status."""
+        reservation.status = 'active'
+        reservation.reason = None
+        reservation.suspended_by_block_id = None
+
+        from app.services.reservation import ReservationService
+        ReservationService.log_reservation_operation(
+            operation='restore',
+            reservation_id=reservation.id,
+            operation_data={
+                'court_id': reservation.court_id,
+                'date': str(reservation.date),
+                'start_time': str(reservation.start_time),
+                'booked_for_id': reservation.booked_for_id,
+                'restored_after_block_removal': True,
+                'block_id': block.id
+            },
+            performed_by_id=admin_id
+        )
+
+        try:
+            EmailService.send_booking_restored(reservation)
+        except Exception as e:
+            logger.error(f"Failed to send restoration email for reservation {reservation.id}: {str(e)}")
+
+    @staticmethod
+    def _cancel_suspended_reservation(reservation, reason, admin_id):
+        """Cancel a suspended reservation (e.g., when a permanent block now covers it)."""
+        reservation.status = 'cancelled'
+        reservation.reason = reason
+        reservation.suspended_by_block_id = None
+
+        from app.services.reservation import ReservationService
+        ReservationService.log_reservation_operation(
+            operation='cancel',
+            reservation_id=reservation.id,
+            operation_data={
+                'court_id': reservation.court_id,
+                'date': str(reservation.date),
+                'start_time': str(reservation.start_time),
+                'reason': reason,
+                'booked_for_id': reservation.booked_for_id,
+                'cancelled_by_admin': True,
+                'cancelled_by_block': True
+            },
+            performed_by_id=admin_id
+        )
+
+        try:
+            EmailService.send_booking_cancelled(reservation, reason)
+        except Exception as e:
+            logger.error(f"Failed to send cancellation email for reservation {reservation.id}: {str(e)}")
+
+    @staticmethod
+    def _is_still_covered_by_block(reservation, block):
+        """Check if a reservation is still covered by the given block."""
+        return (
+            reservation.court_id == block.court_id and
+            reservation.date == block.date and
+            reservation.start_time >= block.start_time and
+            reservation.start_time < block.end_time
+        )
+
+    @staticmethod
+    def handle_suspended_reservations(block, admin_id, check_still_covered=False):
         """
-        Restore reservations that were suspended by a block but are no longer covered after an update.
+        Handle suspended reservations when a block is deleted or updated.
+
+        For each suspended reservation:
+        - If check_still_covered=True and still covered by block: skip
+        - Otherwise determine fate: restore, cancel, or transfer to another block
 
         Args:
-            block: Block object after update
-            old_date: Original block date before update
-            old_start_time: Original start time before update
-            old_end_time: Original end time before update
-            old_court_id: Original court ID before update
-            admin_id: ID of admin performing the update
+            block: Block object being removed or updated
+            admin_id: ID of admin performing the operation
+            check_still_covered: If True, skip reservations still covered by the block (for updates)
 
         Returns:
             list: List of restored Reservation objects
         """
-        # Find all reservations suspended by this block
-        suspended_reservations = Reservation.query.filter(
+        suspended = Reservation.query.filter(
             Reservation.suspended_by_block_id == block.id,
             Reservation.status == 'suspended'
         ).all()
 
         restored = []
 
-        for reservation in suspended_reservations:
-            # Check if the reservation is STILL covered by the UPDATED block
-            still_covered = (
-                reservation.court_id == block.court_id and
-                reservation.date == block.date and
-                reservation.start_time >= block.start_time and
-                reservation.start_time < block.end_time
-            )
-
-            if still_covered:
-                # Reservation is still covered by the block, don't restore
+        for reservation in suspended:
+            # For updates: skip if still covered by the updated block
+            if check_still_covered and BlockService._is_still_covered_by_block(reservation, block):
                 continue
 
-            # Check if any OTHER blocks cover this slot
-            other_blocks = Block.query.filter(
-                Block.id != block.id,
-                Block.court_id == reservation.court_id,
-                Block.date == reservation.date,
-                Block.start_time <= reservation.start_time,
-                Block.end_time > reservation.start_time
-            ).all()
+            fate, context = BlockService._determine_suspension_fate(reservation, block)
 
-            if other_blocks:
-                # Check if any of these blocks are permanent
-                permanent_blocks = [b for b in other_blocks if not b.reason_obj.is_temporary]
-                if permanent_blocks:
-                    # Permanent block exists - cancel the reservation instead
-                    reservation.status = 'cancelled'
-                    reservation.reason = "Storniert wegen permanenter Platzsperre"
-                    reservation.suspended_by_block_id = None
-
-                    from app.services.reservation import ReservationService
-                    ReservationService.log_reservation_operation(
-                        operation='cancel',
-                        reservation_id=reservation.id,
-                        operation_data={
-                            'court_id': reservation.court_id,
-                            'date': str(reservation.date),
-                            'start_time': str(reservation.start_time),
-                            'reason': 'Permanent block placed over suspended reservation',
-                            'booked_for_id': reservation.booked_for_id,
-                            'cancelled_by_admin': True,
-                            'cancelled_by_block': True
-                        },
-                        performed_by_id=admin_id
-                    )
-
-                    try:
-                        EmailService.send_booking_cancelled(reservation, reservation.reason)
-                    except Exception as e:
-                        logger.error(f"Failed to send cancellation email for reservation {reservation.id}: {str(e)}")
-                    continue
-                else:
-                    # Other temporary blocks exist - transfer suspension to first one
-                    reservation.suspended_by_block_id = other_blocks[0].id
-                    continue
-
-            # No other blocks - restore the reservation
-            reservation.status = 'active'
-            reservation.reason = None
-            reservation.suspended_by_block_id = None
-            restored.append(reservation)
-
-            # Log restoration
-            from app.services.reservation import ReservationService
-            ReservationService.log_reservation_operation(
-                operation='restore',
-                reservation_id=reservation.id,
-                operation_data={
-                    'court_id': reservation.court_id,
-                    'date': str(reservation.date),
-                    'start_time': str(reservation.start_time),
-                    'booked_for_id': reservation.booked_for_id,
-                    'restored_after_block_removal': True,
-                    'block_id': block.id
-                },
-                performed_by_id=admin_id
-            )
-
-            # Send restoration notification
-            try:
-                EmailService.send_booking_restored(reservation)
-            except Exception as e:
-                logger.error(f"Failed to send restoration email for reservation {reservation.id}: {str(e)}")
+            if fate == FATE_RESTORE:
+                BlockService._restore_reservation(reservation, block, admin_id)
+                restored.append(reservation)
+            elif fate == FATE_CANCEL:
+                BlockService._cancel_suspended_reservation(reservation, context, admin_id)
+            elif fate == FATE_TRANSFER:
+                reservation.suspended_by_block_id = context
 
         return restored
 
@@ -395,7 +333,7 @@ class BlockService:
                 return False, "Block not found"
 
             # Store old temporary status BEFORE update to handle reason transitions
-            old_is_temporary = block.reason_obj.is_temporary if block.reason_obj else False
+            old_is_temporary = block.is_temporary_block
 
             # Store old values to detect changes that affect coverage
             old_date = block.date
@@ -409,7 +347,7 @@ class BlockService:
                     setattr(block, field, value)
 
             # Check NEW temporary status AFTER update (reason may have changed)
-            new_is_temporary = block.reason_obj.is_temporary if block.reason_obj else False
+            new_is_temporary = block.is_temporary_block
 
             # Check if coverage changed (date, time, or court)
             coverage_changed = (
@@ -428,9 +366,7 @@ class BlockService:
             if coverage_changed or reason_changed:
                 # If old block was temporary, restore suspended reservations that are no longer covered
                 if old_is_temporary and coverage_changed:
-                    BlockService.restore_suspended_reservations_after_update(
-                        block, old_date, old_start_time, old_end_time, old_court_id, admin_id
-                    )
+                    BlockService.handle_suspended_reservations(block, admin_id, check_still_covered=True)
 
                 # Handle new conflicts based on NEW temporary status
                 if new_is_temporary:
@@ -509,21 +445,22 @@ class BlockService:
                 db.session.add(block)
                 blocks.append(block)
             
-            # Flush to get block IDs
+            # Flush to get block IDs and load reason relationships
             db.session.flush()
 
-            # Get reason to check if temporary
+            # Get reason for audit log (use first block's property for is_temporary check)
             reason = BlockReason.query.get(reason_id)
-            is_temporary = reason.is_temporary if reason else False
 
             # Handle conflicting reservations based on block type
             all_affected_reservations = []
             for block in blocks:
-                if is_temporary:
+                if block.is_temporary_block:
                     affected = BlockService.suspend_conflicting_reservations(block)
                 else:
                     affected = BlockService.cancel_conflicting_reservations(block)
                 all_affected_reservations.extend(affected)
+
+            is_temporary = blocks[0].is_temporary_block if blocks else False
 
             db.session.commit()
 
@@ -594,14 +531,14 @@ class BlockService:
             start_time = first_block.start_time.strftime('%H:%M') if first_block.start_time else None
             end_time = first_block.end_time.strftime('%H:%M') if first_block.end_time else None
             reason_name = first_block.reason_obj.name if first_block.reason_obj else None
-            is_temporary = first_block.reason_obj.is_temporary if first_block.reason_obj else False
+            is_temporary = first_block.is_temporary_block
             details = first_block.details
 
             # If temporary block, restore suspended reservations before deleting
             all_restored = []
             if is_temporary:
                 for block in blocks_to_delete:
-                    restored = BlockService.restore_suspended_reservations(block, admin_id)
+                    restored = BlockService.handle_suspended_reservations(block, admin_id)
                     all_restored.extend(restored)
 
             # Delete all blocks in the batch

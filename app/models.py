@@ -506,7 +506,12 @@ class Block(db.Model):
     def reason(self):
         """Return reason name for backward compatibility."""
         return self.reason_obj.name if self.reason_obj else None
-    
+
+    @property
+    def is_temporary_block(self):
+        """Check if this block uses a temporary reason."""
+        return bool(self.reason_obj and self.reason_obj.is_temporary)
+
     def __repr__(self):
         return f'<Block Court {self.court_id} on {self.date} ({self.reason})>'
 
@@ -523,7 +528,7 @@ class Block(db.Model):
             'reason': self.reason,
             'reason_id': self.reason_id,
             'reason_name': self.reason_obj.name if self.reason_obj else None,
-            'is_temporary': self.reason_obj.is_temporary if self.reason_obj else False,
+            'is_temporary': self.is_temporary_block,
             'details': self.details,
             'created_by': self.created_by.name if self.created_by else None,
             'created_by_name': self.created_by.name if self.created_by else None,
