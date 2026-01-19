@@ -5,6 +5,7 @@ from flask_login import login_user, logout_user, current_user
 import jwt
 from app import csrf
 from app.models import Member
+from app.decorators.auth import jwt_or_session_required
 from app.utils.validators import validate_email_address, validate_string_length, ValidationError
 from app.constants.messages import ErrorMessages
 
@@ -129,11 +130,9 @@ def verify_email(token):
 
 
 @bp.route('/resend-verification', methods=['POST'])
+@jwt_or_session_required
 def resend_verification():
     """Resend verification email (for logged-in unverified users)."""
-    if not current_user.is_authenticated:
-        return jsonify({'error': 'Authentifizierung erforderlich'}), 401
-
     if current_user.email_verified:
         return jsonify({'error': 'E-Mail bereits bestätigt'}), 400
 

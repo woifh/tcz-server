@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 ### Improved
 - Email address changes now require re-verification
 - Audit log now properly shows email verification actions with German labels and details
+- Simplified authentication check for resend verification endpoint
 
 ## [3.15] - 2026-01-18
 
