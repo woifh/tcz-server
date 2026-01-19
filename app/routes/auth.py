@@ -14,6 +14,7 @@ def generate_access_token(member):
     payload = {
         'user_id': member.id,
         'email': member.email,
+        'email_verified': member.email_verified,
         'exp': datetime.now(timezone.utc) + current_app.config['JWT_ACCESS_TOKEN_EXPIRES']
     }
     return jwt.encode(
@@ -93,7 +94,8 @@ def login_api():
                 'firstname': member.firstname,
                 'lastname': member.lastname,
                 'email': member.email,
-                'name': member.name
+                'name': member.name,
+                'email_verified': member.email_verified
             },
             'access_token': generate_access_token(member)
         })
@@ -107,3 +109,43 @@ def logout():
     logout_user()
     flash('Erfolgreich abgemeldet', 'info')
     return redirect(url_for('dashboard.index'))
+
+
+@bp.route('/verify-email/<token>')
+def verify_email(token):
+    """Verify email address using token from verification link."""
+    from app.services.verification_service import VerificationService
+
+    success, message, member = VerificationService.verify_member_email(token)
+
+    if success:
+        flash(message, 'success')
+        if current_user.is_authenticated:
+            return redirect(url_for('dashboard.index'))
+        return redirect(url_for('auth.login'))
+    else:
+        flash(message, 'error')
+        return redirect(url_for('auth.login'))
+
+
+@bp.route('/resend-verification', methods=['POST'])
+def resend_verification():
+    """Resend verification email (for logged-in unverified users)."""
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Authentifizierung erforderlich'}), 401
+
+    if current_user.email_verified:
+        return jsonify({'error': 'E-Mail bereits bestätigt'}), 400
+
+    from app.services.verification_service import VerificationService
+
+    success = VerificationService.send_verification_email(
+        current_user,
+        triggered_by='resend',
+        admin_id=None  # Self-service
+    )
+
+    if success:
+        return jsonify({'message': 'Bestätigungs-E-Mail wurde gesendet'})
+    else:
+        return jsonify({'error': 'E-Mail konnte nicht gesendet werden'}), 500

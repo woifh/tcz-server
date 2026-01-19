@@ -396,3 +396,34 @@ def confirm_payment():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ----- Email Verification Routes -----
+
+@bp.route('/members/<id>/resend-verification', methods=['POST'])
+@jwt_or_session_required
+def resend_verification_email(id):
+    """Resend verification email to a member (admin only)."""
+    if not current_user.is_admin():
+        return jsonify({'error': 'Admin-Berechtigung erforderlich'}), 403
+
+    try:
+        member = Member.query.get_or_404(id)
+
+        if member.email_verified:
+            return jsonify({'error': 'E-Mail bereits bestätigt'}), 400
+
+        from app.services.verification_service import VerificationService
+
+        success = VerificationService.send_verification_email(
+            member,
+            triggered_by='resend',
+            admin_id=current_user.id
+        )
+
+        if success:
+            return jsonify({'message': 'Bestätigungs-E-Mail wurde gesendet'})
+        else:
+            return jsonify({'error': 'E-Mail konnte nicht gesendet werden'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

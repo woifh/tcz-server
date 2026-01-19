@@ -36,7 +36,7 @@ npm run watch:css     # Watch mode
 
 ## Project Architecture
 
-This is a Flask web application for tennis court reservation management (TCZ - Tennis Club Zorneding).
+This is a Flask web application for tennis court reservation management (TCZ - Tennis Club Zellerndorf).
 
 ### Backend Structure
 

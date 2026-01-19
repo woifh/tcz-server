@@ -104,6 +104,27 @@
     {% endif %}
 {% endif %}
 
+<!-- Email verification reminder -->
+{% if current_user.is_authenticated and not current_user.email_verified %}
+<div class="mb-4 bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <span class="material-icons text-orange-600 mr-3">email</span>
+            <div>
+                <p class="text-orange-800 font-semibold">E-Mail-Adresse nicht bestätigt</p>
+                <p class="text-orange-700 text-sm">Du erhältst keine E-Mail-Benachrichtigungen zu deinen Buchungen, bis du deine E-Mail-Adresse bestätigst.</p>
+            </div>
+        </div>
+        <button onclick="resendVerification()"
+                id="resend-verification-btn"
+                class="ml-4 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded transition-colors flex items-center gap-2 whitespace-nowrap">
+            <span class="material-icons text-sm">send</span>
+            E-Mail erneut senden
+        </button>
+    </div>
+</div>
+{% endif %}
+
 <div class="bg-white rounded-lg shadow-md p-6" x-data="dashboard()" x-init="init()">
     <div class="flex justify-between items-center mb-6">
         <h2 class="hidden lg:flex text-2xl font-bold items-center gap-2">
@@ -443,6 +464,41 @@ async function confirmPayment() {
         }
     } catch (error) {
         showToast('Fehler bei der Zahlungsbestätigung', 'error');
+    }
+}
+
+async function resendVerification() {
+    const btn = document.getElementById('resend-verification-btn');
+
+    // Disable button during request
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-icons text-sm animate-spin">refresh</span> Wird gesendet...';
+
+    try {
+        const response = await fetch('/auth/resend-verification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showToast('Bestätigungs-E-Mail wurde gesendet! Bitte prüfe dein Postfach.');
+            btn.innerHTML = '<span class="material-icons text-sm">check</span> E-Mail gesendet';
+            btn.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+            btn.classList.add('bg-green-600');
+        } else {
+            showToast(data.error || 'Fehler beim Senden', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons text-sm">send</span> E-Mail erneut senden';
+        }
+    } catch (error) {
+        showToast('Fehler beim Senden der E-Mail', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons text-sm">send</span> E-Mail erneut senden';
     }
 }
 

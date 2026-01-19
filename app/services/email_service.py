@@ -70,6 +70,25 @@ Grund: {reason}
 
 Viele Grüße
 Dein TCZ-Team'''
+        },
+        'email_verification': {
+            'subject': 'Bitte bestätige deine E-Mail-Adresse - TC Zellerndorf',
+            'body': '''Hallo {recipient_name},
+
+willkommen beim Tennisclub Zellerndorf!
+
+Bitte bestätige deine E-Mail-Adresse, indem du auf den folgenden Link klickst:
+
+{verification_url}
+
+Der Link ist 48 Stunden gültig.
+
+Wichtig: Solange deine E-Mail-Adresse nicht bestätigt ist, erhältst du keine Benachrichtigungen zu deinen Buchungen.
+
+Falls du diese E-Mail nicht erwartet hast, kannst du sie ignorieren.
+
+Viele Grüße
+Dein TCZ-Team'''
         }
     }
     
@@ -154,7 +173,8 @@ Dein TCZ-Team'''
     @staticmethod
     def _should_notify_member(member, is_own_booking):
         """
-        Check if member should receive notification based on their preferences.
+        Check if member should receive notification based on their preferences
+        and email verification status.
 
         Args:
             member: Member object
@@ -163,6 +183,10 @@ Dein TCZ-Team'''
         Returns:
             bool: True if member should receive notification
         """
+        # Skip if email is not verified
+        if not member.email_verified:
+            logger.info(f"Skipping notification to {member.email} (email not verified)")
+            return False
         if not member.notifications_enabled:
             return False
         if is_own_booking:
@@ -275,11 +299,11 @@ Dein TCZ-Team'''
     def send_admin_override(reservation, reason):
         """
         Send admin override notification to both parties.
-        
+
         Args:
             reservation: Reservation object
             reason: Override reason
-            
+
         Returns:
             bool: True if both emails sent successfully
         """
@@ -287,4 +311,30 @@ Dein TCZ-Team'''
             reservation,
             'admin_override',
             {'reason': reason}
+        )
+
+    @staticmethod
+    def send_verification_email(member, verification_url):
+        """
+        Send email verification link to a member.
+
+        Note: This email is sent regardless of email_verified status,
+        as it's the mechanism to verify the email address.
+
+        Args:
+            member: Member object
+            verification_url: Full verification URL
+
+        Returns:
+            bool: True if email was sent successfully
+        """
+        template = EmailService.TEMPLATES['email_verification']
+
+        return EmailService._send_email(
+            member.email,
+            template['subject'],
+            template['body'].format(
+                recipient_name=member.firstname,
+                verification_url=verification_url
+            )
         )

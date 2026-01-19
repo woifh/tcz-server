@@ -143,6 +143,18 @@ class MemberService:
 
             logger.info(f"Member created: {member.id} ({email}) by admin {admin_id}")
 
+            # Send verification email to new member
+            from app.services.verification_service import VerificationService
+            try:
+                VerificationService.send_verification_email(
+                    member,
+                    triggered_by='member_creation',
+                    admin_id=admin_id
+                )
+            except Exception as email_error:
+                # Don't fail member creation if email fails
+                logger.error(f"Failed to send verification email for new member: {email_error}")
+
             return member, None
 
         except Exception as e:
@@ -238,6 +250,7 @@ class MemberService:
                     return None, str(e)
 
             # Update email
+            email_changed = False
             if 'email' in updates:
                 try:
                     new_email = validate_email_address(updates['email'], 'E-Mail').lower()
@@ -251,6 +264,11 @@ class MemberService:
                             return None, ErrorMessages.MEMBER_EMAIL_ALREADY_EXISTS
                         changes['email'] = {'old': member.email, 'new': new_email}
                         member.email = new_email
+                        email_changed = True
+
+                        # Reset email verification when email changes
+                        from app.services.verification_service import VerificationService
+                        VerificationService.reset_email_verification(member, admin_id)
                 except ValidationError:
                     return None, ErrorMessages.MEMBER_INVALID_EMAIL
 
@@ -397,6 +415,18 @@ class MemberService:
             db.session.commit()
 
             logger.info(f"Member updated: {member_id} by {admin_id}, changes: {list(changes.keys())}")
+
+            # Send verification email if email was changed
+            if email_changed:
+                from app.services.verification_service import VerificationService
+                try:
+                    VerificationService.send_verification_email(
+                        member,
+                        triggered_by='email_change',
+                        admin_id=admin_id
+                    )
+                except Exception as email_error:
+                    logger.error(f"Failed to send verification email after email change: {email_error}")
 
             return member, None
 

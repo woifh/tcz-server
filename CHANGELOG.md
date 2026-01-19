@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.16] - 2026-01-19
+
+### Added
+- Email verification for members - unverified addresses receive no notifications
+- Verification badge shown on profile page with resend option
+- Admins can trigger verification emails for members
+- New members automatically receive verification email on creation
+
+### Improved
+- Email address changes now require re-verification
+
 ## [3.15] - 2026-01-18
 
 ### Fixed

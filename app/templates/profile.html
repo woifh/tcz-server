@@ -46,6 +46,25 @@
         <div>
             <label class="block text-gray-700 font-semibold mb-2">E-Mail</label>
             <input type="email" id="profile-email" class="w-full border border-gray-300 rounded px-3 py-2" autocomplete="off" required>
+            <!-- Email verification badge -->
+            <div id="email-verification-badge" class="mt-2 hidden">
+                <!-- Verified -->
+                <div id="email-verified" class="hidden flex items-center gap-1 text-green-600 text-sm">
+                    <span class="material-icons text-base">verified</span>
+                    <span>Bestätigt</span>
+                </div>
+                <!-- Not verified -->
+                <div id="email-not-verified" class="hidden flex items-center justify-between">
+                    <span class="flex items-center gap-1 text-orange-600 text-sm">
+                        <span class="material-icons text-base">pending</span>
+                        <span>Nicht bestätigt</span>
+                    </span>
+                    <button type="button" onclick="resendVerificationEmail()" id="resend-btn"
+                            class="text-blue-600 hover:text-blue-800 text-sm underline">
+                        E-Mail erneut senden
+                    </button>
+                </div>
+            </div>
         </div>
         <div>
             <label class="block text-gray-700 font-semibold mb-2">Telefon</label>
@@ -244,6 +263,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Update state based on email validity
         updateNotificationSectionState();
 
+        // Show email verification badge
+        updateEmailVerificationBadge(member.email_verified);
+
         // Show form, hide loading
         loadingDiv.classList.add('hidden');
         form.classList.remove('hidden');
@@ -310,6 +332,59 @@ document.addEventListener('DOMContentLoaded', async function() {
             showToast('Fehler beim Speichern des Profils', 'error');
         }
     });
+
+    // Function to update email verification badge
+    function updateEmailVerificationBadge(isVerified) {
+        const badgeContainer = document.getElementById('email-verification-badge');
+        const verifiedBadge = document.getElementById('email-verified');
+        const notVerifiedBadge = document.getElementById('email-not-verified');
+
+        badgeContainer.classList.remove('hidden');
+
+        if (isVerified) {
+            verifiedBadge.classList.remove('hidden');
+            notVerifiedBadge.classList.add('hidden');
+        } else {
+            verifiedBadge.classList.add('hidden');
+            notVerifiedBadge.classList.remove('hidden');
+        }
+    }
 });
+
+// Function to resend verification email
+async function resendVerificationEmail() {
+    const btn = document.getElementById('resend-btn');
+    const originalText = btn.textContent;
+
+    btn.disabled = true;
+    btn.textContent = 'Wird gesendet...';
+
+    try {
+        const response = await fetch('/auth/resend-verification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showToast('Bestätigungs-E-Mail wurde gesendet! Bitte prüfe dein Postfach.');
+            btn.textContent = 'E-Mail gesendet';
+            btn.classList.remove('text-blue-600', 'hover:text-blue-800');
+            btn.classList.add('text-green-600');
+        } else {
+            showToast(data.error || 'Fehler beim Senden', 'error');
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    } catch (error) {
+        showToast('Fehler beim Senden der E-Mail', 'error');
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
 </script>
 {% endblock %}

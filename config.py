@@ -81,7 +81,11 @@ class Config:
 
     # Development email redirect - all emails in dev mode go to this address
     DEV_EMAIL_RECIPIENT = os.environ.get('DEV_EMAIL_RECIPIENT')
-    
+
+    # Email verification settings
+    # Token expiration in seconds (default: 48 hours)
+    EMAIL_VERIFICATION_EXPIRATION = int(os.environ.get('EMAIL_VERIFICATION_EXPIRATION') or 48 * 60 * 60)
+
     # Application settings
     COURTS_COUNT = 6
     BOOKING_START_HOUR = 8

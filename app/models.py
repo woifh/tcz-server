@@ -58,7 +58,11 @@ class Member(db.Model, UserMixin):
     notify_other_bookings = db.Column(db.Boolean, nullable=False, default=True)
     notify_court_blocked = db.Column(db.Boolean, nullable=False, default=True)
     notify_booking_overridden = db.Column(db.Boolean, nullable=False, default=True)
-    
+
+    # Email verification
+    email_verified = db.Column(db.Boolean, nullable=False, default=False)
+    email_verified_at = db.Column(db.DateTime, nullable=True)
+
     @property
     def name(self):
         """Return full name for backward compatibility."""
@@ -165,6 +169,10 @@ class Member(db.Model, UserMixin):
             return False
         return not self.payment_confirmation_requested
 
+    def is_email_verified(self):
+        """Check if member's email address has been verified."""
+        return self.email_verified
+
     def __repr__(self):
         return f'<Member {self.name} ({self.email})>'
 
@@ -175,7 +183,8 @@ class Member(db.Model, UserMixin):
             'firstname': self.firstname,
             'lastname': self.lastname,
             'name': self.name,
-            'email': self.email
+            'email': self.email,
+            'email_verified': self.email_verified
         }
         if include_admin_fields:
             data.update({
@@ -185,6 +194,8 @@ class Member(db.Model, UserMixin):
                 'fee_paid': self.fee_paid,
                 'payment_confirmation_requested': self.payment_confirmation_requested,
                 'payment_confirmation_requested_at': self.payment_confirmation_requested_at.isoformat() if self.payment_confirmation_requested_at else None,
+                'email_verified': self.email_verified,
+                'email_verified_at': self.email_verified_at.isoformat() if self.email_verified_at else None,
                 'phone': self.phone,
                 'street': self.street,
                 'city': self.city,
@@ -374,7 +385,13 @@ class MemberAuditLog(db.Model):
     def __init__(self, **kwargs):
         """Initialize audit log with validation."""
         super(MemberAuditLog, self).__init__(**kwargs)
-        valid_operations = ['create', 'update', 'delete', 'role_change', 'deactivate', 'reactivate', 'membership_change', 'payment_update', 'payment_confirmation', 'payment_confirmation_request', 'payment_confirmation_reject', 'add_favourite', 'remove_favourite', 'csv_import', 'annual_fee_reset']
+        valid_operations = [
+            'create', 'update', 'delete', 'role_change', 'deactivate', 'reactivate',
+            'membership_change', 'payment_update', 'payment_confirmation',
+            'payment_confirmation_request', 'payment_confirmation_reject',
+            'add_favourite', 'remove_favourite', 'csv_import', 'annual_fee_reset',
+            'email_verification_sent', 'email_verified', 'email_verification_reset'
+        ]
         if self.operation and self.operation not in valid_operations:
             raise ValueError(f"Operation must be one of: {', '.join(valid_operations)}")
 
