@@ -210,7 +210,10 @@
             'add_favourite': { label: 'Favorit +', class: 'bg-pink-100 text-pink-800' },
             'remove_favourite': { label: 'Favorit -', class: 'bg-pink-100 text-pink-800' },
             'csv_import': { label: 'CSV-Import', class: 'bg-cyan-100 text-cyan-800' },
-            'annual_fee_reset': { label: 'Beitrags-Reset', class: 'bg-amber-100 text-amber-800' }
+            'annual_fee_reset': { label: 'Beitrags-Reset', class: 'bg-amber-100 text-amber-800' },
+            'email_verification_sent': { label: 'E-Mail-Bestätigung gesendet', class: 'bg-blue-100 text-blue-800' },
+            'email_verified': { label: 'E-Mail bestätigt', class: 'bg-green-100 text-green-800' },
+            'email_verification_reset': { label: 'E-Mail-Bestätigung zurückgesetzt', class: 'bg-orange-100 text-orange-800' }
         };
         return actionMap[action] || { label: action, class: 'bg-gray-100 text-gray-800' };
     }
@@ -261,7 +264,10 @@
         'is_active': 'Aktiv',
         'old': 'Vorher',
         'new': 'Nachher',
-        'changes': 'Änderungen'
+        'changes': 'Änderungen',
+        'triggered_by': 'Ausgelöst durch',
+        'method': 'Methode',
+        'previous_verified_at': 'Zuvor bestätigt am'
     };
 
     // Role translations
@@ -359,6 +365,36 @@
                 }
                 if (details.details) {
                     lines.push(`<div><span class="font-medium text-gray-700">Details:</span> ${escapeHtml(details.details)}</div>`);
+                }
+                lines.push('</div>');
+                return lines.join('');
+            }
+
+            // Handle email verification actions
+            if (action === 'email_verification_sent' || action === 'email_verified' || action === 'email_verification_reset') {
+                lines.push('<div class="space-y-0.5">');
+                if (details.member_name) {
+                    lines.push(`<div><span class="font-medium text-gray-700">Mitglied:</span> ${escapeHtml(details.member_name)}</div>`);
+                }
+                if (details.email) {
+                    lines.push(`<div><span class="font-medium text-gray-700">E-Mail:</span> ${escapeHtml(details.email)}</div>`);
+                }
+                if (details.triggered_by) {
+                    const triggerLabels = {
+                        'member_creation': 'Mitglied erstellt',
+                        'resend': 'Erneut gesendet',
+                        'admin_triggered': 'Durch Admin',
+                        'email_change': 'E-Mail geändert'
+                    };
+                    lines.push(`<div><span class="font-medium text-gray-700">Ausgelöst durch:</span> ${escapeHtml(triggerLabels[details.triggered_by] || details.triggered_by)}</div>`);
+                }
+                if (details.method) {
+                    const methodLabels = { 'link': 'per Link' };
+                    lines.push(`<div><span class="font-medium text-gray-700">Methode:</span> ${escapeHtml(methodLabels[details.method] || details.method)}</div>`);
+                }
+                if (details.reason) {
+                    const reasonLabels = { 'email_changed': 'E-Mail-Adresse geändert' };
+                    lines.push(`<div><span class="font-medium text-gray-700">Grund:</span> ${escapeHtml(reasonLabels[details.reason] || details.reason)}</div>`);
                 }
                 lines.push('</div>');
                 return lines.join('');

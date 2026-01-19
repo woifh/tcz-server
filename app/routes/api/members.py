@@ -417,7 +417,7 @@ def resend_verification_email(id):
 
         success = VerificationService.send_verification_email(
             member,
-            triggered_by='resend',
+            triggered_by='admin_triggered',
             admin_id=current_user.id
         )
 

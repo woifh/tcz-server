@@ -209,3 +209,8 @@ This codebase prioritizes flow, clarity, and fast iteration.
 - **When in doubt, ask the user** - don't guess or assume; clarify before proceeding
 - **Respect software development principles** - follow SOLID, DRY, KISS
 - **Never mention Claude Code** - no references to Claude, AI, or this tool in changelogs, commits, or any project files
+- **Audit log completeness** - When adding features that create new audit log operations:
+  1. Add the operation to `valid_operations` in `app/models.py` (MemberAuditLog.__init__)
+  2. Add German label mapping in `app/templates/admin/audit_log.html` (getActionBadge actionMap)
+  3. Add detail field labels in `app/templates/admin/audit_log.html` (fieldLabels object)
+  4. Add custom formatting in `formatDetails()` if the operation has structured data

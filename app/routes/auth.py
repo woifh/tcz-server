@@ -142,7 +142,7 @@ def resend_verification():
     success = VerificationService.send_verification_email(
         current_user,
         triggered_by='resend',
-        admin_id=None  # Self-service
+        admin_id=current_user.id  # Show member name in audit log
     )
 
     if success:

@@ -210,6 +210,45 @@ def format_member_details(operation, data, member_id=None):
         member_name = data.get('member_name', name)
         return f"Zahlungsbestätigung abgelehnt: {member_name}"
 
+    elif operation == 'email_verification_sent':
+        member_name = data.get('member_name', name)
+        email = data.get('email', '')
+        triggered_by = data.get('triggered_by', '')
+        trigger_map = {
+            'member_creation': 'Mitglied erstellt',
+            'resend': 'Erneut gesendet',
+            'admin_triggered': 'Durch Admin',
+            'email_change': 'E-Mail geändert'
+        }
+        trigger_text = trigger_map.get(triggered_by, triggered_by)
+        result = f"E-Mail-Bestätigung gesendet an: {member_name}"
+        if email:
+            result += f" ({email})"
+        if trigger_text:
+            result += f" - {trigger_text}"
+        return result
+
+    elif operation == 'email_verified':
+        member_name = data.get('member_name', name)
+        email = data.get('email', '')
+        result = f"E-Mail bestätigt: {member_name}"
+        if email:
+            result += f" ({email})"
+        return result
+
+    elif operation == 'email_verification_reset':
+        member_name = data.get('member_name', name)
+        email = data.get('email', '')
+        reason = data.get('reason', '')
+        reason_map = {'email_changed': 'E-Mail-Adresse geändert'}
+        reason_text = reason_map.get(reason, reason)
+        result = f"E-Mail-Bestätigung zurückgesetzt: {member_name}"
+        if email:
+            result += f" ({email})"
+        if reason_text:
+            result += f" - {reason_text}"
+        return result
+
     return '-'
 
 
