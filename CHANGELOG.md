@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [4.3] - 2026-01-20
 
 ### Fixed
-- Member search now supports multi-word queries (e.g., "Marie A" finds "Marie Altmann")
+- Member search now supports multi-word queries
 
 ## [4.2] - 2026-01-20
 
