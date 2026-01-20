@@ -259,6 +259,12 @@ export function dashboard() {
                 const reservation = slot.reservation || slot.details;
                 const reservationId = reservation.reservation_id || reservation.id;
                 this.cancelReservation(reservationId);
+            } else if (slot.status === 'blocked_temporary' && this.canCancelSlot(slot)) {
+                // Handle suspended reservation cancellation
+                const suspended = slot.details?.suspended_reservation;
+                if (suspended) {
+                    this.cancelReservation(suspended.reservation_id || suspended.id);
+                }
             }
         },
 
@@ -275,10 +281,20 @@ export function dashboard() {
                 const time = this.timeSlots[timeIndex];
                 this.openBookingModal(courtIndex + 1, time);
             } else if (slot.canCancel) {
-                const reservation = slot.details;
-                const reservationId = reservation?.reservation_id || reservation?.id;
-                if (reservationId) {
-                    this.cancelReservation(reservationId);
+                // For suspended reservations, the ID is in suspended_reservation
+                const suspended = slot.details?.suspended_reservation;
+                if (suspended) {
+                    const reservationId = suspended.reservation_id || suspended.id;
+                    if (reservationId) {
+                        this.cancelReservation(reservationId);
+                    }
+                } else {
+                    // Regular reservation
+                    const reservation = slot.details;
+                    const reservationId = reservation?.reservation_id || reservation?.id;
+                    if (reservationId) {
+                        this.cancelReservation(reservationId);
+                    }
                 }
             }
         },
@@ -371,7 +387,9 @@ export function dashboard() {
             } else if (slot.status === 'blocked_temporary') {
                 // Temporary block - yellow/amber color with dark text for readability
                 classes += ' bg-yellow-400 text-yellow-900 min-h-16';
-                if (isPast) {
+                if (!isPast && this.isAuthenticated && this.canCancelSlot(slot)) {
+                    classes += ' cursor-pointer hover:opacity-80';
+                } else if (isPast) {
                     classes += ' opacity-75';
                 }
             } else if (slot.status === 'blocked') {
@@ -389,22 +407,39 @@ export function dashboard() {
             if (!this.isAuthenticated) {
                 return false;
             }
-            
+
+            // Handle suspended reservations in temporary blocks
+            if (slot.status === 'blocked_temporary') {
+                const suspended = slot.details?.suspended_reservation;
+                if (!suspended) {
+                    return false;
+                }
+                // Short-notice bookings can never be cancelled, even when suspended
+                if (suspended.is_short_notice) {
+                    return false;
+                }
+                // User can cancel their suspended non-short-notice reservation
+                return this.currentUserId && (
+                    suspended.booked_for_id === this.currentUserId ||
+                    suspended.booked_by_id === this.currentUserId
+                );
+            }
+
             if (slot.status !== 'reserved' && slot.status !== 'short_notice') {
                 return false;
             }
-            
+
             // Handle both test format (reservation) and production format (details)
             const reservation = slot.reservation || slot.details;
             if (!reservation) {
                 return false;
             }
-            
+
             // Short notice bookings cannot be cancelled (per business rules)
             if (slot.status === 'short_notice' || reservation.is_short_notice) {
                 return false;
             }
-            
+
             // User can cancel if they booked it or if it's booked for them
             return this.currentUserId && (
                 reservation.booked_for_id === this.currentUserId ||

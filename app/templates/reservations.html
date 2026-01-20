@@ -43,6 +43,11 @@
                                         ⚠ Vorübergehend gesperrt
                                     </span>
                                 </template>
+                                <template x-if="reservation.is_short_notice">
+                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                        Kurzfristige Buchung
+                                    </span>
+                                </template>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap" x-text="formatDate(reservation.date)"></td>
                             <td class="px-6 py-4 whitespace-nowrap" x-text="`${reservation.start_time} - ${reservation.end_time}`"></td>
@@ -50,6 +55,7 @@
                             <td class="px-6 py-4 whitespace-nowrap" x-text="reservation.booked_by"></td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
+                                    <!-- Short-notice bookings can never be cancelled, even when suspended -->
                                     <button x-show="!reservation.is_short_notice"
                                         @click="cancelReservation(reservation.id)"
                                         :disabled="cancelling === reservation.id"
@@ -68,6 +74,7 @@
                                             </svg>
                                         </template>
                                     </button>
+                                    <!-- Show "not cancellable" for all short-notice bookings -->
                                     <span x-show="reservation.is_short_notice"
                                           class="text-gray-500 text-sm">
                                         Nicht stornierbar
@@ -80,7 +87,7 @@
             </table>
         </div>
     </template>
-    
+
     <!-- Empty State -->
     <template x-if="!loading && !error && reservations.length === 0">
         <p class="text-gray-600">Du hast gerade keine aktiven Buchungen.</p>
@@ -114,12 +121,18 @@
                                             ⚠ Vorübergehend gesperrt
                                         </span>
                                     </template>
+                                    <template x-if="reservation.is_short_notice">
+                                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                            Kurzfristige Buchung
+                                        </span>
+                                    </template>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap" x-text="formatDate(reservation.date)"></td>
                                 <td class="px-6 py-4 whitespace-nowrap" x-text="`${reservation.start_time} - ${reservation.end_time}`"></td>
                                 <td class="px-6 py-4 whitespace-nowrap" x-text="reservation.booked_for"></td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
+                                        <!-- Short-notice bookings can never be cancelled, even when suspended -->
                                         <button x-show="!reservation.is_short_notice"
                                             @click="cancelReservation(reservation.id)"
                                             :disabled="cancelling === reservation.id"
@@ -138,6 +151,7 @@
                                                 </svg>
                                             </template>
                                         </button>
+                                        <!-- Show "not cancellable" for all short-notice bookings -->
                                         <span x-show="reservation.is_short_notice"
                                               class="text-gray-500 text-sm">
                                             Nicht stornierbar

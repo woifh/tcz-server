@@ -266,13 +266,13 @@
                                     <p class="text-xs text-yellow-700 mt-1" x-text="reservation.reason"></p>
                                 </div>
                             </template>
-                            <span x-show="reservation.is_short_notice && !reservation.is_suspended"
+                            <span x-show="reservation.is_short_notice"
                                   class="inline-block mt-1 px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
                                 Kurzfristige Buchung
                             </span>
                         </div>
-                        <!-- Cancel button: show for suspended OR non-short-notice active -->
-                        <button x-show="reservation.is_suspended || !reservation.is_short_notice"
+                        <!-- Short-notice bookings can never be cancelled, even when suspended -->
+                        <button x-show="!reservation.is_short_notice"
                                 @click="cancelReservation(reservation.id)"
                                 class="text-red-600 hover:text-red-900 p-1"
                                 title="Stornieren">
@@ -280,7 +280,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </button>
-                        <span x-show="reservation.is_short_notice && !reservation.is_suspended"
+                        <span x-show="reservation.is_short_notice"
                               class="text-gray-500 text-sm">
                             Nicht stornierbar
                         </span>
@@ -314,17 +314,27 @@
         </div>
         <div class="space-y-3">
             <template x-for="reservation in bookingsForOthers" :key="reservation.id">
-                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                <div :class="reservation.is_suspended ? 'bg-yellow-50 border-l-4 border-yellow-400' : 'bg-white'" class="rounded-lg p-4 border border-gray-200">
                     <div class="flex justify-between items-start">
                         <div>
                             <h4 class="font-semibold" x-text="`Platz ${reservation.court_number}`"></h4>
                             <p class="text-sm text-gray-600" x-text="`${formatDate(reservation.date)} • ${reservation.start_time} - ${reservation.end_time}`"></p>
                             <p class="text-sm text-gray-500" x-text="`Gebucht für: ${reservation.booked_for}`"></p>
+                            <!-- Suspended badge -->
+                            <template x-if="reservation.is_suspended">
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        ⚠ Vorübergehend gesperrt
+                                    </span>
+                                    <p class="text-xs text-yellow-700 mt-1" x-text="reservation.reason"></p>
+                                </div>
+                            </template>
                             <span x-show="reservation.is_short_notice"
                                   class="inline-block mt-1 px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
                                 Kurzfristige Buchung
                             </span>
                         </div>
+                        <!-- Short-notice bookings can never be cancelled, even when suspended -->
                         <button x-show="!reservation.is_short_notice"
                                 @click="cancelReservation(reservation.id)"
                                 class="text-red-600 hover:text-red-900 p-1"

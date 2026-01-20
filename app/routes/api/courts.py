@@ -146,7 +146,9 @@ def get_availability():
                     block_details['suspended_reservation'] = {
                         'booked_for': f"{suspended_res.booked_for.firstname} {suspended_res.booked_for.lastname}",
                         'booked_for_id': suspended_res.booked_for_id,
-                        'reservation_id': suspended_res.id
+                        'booked_by_id': suspended_res.booked_by_id,
+                        'reservation_id': suspended_res.id,
+                        'is_short_notice': suspended_res.is_short_notice
                     }
 
                 court_data['occupied'].append({

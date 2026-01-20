@@ -389,13 +389,13 @@ class ValidationService:
             if not reservation:
                 return False, "Buchung nicht gefunden"
 
-            # Suspended reservations can be cancelled at any time without time restrictions
-            if reservation.status == 'suspended':
-                return True, ""
-
-            # Short notice bookings can never be cancelled
+            # Short notice bookings can NEVER be cancelled, even when suspended
             if reservation.is_short_notice:
                 return False, error_messages['SHORT_NOTICE_NO_CANCEL']
+
+            # Suspended (non-short-notice) reservations can be cancelled at any time
+            if reservation.status == 'suspended':
+                return True, ""
 
             reservation_datetime = datetime.combine(reservation.date, reservation.start_time)
             time_until_start = reservation_datetime - berlin_time

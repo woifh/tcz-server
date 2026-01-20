@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.2] - 2026-01-20
+
+### Fixed
+- Short-notice bookings can no longer be cancelled, even when suspended
+- Suspended bookings now show proper styling in "Buchungen für andere" section
+- Court grid no longer allows clicking on suspended short-notice bookings
+
 ## [4.1] - 2026-01-19
 
 ### Improved
