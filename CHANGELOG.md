@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 - Past reservations on current day now visible after temporary block removal
 - German grammar correction: "Du hat" → "Du hast" in booking error messages
 - Error messages now clear when selecting a different member in booking modal
+- Admin member search now supports multi-word queries
 
 ## [4.3] - 2026-01-20
 

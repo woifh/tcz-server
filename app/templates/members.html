@@ -60,9 +60,11 @@ function membersList() {
             // Then apply search filter
             const query = this.filterQuery.toLowerCase().trim();
             if (query) {
-                results = results.filter(member =>
-                    member.name.toLowerCase().includes(query)
-                );
+                const tokens = query.split(/\s+/);
+                results = results.filter(member => {
+                    const name = member.name.toLowerCase();
+                    return tokens.every(token => name.includes(token));
+                });
             }
 
             this.filteredMembers = results;
