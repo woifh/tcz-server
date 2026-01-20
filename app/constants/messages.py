@@ -73,11 +73,14 @@ class ErrorMessages:
     MEMBER_FEE_UNPAID_BOOKING_WARNING = "Hinweis: Dein Mitgliedsbeitrag ist noch nicht bezahlt."
 
     # Payment deadline errors (for others - uses {name} placeholder)
-    PAYMENT_DEADLINE_PASSED = "Die Zahlungsfrist für {name} ist abgelaufen. Bitte den Beitrag zahlen, um wieder buchen zu können."
-    PAYMENT_CONFIRMATION_PENDING = "Die Zahlungsbestätigung für {name} wird geprüft. Buchungen sind bis zur Bestätigung gesperrt."
+    PAYMENT_DEADLINE_PASSED = "Die Zahlungsfrist für {name} ist abgelaufen. Buchungen für {name} sind bis Einzahlung gesperrt."
+    PAYMENT_CONFIRMATION_PENDING = "Die Zahlungsbestätigung für {name} wird geprüft. Buchungen für {name} sind bis zur Bestätigung gesperrt."
     # Payment deadline errors (for self)
     PAYMENT_DEADLINE_PASSED_SELF = "Deine Zahlungsfrist ist abgelaufen. Bitte den Beitrag zahlen, um wieder buchen zu können."
     PAYMENT_CONFIRMATION_PENDING_SELF = "Deine Zahlungsbestätigung wird geprüft. Buchungen sind bis zur Bestätigung gesperrt."
+    # Payment deadline errors (for booker making reservation for others)
+    BOOKER_PAYMENT_DEADLINE_PASSED = "Du kannst keine Buchungen vornehmen, da deine Zahlungsfrist abgelaufen ist."
+    BOOKER_PAYMENT_CONFIRMATION_PENDING = "Du kannst keine Buchungen vornehmen, während deine Zahlungsbestätigung aussteht."
     PAYMENT_DEADLINE_INVALID_DATE = "Ungültiges Datum für Zahlungsfrist"
 
 class SuccessMessages:

@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - German grammar correction: "Du hat" → "Du hast" in booking error messages
 - Error messages now clear when selecting a different member in booking modal
 - Admin member search now supports multi-word queries
+- Members with overdue payments can no longer book courts for other members
 
 ## [4.3] - 2026-01-20
 

@@ -302,7 +302,16 @@ class ValidationService:
             if not member.can_reserve_courts():
                 return False, ErrorMessages.SUSTAINING_MEMBER_NO_ACCESS, None
 
-            # Check if member is restricted due to unpaid fee past deadline
+            # Check if the booking member (booked_by) is restricted due to unpaid fee
+            # This prevents members with overdue payments from making ANY reservations
+            if booked_by_id and str(booked_by_id) != str(member_id):
+                booked_by_member = Member.query.get(booked_by_id)
+                if booked_by_member and booked_by_member.is_payment_restricted():
+                    if booked_by_member.has_pending_payment_confirmation():
+                        return False, ErrorMessages.BOOKER_PAYMENT_CONFIRMATION_PENDING, None
+                    return False, ErrorMessages.BOOKER_PAYMENT_DEADLINE_PASSED, None
+
+            # Check if member (booked_for) is restricted due to unpaid fee past deadline
             if member.is_payment_restricted():
                 # Use different message if member has pending confirmation
                 if member.has_pending_payment_confirmation():
