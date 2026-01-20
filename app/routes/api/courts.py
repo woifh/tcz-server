@@ -80,12 +80,12 @@ def get_availability():
     # Build lookup maps for O(1) access
     # Key: (court_id, hour) -> reservation or block
     reservation_map = {}
-    is_past_date = query_date < current_time.date()
+    is_past_or_current_date = query_date <= current_time.date()
     for reservation in reservations:
         if reservation.status == 'active':
-            # For past dates, show all reservations
-            # For current/future dates, only show currently active ones
-            if is_past_date:
+            # For past and current dates, show all reservations (including past time slots)
+            # For future dates, only show currently active ones
+            if is_past_or_current_date:
                 key = (reservation.court_id, reservation.start_time.hour)
                 reservation_map[key] = reservation
             else:

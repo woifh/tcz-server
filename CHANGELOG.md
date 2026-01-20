@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ### Improved
 - Cancellation eligibility is now determined server-side for consistent behavior across all clients
 
+### Fixed
+- Past reservations on current day now visible after temporary block removal
+
 ## [4.3] - 2026-01-20
 
 ### Fixed
