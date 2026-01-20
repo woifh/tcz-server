@@ -162,6 +162,7 @@ Run from project root: `./scripts/deploy/pythonanywhere.sh`
 
 ## Important Rules
 
+- **NEVER deploy to production without explicit user approval** - NEVER use MCP tools to upload files, reload the webapp, or make ANY changes to production (PythonAnywhere) without the user explicitly requesting it. This is NON-NEGOTIABLE. Always ask for approval before touching production.
 - **NEVER push to GitHub without explicit user request** - always wait for the user to ask before pushing commits. This is NON-NEGOTIABLE. Do not commit or push under any circumstances unless the user explicitly says "push" or "commit".
 - **When pushing to GitHub**:
   - Ask the user whether to increase major or minor version

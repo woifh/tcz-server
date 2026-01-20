@@ -4,9 +4,33 @@
 
 {% block content %}
 <div class="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
-    <div class="mb-6">
-        <h2 class="text-2xl font-bold">Mein Profil</h2>
-        <p class="text-gray-600 text-sm mt-1">Hier kannst du deine Kontaktdaten bearbeiten.</p>
+    <!-- Header with Profile Picture -->
+    <div class="flex justify-between items-start mb-6 pb-6 border-b">
+        <div>
+            <h2 class="text-2xl font-bold">Mein Profil</h2>
+            <p class="text-gray-600 text-sm mt-1">Hier kannst du deine Kontaktdaten bearbeiten.</p>
+        </div>
+        <!-- Profile Picture Section -->
+        <div class="flex flex-col items-center ml-4">
+            <div id="profile-picture-container" class="relative mb-2">
+                <div id="profile-picture-display" class="rounded-full bg-green-100 flex items-center justify-center overflow-hidden" style="width: 100px; height: 100px;">
+                    <img id="profile-picture-img" src="" alt="Profilbild" class="w-full h-full object-cover hidden">
+                    <span id="profile-picture-initials" class="text-3xl font-medium text-green-600"></span>
+                </div>
+                <div id="profile-picture-loading" class="absolute inset-0 bg-white bg-opacity-75 rounded-full flex items-center justify-center hidden">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-1">
+                <label class="cursor-pointer text-gray-500 hover:text-blue-600" title="Bild ändern">
+                    <input type="file" id="profile-picture-input" accept="image/*" class="hidden">
+                    <span class="material-icons text-xl">photo_camera</span>
+                </label>
+                <button type="button" id="profile-picture-remove" class="text-gray-500 hover:text-red-600 hidden" title="Entfernen">
+                    <span class="material-icons text-xl">delete</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Loading state -->
@@ -15,31 +39,6 @@
     </div>
 
     <form id="profile-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden" data-member-id="{{ member.id }}">
-
-        <!-- Profile Picture Section -->
-        <div class="md:col-span-2 flex flex-col items-center pb-6 border-b mb-4">
-            <div id="profile-picture-container" class="relative mb-4">
-                <!-- Profile picture or initials fallback -->
-                <div id="profile-picture-display" class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center overflow-hidden">
-                    <img id="profile-picture-img" src="" alt="Profilbild" class="w-full h-full object-cover hidden">
-                    <span id="profile-picture-initials" class="text-3xl font-medium text-green-600"></span>
-                </div>
-                <!-- Loading spinner -->
-                <div id="profile-picture-loading" class="absolute inset-0 bg-white bg-opacity-75 rounded-full flex items-center justify-center hidden">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                </div>
-            </div>
-            <div class="flex gap-3">
-                <label class="cursor-pointer bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 text-sm">
-                    <input type="file" id="profile-picture-input" accept="image/*" class="hidden">
-                    <span id="profile-picture-btn-text">Bild hochladen</span>
-                </label>
-                <button type="button" id="profile-picture-remove" class="bg-red-100 text-red-600 py-2 px-4 rounded hover:bg-red-200 text-sm hidden">
-                    Entfernen
-                </button>
-            </div>
-            <p class="text-sm text-gray-500 mt-2">Max. 5 MB, JPG/PNG</p>
-        </div>
 
         <!-- Row 1: Firstname | Lastname -->
         <div>
@@ -167,7 +166,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const profilePictureInput = document.getElementById('profile-picture-input');
     const profilePictureRemove = document.getElementById('profile-picture-remove');
     const profilePictureLoading = document.getElementById('profile-picture-loading');
-    const profilePictureBtnText = document.getElementById('profile-picture-btn-text');
     let hasProfilePicture = false;
 
     // Notification elements
@@ -278,13 +276,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             profilePictureImg.classList.remove('hidden');
             profilePictureInitials.classList.add('hidden');
             profilePictureRemove.classList.remove('hidden');
-            profilePictureBtnText.textContent = 'Bild ändern';
         } else {
             profilePictureImg.classList.add('hidden');
             profilePictureInitials.classList.remove('hidden');
             profilePictureInitials.textContent = getInitials(firstname, lastname);
             profilePictureRemove.classList.add('hidden');
-            profilePictureBtnText.textContent = 'Bild hochladen';
         }
     }
 
@@ -311,16 +307,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             showToast('Profilbild erfolgreich hochgeladen!');
-            updateProfilePictureDisplay(
-                true,
-                document.getElementById('profile-firstname').value,
-                document.getElementById('profile-lastname').value
-            );
+            // Reload page after short delay to update navigation
+            setTimeout(() => window.location.reload(), 800);
         } catch (error) {
             showToast('Fehler beim Hochladen des Profilbilds', 'error');
-        } finally {
             profilePictureLoading.classList.add('hidden');
-            profilePictureInput.value = ''; // Reset file input
+            profilePictureInput.value = '';
         }
     }
 
@@ -346,14 +338,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             showToast('Profilbild erfolgreich entfernt!');
-            updateProfilePictureDisplay(
-                false,
-                document.getElementById('profile-firstname').value,
-                document.getElementById('profile-lastname').value
-            );
+            // Reload page after short delay to update navigation
+            setTimeout(() => window.location.reload(), 800);
         } catch (error) {
             showToast('Fehler beim Entfernen des Profilbilds', 'error');
-        } finally {
             profilePictureLoading.classList.add('hidden');
         }
     }
