@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0] - 2026-01-20
+
+### Added
+- Profile picture upload for members - users can upload a personal photo on their profile page
+- Supports JPG, PNG, GIF, WebP, and iPhone HEIC formats
+- Images automatically resized and optimized (400x400 pixels)
+- Initials fallback when no picture is uploaded
+
+### Fixed
+- Profile pictures are now properly deleted when a member is removed
+
 ## [4.4] - 2026-01-20
 
 ### Improved

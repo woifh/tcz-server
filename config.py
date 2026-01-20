@@ -93,6 +93,12 @@ class Config:
     BOOKING_DURATION_HOURS = 1
     MAX_ACTIVE_RESERVATIONS = 2
 
+    # Profile picture settings
+    PROFILE_PICTURE_UPLOAD_FOLDER = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'instance', 'uploads', 'profile_pictures'
+    )
+    PROFILE_PICTURE_MAX_SIZE = 5 * 1024 * 1024  # 5MB
+
 
 class DevelopmentConfig(Config):
     """Development configuration.

@@ -501,6 +501,11 @@ class MemberService:
                 performed_by_id=admin_id
             )
 
+            # Delete profile picture file if exists
+            if member.has_profile_picture:
+                from app.services.profile_picture_service import ProfilePictureService
+                ProfilePictureService.delete_profile_picture(member_id)
+
             # Delete member (cascade will handle favourites, notifications)
             db.session.delete(member)
             db.session.commit()

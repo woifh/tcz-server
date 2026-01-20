@@ -10,6 +10,8 @@ PyMySQL==1.1.0
 cryptography==41.0.7
 SQLAlchemy==2.0.35
 email-validator>=2.1.1
+Pillow>=10.0.0
+pillow-heif>=0.18.0
 python-dotenv==1.0.0
 hypothesis==6.92.1
 pytest==7.4.3

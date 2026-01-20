@@ -16,6 +16,31 @@
 
     <form id="profile-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden" data-member-id="{{ member.id }}">
 
+        <!-- Profile Picture Section -->
+        <div class="md:col-span-2 flex flex-col items-center pb-6 border-b mb-4">
+            <div id="profile-picture-container" class="relative mb-4">
+                <!-- Profile picture or initials fallback -->
+                <div id="profile-picture-display" class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center overflow-hidden">
+                    <img id="profile-picture-img" src="" alt="Profilbild" class="w-full h-full object-cover hidden">
+                    <span id="profile-picture-initials" class="text-3xl font-medium text-green-600"></span>
+                </div>
+                <!-- Loading spinner -->
+                <div id="profile-picture-loading" class="absolute inset-0 bg-white bg-opacity-75 rounded-full flex items-center justify-center hidden">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <label class="cursor-pointer bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 text-sm">
+                    <input type="file" id="profile-picture-input" accept="image/*" class="hidden">
+                    <span id="profile-picture-btn-text">Bild hochladen</span>
+                </label>
+                <button type="button" id="profile-picture-remove" class="bg-red-100 text-red-600 py-2 px-4 rounded hover:bg-red-200 text-sm hidden">
+                    Entfernen
+                </button>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">Max. 5 MB, JPG/PNG</p>
+        </div>
+
         <!-- Row 1: Firstname | Lastname -->
         <div>
             <label class="block text-gray-700 font-semibold mb-2">Vorname</label>
@@ -136,6 +161,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     const loadingDiv = document.getElementById('profile-loading');
     const memberId = form.dataset.memberId;
 
+    // Profile picture elements
+    const profilePictureImg = document.getElementById('profile-picture-img');
+    const profilePictureInitials = document.getElementById('profile-picture-initials');
+    const profilePictureInput = document.getElementById('profile-picture-input');
+    const profilePictureRemove = document.getElementById('profile-picture-remove');
+    const profilePictureLoading = document.getElementById('profile-picture-loading');
+    const profilePictureBtnText = document.getElementById('profile-picture-btn-text');
+    let hasProfilePicture = false;
+
     // Notification elements
     const notificationsEnabled = document.getElementById('notifications-enabled');
     const notificationOptions = document.getElementById('notification-options');
@@ -229,6 +263,123 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Listen for master toggle changes
     notificationsEnabled.addEventListener('change', updateNotificationOptions);
 
+    // Profile picture helper functions
+    function getInitials(firstname, lastname) {
+        const first = (firstname || '').charAt(0).toUpperCase();
+        const last = (lastname || '').charAt(0).toUpperCase();
+        return first + last;
+    }
+
+    function updateProfilePictureDisplay(hasPicture, firstname, lastname) {
+        hasProfilePicture = hasPicture;
+        if (hasPicture) {
+            // Show image with cache-busting timestamp
+            profilePictureImg.src = `/api/members/${memberId}/profile-picture?t=${Date.now()}`;
+            profilePictureImg.classList.remove('hidden');
+            profilePictureInitials.classList.add('hidden');
+            profilePictureRemove.classList.remove('hidden');
+            profilePictureBtnText.textContent = 'Bild ändern';
+        } else {
+            profilePictureImg.classList.add('hidden');
+            profilePictureInitials.classList.remove('hidden');
+            profilePictureInitials.textContent = getInitials(firstname, lastname);
+            profilePictureRemove.classList.add('hidden');
+            profilePictureBtnText.textContent = 'Bild hochladen';
+        }
+    }
+
+    async function uploadProfilePicture(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        profilePictureLoading.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`/api/members/${memberId}/profile-picture`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                showToast(data.error || 'Fehler beim Hochladen', 'error');
+                return;
+            }
+
+            showToast('Profilbild erfolgreich hochgeladen!');
+            updateProfilePictureDisplay(
+                true,
+                document.getElementById('profile-firstname').value,
+                document.getElementById('profile-lastname').value
+            );
+        } catch (error) {
+            showToast('Fehler beim Hochladen des Profilbilds', 'error');
+        } finally {
+            profilePictureLoading.classList.add('hidden');
+            profilePictureInput.value = ''; // Reset file input
+        }
+    }
+
+    async function removeProfilePicture() {
+        if (!confirm('Möchtest du dein Profilbild wirklich entfernen?')) {
+            return;
+        }
+
+        profilePictureLoading.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`/api/members/${memberId}/profile-picture`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                showToast(data.error || 'Fehler beim Entfernen', 'error');
+                return;
+            }
+
+            showToast('Profilbild erfolgreich entfernt!');
+            updateProfilePictureDisplay(
+                false,
+                document.getElementById('profile-firstname').value,
+                document.getElementById('profile-lastname').value
+            );
+        } catch (error) {
+            showToast('Fehler beim Entfernen des Profilbilds', 'error');
+        } finally {
+            profilePictureLoading.classList.add('hidden');
+        }
+    }
+
+    // Profile picture event listeners
+    profilePictureInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showToast('Bitte wähle eine Bilddatei aus', 'error');
+            return;
+        }
+
+        // Validate file size (5 MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('Das Bild darf maximal 5 MB groß sein', 'error');
+            return;
+        }
+
+        uploadProfilePicture(file);
+    });
+
+    profilePictureRemove.addEventListener('click', removeProfilePicture);
+
     // Fetch profile data from API
     try {
         const response = await fetch(`/api/members/${memberId}`);
@@ -265,6 +416,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Show email verification badge
         updateEmailVerificationBadge(member.email_verified);
+
+        // Profile picture display
+        updateProfilePictureDisplay(
+            member.has_profile_picture || false,
+            member.firstname,
+            member.lastname
+        );
 
         // Show form, hide loading
         loadingDiv.classList.add('hidden');

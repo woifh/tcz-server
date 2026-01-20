@@ -427,3 +427,90 @@ def resend_verification_email(id):
             return jsonify({'error': 'E-Mail konnte nicht gesendet werden'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ----- Profile Picture Routes -----
+
+@bp.route('/members/<id>/profile-picture', methods=['POST'])
+@jwt_or_session_required
+def upload_profile_picture(id):
+    """Upload profile picture for a member."""
+    try:
+        member = Member.query.get_or_404(id)
+
+        # Users can only update their own profile picture
+        if member.id != current_user.id and not current_user.is_admin():
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
+
+        if 'file' not in request.files:
+            return jsonify({'error': 'Keine Datei ausgewählt'}), 400
+
+        file = request.files['file']
+
+        from app.services.profile_picture_service import ProfilePictureService
+
+        success, error = ProfilePictureService.save_profile_picture(id, file)
+
+        if not success:
+            return jsonify({'error': error}), 400
+
+        # Refresh member data
+        db.session.refresh(member)
+
+        return jsonify({
+            'message': 'Profilbild erfolgreich hochgeladen',
+            'has_profile_picture': member.has_profile_picture,
+            'profile_picture_version': member.profile_picture_version
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/members/<id>/profile-picture', methods=['GET'])
+@jwt_or_session_required
+def get_profile_picture(id):
+    """Get profile picture for a member."""
+    from flask import Response
+    from app.services.profile_picture_service import ProfilePictureService
+
+    try:
+        data, error = ProfilePictureService.get_profile_picture_data(id)
+
+        if error:
+            return jsonify({'error': error}), 404
+
+        return Response(
+            data,
+            mimetype='image/jpeg',
+            headers={
+                'Cache-Control': 'private, max-age=3600'
+            }
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/members/<id>/profile-picture', methods=['DELETE'])
+@jwt_or_session_required
+def delete_profile_picture(id):
+    """Delete profile picture for a member."""
+    try:
+        member = Member.query.get_or_404(id)
+
+        # Users can only delete their own profile picture
+        if member.id != current_user.id and not current_user.is_admin():
+            return jsonify({'error': 'Du hast keine Berechtigung für diese Aktion'}), 403
+
+        from app.services.profile_picture_service import ProfilePictureService
+
+        success, error = ProfilePictureService.delete_profile_picture(id)
+
+        if not success:
+            return jsonify({'error': error}), 400
+
+        return jsonify({
+            'message': 'Profilbild erfolgreich gelöscht',
+            'has_profile_picture': False
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

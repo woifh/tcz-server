@@ -63,6 +63,10 @@ class Member(db.Model, UserMixin):
     email_verified = db.Column(db.Boolean, nullable=False, default=False)
     email_verified_at = db.Column(db.DateTime, nullable=True)
 
+    # Profile picture
+    has_profile_picture = db.Column(db.Boolean, nullable=False, default=False)
+    profile_picture_version = db.Column(db.Integer, nullable=False, default=0)
+
     @property
     def name(self):
         """Return full name for backward compatibility."""
@@ -184,7 +188,9 @@ class Member(db.Model, UserMixin):
             'lastname': self.lastname,
             'name': self.name,
             'email': self.email,
-            'email_verified': self.email_verified
+            'email_verified': self.email_verified,
+            'has_profile_picture': self.has_profile_picture,
+            'profile_picture_version': self.profile_picture_version
         }
         if include_admin_fields:
             data.update({
@@ -293,6 +299,8 @@ class Reservation(db.Model):
             'end_time': self.end_time.strftime('%H:%M'),
             'booked_for_id': self.booked_for_id,
             'booked_for': self.booked_for.name if self.booked_for else None,
+            'booked_for_has_profile_picture': self.booked_for.has_profile_picture if self.booked_for else False,
+            'booked_for_profile_picture_version': self.booked_for.profile_picture_version if self.booked_for else 0,
             'booked_by_id': self.booked_by_id,
             'status': self.status,
             'is_short_notice': self.is_short_notice,
