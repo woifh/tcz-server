@@ -7,6 +7,7 @@ All routes return JSON and use Bearer token authentication.
 
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
+from sqlalchemy.orm import joinedload
 
 from app.models import Reservation
 from app.services.reservation_service import ReservationService
@@ -40,7 +41,11 @@ def list_reservations():
     current_time = get_current_berlin_time()
 
     if include_past:
-        all_reservations = Reservation.query.filter(
+        all_reservations = Reservation.query.options(
+            joinedload(Reservation.booked_for),
+            joinedload(Reservation.booked_by),
+            joinedload(Reservation.court)
+        ).filter(
             (Reservation.booked_for_id == current_user.id) |
             (Reservation.booked_by_id == current_user.id),
             Reservation.status == 'active'
