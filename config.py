@@ -86,6 +86,13 @@ class Config:
     # Token expiration in seconds (default: 48 hours)
     EMAIL_VERIFICATION_EXPIRATION = int(os.environ.get('EMAIL_VERIFICATION_EXPIRATION') or 48 * 60 * 60)
 
+    # APNs Configuration for Push Notifications
+    # Get these from Apple Developer Portal: https://developer.apple.com/account
+    APNS_KEY_ID = os.environ.get('APNS_KEY_ID')  # 10-character Key ID
+    APNS_TEAM_ID = os.environ.get('APNS_TEAM_ID')  # Team ID from portal
+    APNS_KEY_PATH = os.environ.get('APNS_KEY_PATH')  # Path to .p8 private key file
+    APNS_BUNDLE_ID = os.environ.get('APNS_BUNDLE_ID', 'com.tcz.tennisapp')
+
     # Application settings
     COURTS_COUNT = 6
     BOOKING_START_HOUR = 8

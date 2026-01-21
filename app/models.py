@@ -59,6 +59,13 @@ class Member(db.Model, UserMixin):
     notify_court_blocked = db.Column(db.Boolean, nullable=False, default=True)
     notify_booking_overridden = db.Column(db.Boolean, nullable=False, default=True)
 
+    # Push notification preferences
+    push_notifications_enabled = db.Column(db.Boolean, nullable=False, default=True)
+    push_notify_own_bookings = db.Column(db.Boolean, nullable=False, default=True)
+    push_notify_other_bookings = db.Column(db.Boolean, nullable=False, default=True)
+    push_notify_court_blocked = db.Column(db.Boolean, nullable=False, default=True)
+    push_notify_booking_overridden = db.Column(db.Boolean, nullable=False, default=True)
+
     # Email verification
     email_verified = db.Column(db.Boolean, nullable=False, default=False)
     email_verified_at = db.Column(db.DateTime, nullable=True)
@@ -210,7 +217,12 @@ class Member(db.Model, UserMixin):
                 'notify_own_bookings': self.notify_own_bookings,
                 'notify_other_bookings': self.notify_other_bookings,
                 'notify_court_blocked': self.notify_court_blocked,
-                'notify_booking_overridden': self.notify_booking_overridden
+                'notify_booking_overridden': self.notify_booking_overridden,
+                'push_notifications_enabled': self.push_notifications_enabled,
+                'push_notify_own_bookings': self.push_notify_own_bookings,
+                'push_notify_other_bookings': self.push_notify_other_bookings,
+                'push_notify_court_blocked': self.push_notify_court_blocked,
+                'push_notify_booking_overridden': self.push_notify_booking_overridden
             })
         return data
 
@@ -565,6 +577,28 @@ class Notification(db.Model):
 
     def __repr__(self):
         return f'<Notification {self.type} for Member {self.recipient_id}>'
+
+
+class DeviceToken(db.Model):
+    """DeviceToken model for push notification device registration."""
+
+    __tablename__ = 'device_token'
+    __table_args__ = (
+        db.Index('idx_device_token_member', 'member_id'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    member_id = db.Column(db.String(36), db.ForeignKey('member.id', ondelete='CASCADE'), nullable=False)
+    token = db.Column(db.String(255), unique=True, nullable=False)
+    platform = db.Column(db.String(20), nullable=False, default='ios')
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    last_used_at = db.Column(db.DateTime, nullable=True)
+
+    member = db.relationship('Member', backref=db.backref('device_tokens', lazy='dynamic', cascade='all, delete-orphan'))
+
+    def __repr__(self):
+        return f'<DeviceToken {self.platform} for Member {self.member_id}>'
 
 
 class SystemSetting(db.Model):

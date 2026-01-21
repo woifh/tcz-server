@@ -1,7 +1,11 @@
 """Flask application factory for Tennis Club Reservation System."""
 import os
 import logging
+from dotenv import load_dotenv
 from flask import Flask, render_template
+
+# Load .env file for local development (VS Code debugger doesn't auto-load it)
+load_dotenv()
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_mail import Mail

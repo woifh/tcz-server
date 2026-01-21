@@ -111,6 +111,13 @@ class BlockService:
             except Exception as e:
                 logger.error(f"Failed to send cancellation email for reservation {reservation.id}: {str(e)}")
 
+            # Send push notifications
+            try:
+                from app.services.push_notification_service import PushNotificationService
+                PushNotificationService.send_booking_cancelled_push(reservation, cancellation_reason)
+            except Exception as e:
+                logger.error(f"Failed to send cancellation push for reservation {reservation.id}: {str(e)}")
+
         return conflicting_reservations
 
     @staticmethod
@@ -171,6 +178,13 @@ class BlockService:
                 EmailService.send_booking_suspended(reservation, suspension_reason)
             except Exception as e:
                 logger.error(f"Failed to send suspension email for reservation {reservation.id}: {str(e)}")
+
+            # Send push notification for suspension
+            try:
+                from app.services.push_notification_service import PushNotificationService
+                PushNotificationService.send_booking_suspended_push(reservation, suspension_reason)
+            except Exception as e:
+                logger.error(f"Failed to send suspension push for reservation {reservation.id}: {str(e)}")
 
         return conflicting_reservations
 
@@ -234,6 +248,13 @@ class BlockService:
         except Exception as e:
             logger.error(f"Failed to send restoration email for reservation {reservation.id}: {str(e)}")
 
+        # Send push notification for restoration
+        try:
+            from app.services.push_notification_service import PushNotificationService
+            PushNotificationService.send_booking_restored_push(reservation)
+        except Exception as e:
+            logger.error(f"Failed to send restoration push for reservation {reservation.id}: {str(e)}")
+
     @staticmethod
     def _cancel_suspended_reservation(reservation, reason, admin_id):
         """Cancel a suspended reservation (e.g., when a permanent block now covers it)."""
@@ -261,6 +282,13 @@ class BlockService:
             EmailService.send_booking_cancelled(reservation, reason)
         except Exception as e:
             logger.error(f"Failed to send cancellation email for reservation {reservation.id}: {str(e)}")
+
+        # Send push notification for cancellation
+        try:
+            from app.services.push_notification_service import PushNotificationService
+            PushNotificationService.send_booking_cancelled_push(reservation, reason)
+        except Exception as e:
+            logger.error(f"Failed to send cancellation push for reservation {reservation.id}: {str(e)}")
 
     @staticmethod
     def _is_still_covered_by_block(reservation, block):

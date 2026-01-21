@@ -103,6 +103,14 @@ class ReservationCreationService:
                     logger.warning(f"Email notification failed: {email_error}")
                     # Don't fail the reservation creation if email fails
 
+                # Send push notifications (don't fail if push fails)
+                try:
+                    from app.services.push_notification_service import PushNotificationService
+                    PushNotificationService.send_booking_created_push(reservation)
+                except Exception as push_error:
+                    logger.warning(f"Push notification failed: {push_error}")
+                    # Don't fail the reservation creation if push fails
+
                 # Log audit trail
                 from app.services.reservation import ReservationService
                 ReservationService.log_reservation_operation(

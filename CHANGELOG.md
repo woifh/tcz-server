@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.0] - 2026-01-21
+
+### Added
+- Push notifications for iOS app when bookings are created, cancelled, or modified
+- Separate push notification preferences for members (own bookings, others' bookings, court blocks)
+
 ## [6.1] - 2026-01-21
 
 ### Added

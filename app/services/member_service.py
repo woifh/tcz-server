@@ -385,6 +385,37 @@ class MemberService:
                     changes['notify_booking_overridden'] = {'old': member.notify_booking_overridden, 'new': new_notify_booking_overridden}
                     member.notify_booking_overridden = new_notify_booking_overridden
 
+            # Update push notification preferences
+            if 'push_notifications_enabled' in updates:
+                new_push_enabled = to_bool(updates['push_notifications_enabled'])
+                if member.push_notifications_enabled != new_push_enabled:
+                    changes['push_notifications_enabled'] = {'old': member.push_notifications_enabled, 'new': new_push_enabled}
+                    member.push_notifications_enabled = new_push_enabled
+
+            if 'push_notify_own_bookings' in updates:
+                new_push_notify_own = to_bool(updates['push_notify_own_bookings'])
+                if member.push_notify_own_bookings != new_push_notify_own:
+                    changes['push_notify_own_bookings'] = {'old': member.push_notify_own_bookings, 'new': new_push_notify_own}
+                    member.push_notify_own_bookings = new_push_notify_own
+
+            if 'push_notify_other_bookings' in updates:
+                new_push_notify_other = to_bool(updates['push_notify_other_bookings'])
+                if member.push_notify_other_bookings != new_push_notify_other:
+                    changes['push_notify_other_bookings'] = {'old': member.push_notify_other_bookings, 'new': new_push_notify_other}
+                    member.push_notify_other_bookings = new_push_notify_other
+
+            if 'push_notify_court_blocked' in updates:
+                new_push_notify_court_blocked = to_bool(updates['push_notify_court_blocked'])
+                if member.push_notify_court_blocked != new_push_notify_court_blocked:
+                    changes['push_notify_court_blocked'] = {'old': member.push_notify_court_blocked, 'new': new_push_notify_court_blocked}
+                    member.push_notify_court_blocked = new_push_notify_court_blocked
+
+            if 'push_notify_booking_overridden' in updates:
+                new_push_notify_booking_overridden = to_bool(updates['push_notify_booking_overridden'])
+                if member.push_notify_booking_overridden != new_push_notify_booking_overridden:
+                    changes['push_notify_booking_overridden'] = {'old': member.push_notify_booking_overridden, 'new': new_push_notify_booking_overridden}
+                    member.push_notify_booking_overridden = new_push_notify_booking_overridden
+
             # If no changes, return early
             if not changes:
                 return member, None

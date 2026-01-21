@@ -219,6 +219,80 @@ def reservation_status():
     return jsonify(response)
 
 
+# ----- Push Notification Device Token Routes -----
+
+@bp.route('/notifications/device', methods=['POST'])
+@jwt_or_session_required
+def register_device_token():
+    """Register a device token for push notifications."""
+    from datetime import datetime
+    from app import db
+    from app.models import DeviceToken
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'JSON body required'}), 400
+
+    token = data.get('device_token')
+    platform = data.get('platform', 'ios')
+
+    if not token:
+        return jsonify({'error': 'device_token ist erforderlich'}), 400
+
+    if platform not in ['ios', 'android']:
+        return jsonify({'error': 'Ungueltige Plattform'}), 400
+
+    try:
+        # Check if token already exists
+        existing = DeviceToken.query.filter_by(token=token).first()
+
+        if existing:
+            # Update existing token (might be re-registered after reinstall)
+            existing.member_id = current_user.id
+            existing.is_active = True
+            existing.last_used_at = datetime.utcnow()
+        else:
+            # Create new token
+            device_token = DeviceToken(
+                member_id=current_user.id,
+                token=token,
+                platform=platform,
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(device_token)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Geraet erfolgreich registriert'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/notifications/device/<token>', methods=['DELETE'])
+@jwt_or_session_required
+def unregister_device_token(token):
+    """Unregister a device token (on logout)."""
+    from app import db
+    from app.models import DeviceToken
+
+    try:
+        device_token = DeviceToken.query.filter_by(
+            token=token,
+            member_id=current_user.id
+        ).first()
+
+        if device_token:
+            device_token.is_active = False
+            db.session.commit()
+
+        return jsonify({'message': 'Geraet erfolgreich abgemeldet'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 # Import sub-modules to register their routes
 from . import members
 from . import admin

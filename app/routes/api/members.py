@@ -233,7 +233,9 @@ def update_member_profile(id):
         # Fields users can update on their own profile
         allowed_fields = ['firstname', 'lastname', 'email', 'phone', 'street', 'city', 'zip_code',
                           'notifications_enabled', 'notify_own_bookings', 'notify_other_bookings',
-                          'notify_court_blocked', 'notify_booking_overridden']
+                          'notify_court_blocked', 'notify_booking_overridden', 'push_notifications_enabled',
+                          'push_notify_own_bookings', 'push_notify_other_bookings',
+                          'push_notify_court_blocked', 'push_notify_booking_overridden']
 
         # Admin-only fields
         admin_fields = ['role', 'membership_type', 'fee_paid', 'is_active']
