@@ -49,14 +49,32 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_feature_flag_audit_log_timestamp'), ['timestamp'], unique=False)
 
     # Seed initial help_center flag (admin-only during review)
-    # Using raw SQL for idempotent insert
-    op.execute(
-        """
-        INSERT INTO feature_flag (key, name, description, is_enabled, allowed_roles, created_at, updated_at)
-        SELECT 'help_center', 'Hilfe-Center', 'Hilfe-Seiten für Mitglieder', 1, '["administrator"]', datetime('now'), datetime('now')
-        WHERE NOT EXISTS (SELECT 1 FROM feature_flag WHERE key = 'help_center')
-        """
-    )
+    # Using SQLAlchemy for database-agnostic insert
+    from sqlalchemy import text
+    from sqlalchemy.engine import Engine
+
+    bind = op.get_bind()
+    is_mysql = 'mysql' in bind.dialect.name.lower()
+
+    if is_mysql:
+        # MySQL: use backticks for reserved word 'key' and NOW() for datetime
+        op.execute(text(
+            """
+            INSERT INTO feature_flag (`key`, name, description, is_enabled, allowed_roles, created_at, updated_at)
+            SELECT 'help_center', 'Hilfe-Center', 'Hilfe-Seiten für Mitglieder', 1, '["administrator"]', NOW(), NOW()
+            FROM DUAL
+            WHERE NOT EXISTS (SELECT 1 FROM feature_flag WHERE `key` = 'help_center')
+            """
+        ))
+    else:
+        # SQLite
+        op.execute(text(
+            """
+            INSERT INTO feature_flag (key, name, description, is_enabled, allowed_roles, created_at, updated_at)
+            SELECT 'help_center', 'Hilfe-Center', 'Hilfe-Seiten für Mitglieder', 1, '["administrator"]', datetime('now'), datetime('now')
+            WHERE NOT EXISTS (SELECT 1 FROM feature_flag WHERE key = 'help_center')
+            """
+        ))
 
 
 def downgrade():
