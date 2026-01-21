@@ -46,10 +46,10 @@
 
     <!-- Court Availability Grid -->
     <div class="overflow-x-auto">
-        <table class="min-w-full border-collapse" id="availability-grid">
+        <table class="min-w-full border-collapse table-fixed" id="availability-grid">
             <thead>
                 <tr class="bg-gray-100">
-                    <th class="border border-gray-300 px-4 py-2 text-left font-semibold">Uhrzeit</th>
+                    <th class="border border-gray-300 px-2 py-2 text-center font-semibold text-sm w-16">Uhrzeit</th>
                     <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 1</th>
                     <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 2</th>
                     <th class="border border-gray-300 px-4 py-2 text-center font-semibold">Platz 3</th>
@@ -72,7 +72,7 @@
                 <!-- Grid data - static structure, dynamic content (no DOM recreation) -->
                 {% for time_idx in range(14) %}
                 <tr x-show="!error" :class="{ 'opacity-50': loading }">
-                    <td class="border border-gray-300 px-4 py-2 font-semibold"
+                    <td class="border border-gray-300 px-2 py-2 font-semibold text-center text-sm w-16 bg-white"
                         x-text="timeSlots[{{ time_idx }}] || '{{ '%02d:00'|format(8 + time_idx) }}'"></td>
                     {% for court_idx in range(6) %}
                     <td id="slot-{{ court_idx }}-{{ time_idx }}"
