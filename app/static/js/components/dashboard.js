@@ -3,7 +3,7 @@
  * Manages court availability grid, date navigation, and user reservations
  */
 
-import { getToday, toBerlinDateString } from '../utils/date-utils.js';
+import { getToday, toBerlinDateString, isToday, generateDateRange, formatDateHeaderGerman } from '../utils/date-utils.js';
 import { availabilityService, availabilityCache } from '../utils/availability-service.js';
 
 /**
@@ -31,7 +31,14 @@ export function dashboard() {
         currentUserId: null,
         isAuthenticated: true, // Default to authenticated, will be overridden for anonymous users
         defaultCellClass: 'border border-gray-300 px-2 py-4 text-center text-xs bg-gray-100', // Default class for cells before data loads
-        
+
+        // Date navigation state
+        dateRange: [],
+        visibleDays: [],
+        windowStartIndex: 0,
+        visibleDaysCount: 7,
+        isSelectedToday: true,
+
         // Lifecycle
         init() {
             // Prevent double initialization (e.g., from Alpine reinit or x-init calling twice)
@@ -49,6 +56,9 @@ export function dashboard() {
                     this.currentUserId = firstOption ? firstOption.value : null;
                 }
             }
+
+            // Initialize date strip for mobile
+            this.initDateStrip();
 
             // Load initial availability with caching
             this.loadWithCache(true);
@@ -344,14 +354,115 @@ export function dashboard() {
             const date = new Date(this.selectedDate + 'T12:00:00'); // Use noon to avoid DST issues
             date.setDate(date.getDate() + offset);
             this.selectedDate = toBerlinDateString(date);
+            this.isSelectedToday = isToday(this.selectedDate);
             this.loadWithCache();
         },
 
         goToToday() {
             this.selectedDate = getToday();
+            this.isSelectedToday = true;
+            this.centerWindowOnDate(this.selectedDate);
             this.loadWithCache();
         },
-        
+
+        // Date navigation methods
+        initDateStrip() {
+            this.dateRange = generateDateRange(30, 90);
+            this.isSelectedToday = isToday(this.selectedDate);
+            this.updateVisibleDaysCount();
+            this.centerWindowOnDate(this.selectedDate);
+
+            // Listen for resize to adjust visible days count
+            window.addEventListener('resize', () => this.handleResize());
+        },
+
+        updateVisibleDaysCount() {
+            // Responsive: 7 on desktop (≥768px), 5 on mobile
+            const width = window.innerWidth;
+            this.visibleDaysCount = width >= 768 ? 7 : 5;
+        },
+
+        handleResize() {
+            const oldCount = this.visibleDaysCount;
+            this.updateVisibleDaysCount();
+            if (oldCount !== this.visibleDaysCount) {
+                this.centerWindowOnDate(this.selectedDate);
+            }
+        },
+
+        centerWindowOnDate(isoDate) {
+            const index = this.dateRange.findIndex(d => d.isoDate === isoDate);
+            if (index === -1) return;
+
+            const centerOffset = Math.floor(this.visibleDaysCount / 2);
+            this.windowStartIndex = Math.max(0,
+                Math.min(index - centerOffset, this.dateRange.length - this.visibleDaysCount));
+            this.updateVisibleDays();
+        },
+
+        shiftWindow(offset) {
+            // Change selected date by offset days
+            const currentIndex = this.dateRange.findIndex(d => d.isoDate === this.selectedDate);
+            const newIndex = currentIndex + offset;
+
+            // Check bounds
+            if (newIndex < 0 || newIndex >= this.dateRange.length) return;
+
+            // Update selected date
+            const newDate = this.dateRange[newIndex];
+            this.selectedDate = newDate.isoDate;
+            this.isSelectedToday = newDate.isToday;
+
+            // Shift window if selected date would go out of view
+            const visibleStart = this.windowStartIndex;
+            const visibleEnd = this.windowStartIndex + this.visibleDaysCount - 1;
+
+            if (newIndex < visibleStart) {
+                this.windowStartIndex = newIndex;
+                this.updateVisibleDays();
+            } else if (newIndex > visibleEnd) {
+                this.windowStartIndex = newIndex - this.visibleDaysCount + 1;
+                this.updateVisibleDays();
+            }
+
+            // Load availability for new date
+            this.loadWithCache();
+        },
+
+        updateVisibleDays() {
+            this.visibleDays = this.dateRange.slice(
+                this.windowStartIndex,
+                this.windowStartIndex + this.visibleDaysCount
+            );
+        },
+
+        selectDate(isoDate) {
+            this.selectedDate = isoDate;
+            this.isSelectedToday = isToday(isoDate);
+            this.loadWithCache();
+        },
+
+        getDayCellClasses(day) {
+            const isSelected = day.isoDate === this.selectedDate;
+            if (isSelected) {
+                return 'day-card-selected';
+            }
+            if (day.isToday) {
+                return 'day-card-today';
+            }
+            return 'day-card-default';
+        },
+
+        formatDateHeader(isoDate) {
+            return formatDateHeaderGerman(isoDate);
+        },
+
+        onDatePickerChange() {
+            this.isSelectedToday = isToday(this.selectedDate);
+            this.centerWindowOnDate(this.selectedDate);
+            this.loadWithCache();
+        },
+
         handleSlotClick(court, time, slot) {
             // Don't allow any interactions for anonymous users
             if (!this.isAuthenticated) {

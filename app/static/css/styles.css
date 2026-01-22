@@ -63,3 +63,44 @@ table tbody tr td.border.border-gray-300.px-2.py-4.text-center.bg-orange-500.tex
 #availability-grid td {
     transition: background-color 150ms ease-out, opacity 150ms ease-out;
 }
+
+/* Day Card Navigation Component */
+.day-card {
+    transition: all 150ms ease-out;
+}
+
+.day-card:active {
+    transform: scale(0.95);
+}
+
+/* Day card states */
+.day-card-default {
+    background-color: #f3f4f6; /* gray-100 */
+    color: #374151; /* gray-700 */
+}
+
+.day-card-default:hover {
+    background-color: #e5e7eb; /* gray-200 */
+}
+
+.day-card-today {
+    background-color: #fed7aa; /* orange-200 - light orange */
+    color: #111827; /* gray-900 */
+}
+
+.day-card-today:hover {
+    background-color: #fdba74; /* orange-300 */
+}
+
+.day-card-selected {
+    background-color: #dcfce7; /* green-100 - matches Heute button */
+    color: #15803d; /* green-700 */
+}
+
+.day-card-selected:hover {
+    background-color: #bbf7d0; /* green-200 */
+}
+
+.day-card-selected span {
+    opacity: 1 !important;
+}

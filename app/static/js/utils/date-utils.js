@@ -110,3 +110,66 @@ export function isPast(isoDate) {
 export function isToday(isoDate) {
     return isoDate === getToday();
 }
+
+// German abbreviations for date strip
+const GERMAN_MONTHS = ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'];
+const GERMAN_WEEKDAYS = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'];
+const GERMAN_WEEKDAYS_LONG = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+/**
+ * Get German month abbreviation (uppercase)
+ * @param {Date} date - Date object
+ * @returns {string} German month abbreviation (e.g., "JAN", "MÄR")
+ */
+export function getGermanMonthAbbr(date) {
+    return GERMAN_MONTHS[date.getMonth()];
+}
+
+/**
+ * Get German weekday abbreviation (uppercase)
+ * @param {Date} date - Date object
+ * @returns {string} German weekday abbreviation (e.g., "MO", "DI")
+ */
+export function getGermanWeekdayAbbr(date) {
+    return GERMAN_WEEKDAYS[date.getDay()];
+}
+
+/**
+ * Format ISO date to German header format (e.g., "Fr. 23.01.2026")
+ * @param {string} isoDate - ISO date string (YYYY-MM-DD)
+ * @returns {string} Formatted date header
+ */
+export function formatDateHeaderGerman(isoDate) {
+    if (!isoDate) return '';
+    const date = new Date(isoDate + 'T12:00:00');
+    const weekday = GERMAN_WEEKDAYS_LONG[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${weekday}. ${day}.${month}.${year}`;
+}
+
+/**
+ * Generate array of date objects for date strip
+ * @param {number} daysBefore - Number of days before today (default 30)
+ * @param {number} daysAfter - Number of days after today (default 90)
+ * @returns {Array} Array of date objects with isoDate, dayNumber, monthAbbr, weekdayAbbr, isToday
+ */
+export function generateDateRange(daysBefore = 30, daysAfter = 90) {
+    const dates = [];
+    const today = getToday();
+
+    for (let offset = -daysBefore; offset <= daysAfter; offset++) {
+        const isoDate = addDays(today, offset);
+        const date = new Date(isoDate + 'T12:00:00');
+        dates.push({
+            isoDate,
+            dayNumber: date.getDate(),
+            monthAbbr: getGermanMonthAbbr(date),
+            weekdayAbbr: getGermanWeekdayAbbr(date),
+            isToday: offset === 0
+        });
+    }
+
+    return dates;
+}

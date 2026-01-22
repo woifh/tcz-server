@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- iOS-style calendar navigation with day cards for quick date selection
+- Responsive design: 7 days on desktop, 5 days on mobile
+- Arrow navigation to move one day at a time
+- Date header with native date picker dropdown
+
 ### Fixed
 - API now returns address and notification preferences when users view their own profile
 - Push notifications can only be enabled when a device is registered
