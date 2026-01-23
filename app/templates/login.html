@@ -4,6 +4,9 @@
 
 {% block content %}
 <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-8 mt-12">
+    <div class="flex justify-center mb-6">
+        <img src="{{ url_for('static', filename='images/tcz_icon.png') }}" alt="Tennisclub Zellerndorf Logo" style="height: 150px; width: 150px;">
+    </div>
     <h2 class="text-2xl font-bold mb-6 text-center">Anmelden</h2>
     
     <form method="POST" action="{{ url_for('auth.login') }}">

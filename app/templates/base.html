@@ -44,9 +44,10 @@
             <!-- Desktop/Tablet Navigation -->
             <div class="flex justify-between items-center">
                 <h1 class="text-2xl font-bold flex items-center gap-2 lg:!flex" :class="{ 'hidden': mobileMenuOpen }">
-                    <span class="material-icons">sports_tennis</span>
+                    <img src="{{ url_for('static', filename='images/tcz_icon.png') }}" alt="TCZ Logo" class="rounded-full" style="height: 60px; width: 60px;">
                     <span class="hidden sm:inline">Tennisclub Zellerndorf</span>
                     <span class="sm:hidden">TC Zellerndorf</span>
+                    <span class="material-icons">sports_tennis</span>
                 </h1>
 
                 <div class="flex items-center gap-4">
