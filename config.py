@@ -127,6 +127,13 @@ class ProductionConfig(Config):
     DEBUG = False
     SESSION_COOKIE_SECURE = True
 
+    # MySQL connection pool settings for PythonAnywhere
+    # PythonAnywhere MySQL has a 300-second connection timeout
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,      # Test connections before use
+        'pool_recycle': 280,        # Recycle connections before timeout
+    }
+
     # Ensure required environment variables are set
     @classmethod
     def init_app(cls, app):

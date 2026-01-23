@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [7.3] - 2026-01-23
+
+### Fixed
+- Intermittent HTTP 500 errors caused by MySQL connection timeouts on PythonAnywhere
+
 ## [7.2] - 2026-01-23
 
 ### Added
