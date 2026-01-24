@@ -227,7 +227,7 @@ flask test-email your-email@example.com
 ## 📁 Project Structure
 
 ```
-tcz-web/
+tcz-server/
 ├── app/                      # Main application package
 │   ├── __init__.py          # Flask app factory
 │   ├── models.py            # Database models

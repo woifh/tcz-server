@@ -1,4 +1,4 @@
-# CLAUDE.md — TCZ Web (Flask Backend + Web UI)
+# CLAUDE.md — TCZ Server (Flask Backend + Web UI)
 
 This file contains web-specific guidance.
 Shared rules (git, production, vibe coding) are in `/Users/woifh/tcz/CLAUDE.md`.
@@ -395,10 +395,10 @@ Don't confuse these — using the wrong virtualenv will cause missing dependenci
 
 | Environment | Flask App Location | Note |
 |-------------|-------------------|------|
-| **Local (Mac)** | `/Users/woifh/tcz/tcz-web/` | In subdirectory of monorepo |
-| **Production** | `/home/woifh/tcz/` | At root (only tcz-web is deployed) |
+| **Local (Mac)** | `/Users/woifh/tcz/tcz-server/` | In subdirectory of monorepo |
+| **Production** | `/home/woifh/tcz/` | At root (only tcz-server is deployed) |
 
-Local has the monorepo structure (`tcz-web/`, `tcz-ios/`, `tcz-android/`), but production only has the Flask app at the root.
+Local has the monorepo structure (`tcz-server/`, `tcz-ios/`, `tcz-android/`), but production only has the Flask app at the root.
 
 ### Production Commands
 
