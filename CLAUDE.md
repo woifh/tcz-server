@@ -302,6 +302,18 @@ When adding new audit log operations:
 
 ---
 
+## 📦 Versioning
+
+### Release Configuration (for woifh workflows)
+
+| Setting | Value |
+|---------|-------|
+| CHANGELOG | `CHANGELOG.md` (project root) |
+| Version file | None (calculated from git tags) |
+| Test command | `source .venv/bin/activate && pytest` |
+
+---
+
 ## ⚠️ Common Mistakes to Avoid
 
 - Don't put business logic in route handlers — use services

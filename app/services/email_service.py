@@ -1,7 +1,7 @@
 """Email service for sending notifications."""
 import threading
 from flask import current_app, copy_current_request_context
-from flask_mail import Message
+from flask_mailman import EmailMessage
 from app import mail
 import logging
 
@@ -158,13 +158,13 @@ Dein TCZ-Team'''
                 body = f"[DEV MODE - Original recipient: {recipient_email}]\n\n" + body
 
             try:
-                msg = Message(
+                msg = EmailMessage(
                     subject=subject,
-                    recipients=[actual_recipient],
+                    to=[actual_recipient],
                     body=body,
-                    sender=app.config.get('MAIL_DEFAULT_SENDER')
+                    from_email=app.config.get('MAIL_DEFAULT_SENDER')
                 )
-                mail.send(msg)
+                msg.send()
                 logger.info(f"Email sent successfully to {actual_recipient}")
                 return True
             except Exception as e:

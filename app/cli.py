@@ -59,7 +59,7 @@ def test_email_command(recipient):
         flask test-email recipient@example.com
     """
     from flask import current_app
-    from flask_mail import Message
+    from flask_mailman import EmailMessage
     from app import mail
 
     # Display current email configuration (without exposing password)
@@ -90,9 +90,9 @@ def test_email_command(recipient):
 
     # Send test email
     try:
-        msg = Message(
+        msg = EmailMessage(
             subject='Tennis Club - Email Configuration Test',
-            recipients=[recipient],
+            to=[recipient],
             body='''Hallo,
 
 dies ist eine Test-E-Mail vom Tennisclub-Reservierungssystem.
@@ -115,7 +115,7 @@ Dein TCZ-Team
             )
         )
 
-        mail.send(msg)
+        msg.send()
 
         click.echo('✓ Email configuration test successful!')
         click.echo(f'  Test email sent to: {recipient}')

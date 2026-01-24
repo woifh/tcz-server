@@ -70,7 +70,7 @@ python wsgi.py
 - **Backend**: Flask 3.0+, Python 3.10+
 - **Database**: SQLAlchemy 2.0+ (MySQL/SQLite)
 - **Authentication**: Flask-Login (web), JWT (mobile API)
-- **Email**: Flask-Mail (SMTP)
+- **Email**: Flask-Mailman (SMTP)
 - **Push Notifications**: APNs (iOS)
 - **Frontend**: HTML5, Tailwind CSS 3.0+, Alpine.js
 - **Testing**: Pytest, Playwright (E2E)

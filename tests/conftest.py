@@ -2,7 +2,7 @@
 import pytest
 from app import create_app, db
 from app.models import Member, Court, BlockReason
-from flask_mail import Mail
+from flask_mailman import Mail
 
 
 @pytest.fixture
@@ -124,7 +124,7 @@ def test_admin(app):
 @pytest.fixture
 def mail(app):
     """Create mail instance for testing."""
-    from flask_mail import Mail
+    from flask_mailman import Mail
     mail = Mail(app)
     return mail
 

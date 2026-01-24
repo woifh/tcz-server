@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Technical
+- Migrated from Flask-Mail to Flask-Mailman for better async support
+
 ## [7.3] - 2026-01-23
 
 ### Fixed
