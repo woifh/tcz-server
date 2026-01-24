@@ -51,7 +51,7 @@ export function bookingModal() {
                 this.loadFavourites();
             }
         },
-        
+
         // Methods
         open(courtNumber, time, date) {
             this.court = courtNumber;
@@ -60,19 +60,19 @@ export function bookingModal() {
             this.date = date || getToday();
             this.error = null;
             this.show = true;
-            
+
             // Set default booked for to current user
             const bookingForSelect = document.getElementById('booking-for');
             if (bookingForSelect && bookingForSelect.options.length > 0) {
                 this.bookedFor = bookingForSelect.options[0].value;
             }
         },
-        
+
         close() {
             this.show = false;
             this.reset();
         },
-        
+
         reset() {
             this.error = null;
             this.submitting = false;
@@ -139,7 +139,10 @@ export function bookingModal() {
 
         searchHighlightNext() {
             if (this.searchResults.length === 0) return;
-            this.searchHighlightIndex = Math.min(this.searchHighlightIndex + 1, this.searchResults.length - 1);
+            this.searchHighlightIndex = Math.min(
+                this.searchHighlightIndex + 1,
+                this.searchResults.length - 1
+            );
         },
 
         searchHighlightPrevious() {
@@ -148,7 +151,10 @@ export function bookingModal() {
         },
 
         searchSelectHighlighted() {
-            if (this.searchHighlightIndex >= 0 && this.searchHighlightIndex < this.searchResults.length) {
+            if (
+                this.searchHighlightIndex >= 0 &&
+                this.searchHighlightIndex < this.searchResults.length
+            ) {
                 this.selectSearchResult(this.searchResults[this.searchHighlightIndex]);
             }
         },
@@ -159,7 +165,7 @@ export function bookingModal() {
             this.favourites.push({
                 id: member.id,
                 name: member.name,
-                email: member.email
+                email: member.email,
             });
 
             // Select this member for booking
@@ -171,34 +177,34 @@ export function bookingModal() {
             // Close search UI
             this.resetSearch();
         },
-        
+
         async submit() {
             if (!this.validate()) {
                 return;
             }
-            
+
             this.submitting = true;
             this.error = null;
-            
+
             const bookingData = {
                 court_id: this.court,
                 date: this.date,
                 start_time: this.time,
-                booked_for_id: this.bookedFor
+                booked_for_id: this.bookedFor,
             };
-            
+
             try {
                 const response = await fetch('/api/reservations/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
+                        'X-CSRFToken': getCsrfToken(),
                     },
-                    body: JSON.stringify(bookingData)
+                    body: JSON.stringify(bookingData),
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     this.close();
                     this.showSuccess('Buchung erfolgreich erstellt!');
@@ -213,12 +219,12 @@ export function bookingModal() {
                     let errorMsg = data.error || 'Fehler beim Erstellen der Buchung';
 
                     if (data.active_sessions && data.active_sessions.length > 0) {
-                        const sessionLines = data.active_sessions.map(s => {
+                        const sessionLines = data.active_sessions.map((s) => {
                             const dateObj = new Date(s.date);
                             const formattedDate = dateObj.toLocaleDateString('de-DE', {
                                 weekday: 'short',
                                 day: '2-digit',
-                                month: '2-digit'
+                                month: '2-digit',
                             });
                             // Calculate end time (1 hour after start)
                             const [startHour] = s.start_time.split(':');
@@ -242,7 +248,7 @@ export function bookingModal() {
                 this.submitting = false;
             }
         },
-        
+
         validate() {
             if (!this.court || !this.date || !this.time || !this.bookedFor) {
                 this.error = 'Bitte füllen Sie alle Felder aus';
@@ -250,7 +256,7 @@ export function bookingModal() {
             }
             return true;
         },
-        
+
         async loadFavourites() {
             console.log('Loading favourites...');
             try {
@@ -260,21 +266,21 @@ export function bookingModal() {
                     console.log('No booking-for select found');
                     return;
                 }
-                
+
                 const firstOption = bookingForSelect.querySelector('option');
                 const currentUserId = firstOption ? firstOption.value : null;
                 console.log('Current user ID:', currentUserId);
                 console.log('First option:', firstOption);
-                
+
                 if (!currentUserId) {
                     console.log('No current user ID found');
                     return;
                 }
-                
+
                 console.log(`Fetching favourites from: /api/members/${currentUserId}/favourites`);
                 const response = await fetch(`/api/members/${currentUserId}/favourites`);
                 console.log('Favourites response:', response.status, response.ok);
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     console.log('Favourites data:', data);
@@ -287,7 +293,7 @@ export function bookingModal() {
                 console.error('Error loading favourites:', err);
             }
         },
-        
+
         reloadDashboard() {
             // Trigger dashboard component refresh (partial update to avoid table flicker)
             const dashboardEl = document.querySelector('[x-data*="dashboard"]');
@@ -310,19 +316,19 @@ export function bookingModal() {
                 }
             }
         },
-        
+
         showSuccess(message) {
             if (typeof window.showSuccess === 'function') {
                 window.showSuccess(message);
             }
         },
-        
+
         getTimeRange() {
             if (!this.time) return '';
             const [hour] = this.time.split(':');
             const endHour = parseInt(hour) + 1;
             return `${this.time} - ${endHour.toString().padStart(2, '0')}:00`;
-        }
+        },
     };
 }
 
@@ -331,7 +337,7 @@ if (typeof window !== 'undefined') {
     document.addEventListener('alpine:init', () => {
         if (window.Alpine) {
             window.Alpine.store('booking', {
-                modalComponent: null
+                modalComponent: null,
             });
         }
     });

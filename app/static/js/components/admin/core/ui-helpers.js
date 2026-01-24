@@ -8,12 +8,12 @@
  */
 export function showTab(tabName) {
     // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(content => {
+    document.querySelectorAll('.tab-content').forEach((content) => {
         content.classList.add('hidden');
     });
 
     // Remove active styling from all tabs
-    document.querySelectorAll('.tab-button').forEach(button => {
+    document.querySelectorAll('.tab-button').forEach((button) => {
         button.classList.remove('border-green-600', 'text-green-600');
         button.classList.add('border-transparent', 'text-gray-500');
     });
@@ -49,15 +49,20 @@ export const modalUtils = {
     createModal(id, title, content, buttons = []) {
         const modal = document.createElement('div');
         modal.id = id;
-        modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
+        modal.className =
+            'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
 
-        const buttonHtml = buttons.map(btn => `
+        const buttonHtml = buttons
+            .map(
+                (btn) => `
             <button
                 onclick="${btn.onclick}"
                 class="${btn.className || 'bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700'}">
                 ${btn.label}
             </button>
-        `).join('');
+        `
+            )
+            .join('');
 
         modal.innerHTML = `
             <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
@@ -72,11 +77,15 @@ export const modalUtils = {
                 <div class="modal-content">
                     ${content}
                 </div>
-                ${buttons.length > 0 ? `
+                ${
+                    buttons.length > 0
+                        ? `
                     <div class="flex gap-2 mt-6">
                         ${buttonHtml}
                     </div>
-                ` : ''}
+                `
+                        : ''
+                }
             </div>
         `;
 
@@ -106,26 +115,21 @@ export const modalUtils = {
     showConfirmation(title, message, onConfirm, onCancel = null) {
         const modalId = 'confirmation-modal-' + Date.now();
 
-        const modal = this.createModal(
-            modalId,
-            title,
-            `<p class="text-gray-700">${message}</p>`,
-            [
-                {
-                    label: 'Bestätigen',
-                    className: 'bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700',
-                    onclick: `window.modalUtils.closeModal('${modalId}'); (${onConfirm.toString()})()`
-                },
-                {
-                    label: 'Abbrechen',
-                    className: 'bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700',
-                    onclick: `window.modalUtils.closeModal('${modalId}'); ${onCancel ? `(${onCancel.toString()})()` : ''}`
-                }
-            ]
-        );
+        const modal = this.createModal(modalId, title, `<p class="text-gray-700">${message}</p>`, [
+            {
+                label: 'Bestätigen',
+                className: 'bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700',
+                onclick: `window.modalUtils.closeModal('${modalId}'); (${onConfirm.toString()})()`,
+            },
+            {
+                label: 'Abbrechen',
+                className: 'bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700',
+                onclick: `window.modalUtils.closeModal('${modalId}'); ${onCancel ? `(${onCancel.toString()})()` : ''}`,
+            },
+        ]);
 
         this.showModal(modal);
-    }
+    },
 };
 
 /**
@@ -133,18 +137,18 @@ export const modalUtils = {
  */
 export function getReasonColor(reasonName) {
     const colorMap = {
-        'Wartung': '#f59e0b',      // amber
-        'Maintenance': '#f59e0b',   // amber
-        'Regen': '#6b7280',        // gray
-        'Weather': '#6b7280',      // gray
-        'Turnier': '#10b981',      // emerald
-        'Tournament': '#10b981',   // emerald
-        'Meisterschaft': '#8b5cf6', // violet
-        'Championship': '#8b5cf6', // violet
-        'Tenniskurs': '#3b82f6',   // blue
+        Wartung: '#f59e0b', // amber
+        Maintenance: '#f59e0b', // amber
+        Regen: '#6b7280', // gray
+        Weather: '#6b7280', // gray
+        Turnier: '#10b981', // emerald
+        Tournament: '#10b981', // emerald
+        Meisterschaft: '#8b5cf6', // violet
+        Championship: '#8b5cf6', // violet
+        Tenniskurs: '#3b82f6', // blue
         'Tennis Course': '#3b82f6', // blue
-        'Platzreparatur': '#f97316', // orange
-        'Court Repair': '#f97316'   // orange
+        Platzreparatur: '#f97316', // orange
+        'Court Repair': '#f97316', // orange
     };
 
     return colorMap[reasonName] || '#6b7280'; // default gray
@@ -195,7 +199,7 @@ export const loadingUtils = {
                 <p class="text-gray-600">${message}</p>
             </div>
         `;
-    }
+    },
 };
 
 /**

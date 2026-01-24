@@ -1,0 +1,23 @@
+{
+    "env": {
+        "browser": true,
+        "es2020": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 2020,
+        "sourceType": "module"
+    },
+    "globals": {
+        "Alpine": "readonly",
+        "loadFavourites": "readonly"
+    },
+    "extends": [
+        "eslint:recommended",
+        "prettier"
+    ],
+    "rules": {
+        "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+        "no-console": "off",
+        "prefer-const": "warn"
+    }
+}

@@ -27,10 +27,11 @@ export function formatDateGerman(dateString) {
  */
 export function showSuccess(message) {
     const flashDiv = document.createElement('div');
-    flashDiv.className = 'fixed top-4 right-4 bg-green-100 text-green-700 px-6 py-4 rounded-lg shadow-lg z-50';
+    flashDiv.className =
+        'fixed top-4 right-4 bg-green-100 text-green-700 px-6 py-4 rounded-lg shadow-lg z-50';
     flashDiv.textContent = message;
     document.body.appendChild(flashDiv);
-    
+
     setTimeout(() => {
         flashDiv.remove();
     }, 3000);
@@ -41,10 +42,11 @@ export function showSuccess(message) {
  */
 export function showError(message) {
     const flashDiv = document.createElement('div');
-    flashDiv.className = 'fixed top-4 right-4 bg-red-100 text-red-700 px-6 py-4 rounded-lg shadow-lg z-50';
+    flashDiv.className =
+        'fixed top-4 right-4 bg-red-100 text-red-700 px-6 py-4 rounded-lg shadow-lg z-50';
     flashDiv.textContent = message;
     document.body.appendChild(flashDiv);
-    
+
     setTimeout(() => {
         flashDiv.remove();
     }, 5000);

@@ -68,7 +68,7 @@ class AvailabilityService {
         if (needsAhead) {
             // Prefetch 7 days ahead in background
             const startAhead = addDays(centerDate, 1);
-            this._fetchRange(startAhead, 7).catch(err => {
+            this._fetchRange(startAhead, 7).catch((err) => {
                 console.warn('Prefetch ahead failed:', err);
             });
         }
@@ -76,7 +76,7 @@ class AvailabilityService {
         if (needsBehind) {
             // Prefetch 7 days behind in background
             const startBehind = addDays(centerDate, -7);
-            this._fetchRange(startBehind, 7).catch(err => {
+            this._fetchRange(startBehind, 7).catch((err) => {
                 console.warn('Prefetch behind failed:', err);
             });
         }

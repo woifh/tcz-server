@@ -17,7 +17,7 @@ function getCsrfToken() {
 function getHeaders() {
     return {
         'Content-Type': 'application/json',
-        'X-CSRFToken': getCsrfToken()
+        'X-CSRFToken': getCsrfToken(),
     };
 }
 
@@ -27,7 +27,7 @@ export const blockReasonsAPI = {
         try {
             const response = await fetch('/api/admin/block-reasons');
             const data = await response.json();
-            
+
             if (response.ok) {
                 return { success: true, reasons: data.reasons };
             } else {
@@ -43,9 +43,9 @@ export const blockReasonsAPI = {
             const response = await fetch('/api/admin/block-reasons', {
                 method: 'POST',
                 headers: getHeaders(),
-                body: JSON.stringify(reasonData)
+                body: JSON.stringify(reasonData),
             });
-            
+
             const data = await response.json();
             return { success: response.ok, data, error: response.ok ? null : data.error };
         } catch (error) {
@@ -58,9 +58,9 @@ export const blockReasonsAPI = {
             const response = await fetch(`/api/admin/block-reasons/${reasonId}`, {
                 method: 'PUT',
                 headers: getHeaders(),
-                body: JSON.stringify(reasonData)
+                body: JSON.stringify(reasonData),
             });
-            
+
             const data = await response.json();
             return { success: response.ok, data, error: response.ok ? null : data.error };
         } catch (error) {
@@ -72,15 +72,15 @@ export const blockReasonsAPI = {
         try {
             const response = await fetch(`/api/admin/block-reasons/${reasonId}`, {
                 method: 'DELETE',
-                headers: { 'X-CSRFToken': getCsrfToken() }
+                headers: { 'X-CSRFToken': getCsrfToken() },
             });
-            
+
             const data = await response.json();
             return { success: response.ok, data, error: response.ok ? null : data.error };
         } catch (error) {
             return { success: false, error: 'Fehler beim Löschen des Grundes' };
         }
-    }
+    },
 };
 
 // Blocks API
@@ -90,7 +90,7 @@ export const blocksAPI = {
             const queryParams = new URLSearchParams(params);
             const response = await fetch(`/api/admin/blocks?${queryParams.toString()}`);
             const data = await response.json();
-            
+
             if (response.ok) {
                 return { success: true, blocks: data.blocks };
             } else {
@@ -106,7 +106,7 @@ export const blocksAPI = {
             const response = await fetch('/api/admin/blocks', {
                 method: 'POST',
                 headers: getHeaders(),
-                body: JSON.stringify(blockData)
+                body: JSON.stringify(blockData),
             });
 
             const data = await response.json();
@@ -121,7 +121,7 @@ export const blocksAPI = {
             const response = await fetch(`/api/admin/blocks/${batchId}`, {
                 method: 'PUT',
                 headers: getHeaders(),
-                body: JSON.stringify(blockData)
+                body: JSON.stringify(blockData),
             });
 
             const data = await response.json();
@@ -135,7 +135,7 @@ export const blocksAPI = {
         try {
             const response = await fetch(`/api/admin/blocks/${batchId}`, {
                 method: 'DELETE',
-                headers: { 'X-CSRFToken': getCsrfToken() }
+                headers: { 'X-CSRFToken': getCsrfToken() },
             });
 
             const data = await response.json();
@@ -165,9 +165,9 @@ export const blocksAPI = {
             const response = await fetch('/api/admin/blocks/conflict-preview', {
                 method: 'POST',
                 headers: getHeaders(),
-                body: JSON.stringify(blockData)
+                body: JSON.stringify(blockData),
             });
-            
+
             const data = await response.json();
             return { success: response.ok, data, error: response.ok ? null : data.error };
         } catch (error) {
@@ -179,7 +179,7 @@ export const blocksAPI = {
         try {
             const response = await fetch('/api/admin/blocks/audit-log');
             const data = await response.json();
-            
+
             if (response.ok) {
                 return { success: true, logs: data.logs };
             } else {
@@ -188,7 +188,7 @@ export const blocksAPI = {
         } catch (error) {
             return { success: false, error: 'Fehler beim Laden des Audit-Logs' };
         }
-    }
+    },
 };
 
 // Series API removed - feature discontinued

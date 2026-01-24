@@ -32,7 +32,7 @@ export function toBerlinDateString(date) {
  */
 export function formatDate(isoDate) {
     if (!isoDate) return '';
-    
+
     const [year, month, day] = isoDate.split('-');
     return `${day}.${month}.${year}`;
 }
@@ -54,7 +54,7 @@ export function formatTime(time) {
  */
 export function getEndTime(startTime) {
     if (!startTime) return '';
-    
+
     const [hour, minute] = startTime.split(':').map(Number);
     const endHour = hour + 1;
     return `${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -112,7 +112,20 @@ export function isToday(isoDate) {
 }
 
 // German abbreviations for date strip
-const GERMAN_MONTHS = ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'];
+const GERMAN_MONTHS = [
+    'JAN',
+    'FEB',
+    'MÄR',
+    'APR',
+    'MAI',
+    'JUN',
+    'JUL',
+    'AUG',
+    'SEP',
+    'OKT',
+    'NOV',
+    'DEZ',
+];
 const GERMAN_WEEKDAYS = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'];
 const GERMAN_WEEKDAYS_LONG = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 
@@ -167,7 +180,7 @@ export function generateDateRange(daysBefore = 30, daysAfter = 90) {
             dayNumber: date.getDate(),
             monthAbbr: getGermanMonthAbbr(date),
             weekdayAbbr: getGermanWeekdayAbbr(date),
-            isToday: offset === 0
+            isToday: offset === 0,
         });
     }
 

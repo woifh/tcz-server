@@ -3,7 +3,13 @@
  * Manages court availability grid, date navigation, and user reservations
  */
 
-import { getToday, toBerlinDateString, isToday, generateDateRange, formatDateHeaderGerman } from '../utils/date-utils.js';
+import {
+    getToday,
+    toBerlinDateString,
+    isToday,
+    generateDateRange,
+    formatDateHeaderGerman,
+} from '../utils/date-utils.js';
 import { availabilityService, availabilityCache } from '../utils/availability-service.js';
 
 /**
@@ -30,7 +36,8 @@ export function dashboard() {
         error: null,
         currentUserId: null,
         isAuthenticated: true, // Default to authenticated, will be overridden for anonymous users
-        defaultCellClass: 'px-2 py-3 text-center text-xs rounded-lg bg-gray-100 border border-gray-200', // Default class for cells before data loads
+        defaultCellClass:
+            'px-2 py-3 text-center text-xs rounded-lg bg-gray-100 border border-gray-200', // Default class for cells before data loads
 
         // Date navigation state
         dateRange: [],
@@ -46,7 +53,8 @@ export function dashboard() {
             initializedComponents.add(this.$el);
 
             // Detect authentication status from global variable or DOM
-            this.isAuthenticated = window.isAuthenticated !== undefined ? window.isAuthenticated : true;
+            this.isAuthenticated =
+                window.isAuthenticated !== undefined ? window.isAuthenticated : true;
 
             // Get current user ID from the page (only for authenticated users)
             if (this.isAuthenticated) {
@@ -68,7 +76,7 @@ export function dashboard() {
                 this.loadUserReservations();
             }
         },
-        
+
         // Methods
         async loadAvailability() {
             this.loading = true;
@@ -102,8 +110,7 @@ export function dashboard() {
                 else if (data.slots) {
                     this.availability = data;
                     this.courts = data.slots;
-                }
-                else if (data.error) {
+                } else if (data.error) {
                     this.error = data.error;
                 }
             } catch (err) {
@@ -189,8 +196,7 @@ export function dashboard() {
             else if (data.slots) {
                 this.availability = data;
                 this.courts = data.slots;
-            }
-            else if (data.error) {
+            } else if (data.error) {
                 this.error = data.error;
             }
         },
@@ -213,7 +219,10 @@ export function dashboard() {
                             newCourt.slots.forEach((newSlot, slotIndex) => {
                                 const oldSlot = this.courts[courtIndex].slots[slotIndex];
                                 if (oldSlot && this.slotHasChanged(oldSlot, newSlot)) {
-                                    Object.assign(this.courts[courtIndex].slots[slotIndex], newSlot);
+                                    Object.assign(
+                                        this.courts[courtIndex].slots[slotIndex],
+                                        newSlot
+                                    );
                                 }
                             });
                         }
@@ -229,9 +238,7 @@ export function dashboard() {
          * Sparse format only includes occupied slots; this fills in available slots.
          */
         transformSparseResponse(data) {
-            const currentHour = data.current_hour || new Date().getHours();
-
-            return data.courts.map(court => {
+            return data.courts.map((court) => {
                 // Build lookup map for occupied slots
                 const occupiedMap = {};
                 for (const slot of court.occupied) {
@@ -239,7 +246,7 @@ export function dashboard() {
                 }
 
                 // Generate full slots array
-                const slots = this.timeSlots.map(time => {
+                const slots = this.timeSlots.map((time) => {
                     const occupied = occupiedMap[time];
 
                     if (occupied) {
@@ -251,7 +258,7 @@ export function dashboard() {
                             cssClass: this.getSlotClass(occupied, time),
                             content: this.getSlotContent(occupied, time),
                             isPast: this.isSlotInPast(time),
-                            canCancel: this.canCancelSlot(occupied)
+                            canCancel: this.canCancelSlot(occupied),
                         };
                     } else {
                         // Available slot - generate default
@@ -263,7 +270,7 @@ export function dashboard() {
                             cssClass: this.getAvailableSlotClass(isPast),
                             content: isPast ? '' : 'Frei',
                             isPast,
-                            canCancel: false
+                            canCancel: false,
                         };
                     }
                 });
@@ -271,7 +278,7 @@ export function dashboard() {
                 return {
                     court_id: court.court_id,
                     court_number: court.court_number,
-                    slots
+                    slots,
                 };
             });
         },
@@ -324,9 +331,11 @@ export function dashboard() {
         },
 
         slotHasChanged(oldSlot, newSlot) {
-            return oldSlot.status !== newSlot.status ||
-                   oldSlot.reservation_id !== newSlot.reservation_id ||
-                   JSON.stringify(oldSlot.details) !== JSON.stringify(newSlot.details);
+            return (
+                oldSlot.status !== newSlot.status ||
+                oldSlot.reservation_id !== newSlot.reservation_id ||
+                JSON.stringify(oldSlot.details) !== JSON.stringify(newSlot.details)
+            );
         },
 
         async loadUserReservations() {
@@ -340,16 +349,20 @@ export function dashboard() {
                     // Split reservations: my own vs bookings I made for others
                     // userReservations: where I am the booked_for person (counts toward my limits)
                     // bookingsForOthers: where I booked for someone else
-                    this.userReservations = allReservations.filter(r => r.booked_for_id === this.currentUserId);
-                    this.bookingsForOthers = allReservations.filter(r =>
-                        r.booked_by_id === this.currentUserId && r.booked_for_id !== this.currentUserId
+                    this.userReservations = allReservations.filter(
+                        (r) => r.booked_for_id === this.currentUserId
+                    );
+                    this.bookingsForOthers = allReservations.filter(
+                        (r) =>
+                            r.booked_by_id === this.currentUserId &&
+                            r.booked_for_id !== this.currentUserId
                     );
                 }
             } catch (err) {
                 console.error('Error loading user reservations:', err);
             }
         },
-        
+
         changeDate(offset) {
             const date = new Date(this.selectedDate + 'T12:00:00'); // Use noon to avoid DST issues
             date.setDate(date.getDate() + offset);
@@ -391,18 +404,20 @@ export function dashboard() {
         },
 
         centerWindowOnDate(isoDate) {
-            const index = this.dateRange.findIndex(d => d.isoDate === isoDate);
+            const index = this.dateRange.findIndex((d) => d.isoDate === isoDate);
             if (index === -1) return;
 
             const centerOffset = Math.floor(this.visibleDaysCount / 2);
-            this.windowStartIndex = Math.max(0,
-                Math.min(index - centerOffset, this.dateRange.length - this.visibleDaysCount));
+            this.windowStartIndex = Math.max(
+                0,
+                Math.min(index - centerOffset, this.dateRange.length - this.visibleDaysCount)
+            );
             this.updateVisibleDays();
         },
 
         shiftWindow(offset) {
             // Change selected date by offset days
-            const currentIndex = this.dateRange.findIndex(d => d.isoDate === this.selectedDate);
+            const currentIndex = this.dateRange.findIndex((d) => d.isoDate === this.selectedDate);
             const newIndex = currentIndex + offset;
 
             // Check bounds
@@ -476,7 +491,10 @@ export function dashboard() {
 
             if (slot.status === 'available') {
                 this.openBookingModal(court, time);
-            } else if ((slot.status === 'reserved' || slot.status === 'short_notice') && this.canCancelSlot(slot)) {
+            } else if (
+                (slot.status === 'reserved' || slot.status === 'short_notice') &&
+                this.canCancelSlot(slot)
+            ) {
                 // Handle both test format (reservation) and production format (details)
                 const reservation = slot.reservation || slot.details;
                 const reservationId = reservation.reservation_id || reservation.id;
@@ -520,7 +538,7 @@ export function dashboard() {
                 }
             }
         },
-        
+
         openBookingModal(courtNumber, time) {
             // Find the booking modal Alpine component and open it
             const modalEl = document.querySelector('[x-data*="bookingModal"]');
@@ -535,17 +553,17 @@ export function dashboard() {
                 }
             }
         },
-        
+
         async cancelReservation(reservationId) {
             // Keep confirmation dialog for cancellation request
             if (!confirm('Möchten Sie diese Buchung wirklich stornieren?')) {
                 return;
             }
-            
+
             try {
                 const response = await fetch(`/api/reservations/${reservationId}`, {
                     method: 'DELETE',
-                    headers: { 'X-CSRFToken': getCsrfToken() }
+                    headers: { 'X-CSRFToken': getCsrfToken() },
                 });
 
                 const data = await response.json();
@@ -563,7 +581,7 @@ export function dashboard() {
                 this.showError('Fehler beim Stornieren der Buchung');
             }
         },
-        
+
         /**
          * Compute CSS classes for a slot based on status and time.
          * Used when transforming sparse API responses.
@@ -623,7 +641,7 @@ export function dashboard() {
 
             return classes;
         },
-        
+
         canCancelSlot(slot) {
             // Anonymous users cannot cancel
             if (!this.isAuthenticated) {
@@ -638,7 +656,7 @@ export function dashboard() {
             // Use server-computed flag for regular reservations
             return slot.details?.can_cancel === true;
         },
-        
+
         isSlotInPast(time) {
             const today = getToday();
 
@@ -654,18 +672,21 @@ export function dashboard() {
 
             // If selected date is today, check the time
             // Get current hour in Berlin timezone
-            const berlinHour = parseInt(new Date().toLocaleTimeString('de-DE', {
-                timeZone: 'Europe/Berlin',
-                hour: '2-digit',
-                hour12: false
-            }), 10);
+            const berlinHour = parseInt(
+                new Date().toLocaleTimeString('de-DE', {
+                    timeZone: 'Europe/Berlin',
+                    hour: '2-digit',
+                    hour12: false,
+                }),
+                10
+            );
             const [slotHour] = time.split(':').map(Number);
 
             // Slot is in the past only if it's before current hour
             // Current hour is still bookable as short notice booking
             return slotHour < berlinHour;
         },
-        
+
         generateTimeSlots() {
             const slots = [];
             for (let hour = 8; hour < 22; hour++) {
@@ -673,7 +694,7 @@ export function dashboard() {
             }
             return slots;
         },
-        
+
         showSuccess(message) {
             // Use existing toast notification system
             if (typeof window.showToast === 'function') {
@@ -684,7 +705,7 @@ export function dashboard() {
                 alert(message);
             }
         },
-        
+
         showError(message) {
             // Use existing toast notification system
             if (typeof window.showToast === 'function') {
@@ -695,17 +716,17 @@ export function dashboard() {
                 alert(message);
             }
         },
-        
+
         // Template helper methods
         getSlot(courtIndex, time) {
             if (!this.courts || !this.courts[courtIndex] || !this.courts[courtIndex].slots) {
                 return { status: 'available' };
             }
-            
+
             const timeIndex = this.timeSlots.indexOf(time);
             return this.courts[courtIndex].slots[timeIndex] || { status: 'available' };
         },
-        
+
         /**
          * Compute display content for a slot based on status and details.
          * Used when transforming sparse API responses.
@@ -779,28 +800,28 @@ export function dashboard() {
 
             return '';
         },
-        
+
         formatDate(dateStr) {
             if (!dateStr) return '';
             const [year, month, day] = dateStr.split('-');
             return `${day}.${month}.${year}`;
         },
-        
+
         // Availability calculation methods
         getAvailableSlots() {
             if (!this.userReservations) return 2;
-            
+
             // Count regular (non-short-notice) active booking sessions
-            const regularBookings = this.userReservations.filter(r => !r.is_short_notice);
+            const regularBookings = this.userReservations.filter((r) => !r.is_short_notice);
             return Math.max(0, 2 - regularBookings.length);
         },
-        
+
         getShortNoticeSlots() {
             if (!this.userReservations) return 1;
 
             // Count short notice active booking sessions
-            const shortNoticeBookings = this.userReservations.filter(r => r.is_short_notice);
+            const shortNoticeBookings = this.userReservations.filter((r) => r.is_short_notice);
             return Math.max(0, 1 - shortNoticeBookings.length);
-        }
+        },
     };
 }

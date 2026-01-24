@@ -38,7 +38,7 @@ export class BlocksManager {
             const today = dateUtils.getTodayString();
 
             const result = await blocksAPI.load({
-                date_range_start: today
+                date_range_start: today,
             });
 
             if (result.success) {
@@ -82,7 +82,7 @@ export class BlocksManager {
 
         let html = '<div class="divide-y divide-gray-200">';
 
-        groupedBlocks.forEach(group => {
+        groupedBlocks.forEach((group) => {
             html += this.renderBlockGroup(group);
         });
 
@@ -96,13 +96,13 @@ export class BlocksManager {
     groupBlocksByBatch(blocks) {
         const groups = new Map();
 
-        blocks.forEach(block => {
+        blocks.forEach((block) => {
             const key = `batch_${block.batch_id}`;
 
             if (!groups.has(key)) {
                 groups.set(key, {
                     key: key,
-                    blocks: []
+                    blocks: [],
                 });
             }
 
@@ -127,7 +127,7 @@ export class BlocksManager {
         const endTime = firstBlock.end_time.slice(0, 5);
 
         // Sort court numbers
-        const courtNumbers = group.blocks.map(b => b.court_number).sort((a, b) => a - b);
+        const courtNumbers = group.blocks.map((b) => b.court_number).sort((a, b) => a - b);
 
         // Format court display
         let courtsDisplay;
@@ -141,8 +141,9 @@ export class BlocksManager {
         const batchId = firstBlock.batch_id;
 
         // Check if current user can edit this block
-        const canEdit = window.currentUserIsAdmin ||
-                       (window.currentUserIsTeamster && firstBlock.created_by_id === window.currentUserId);
+        const canEdit =
+            window.currentUserIsAdmin ||
+            (window.currentUserIsTeamster && firstBlock.created_by_id === window.currentUserId);
 
         return `
             <div class="p-4 hover:bg-gray-50 flex items-center justify-between">
@@ -157,24 +158,38 @@ export class BlocksManager {
                         <div class="text-sm text-gray-500">
                             ${firstBlock.reason_name}${firstBlock.details ? ' / ' + firstBlock.details : ''}
                         </div>
-                        ${firstBlock.created_by_name ? `
+                        ${
+                            firstBlock.created_by_name
+                                ? `
                             <div class="text-xs text-gray-400">
                                 von ${firstBlock.created_by_name}
                             </div>
-                        ` : ''}
-                        ${firstBlock.is_temporary ? `
+                        `
+                                : ''
+                        }
+                        ${
+                            firstBlock.is_temporary
+                                ? `
                             <div class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                                 Vorübergehend
                             </div>
-                        ` : ''}
-                        ${group.blocks.length > 1 ? `
+                        `
+                                : ''
+                        }
+                        ${
+                            group.blocks.length > 1
+                                ? `
                             <div class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                                 ${group.blocks.length} Plätze
                             </div>
-                        ` : ''}
+                        `
+                                : ''
+                        }
                     </div>
                 </div>
-                ${canEdit ? `
+                ${
+                    canEdit
+                        ? `
                     <div class="flex items-center gap-2">
                         <button onclick="window.blocksManager.editBatch('${batchId}')" class="text-blue-600 hover:text-blue-900 p-1" title="Bearbeiten">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -187,7 +202,9 @@ export class BlocksManager {
                             </svg>
                         </button>
                     </div>
-                ` : ''}
+                `
+                        : ''
+                }
             </div>
         `;
     }
@@ -210,7 +227,7 @@ export class BlocksManager {
         }
 
         // Use cached blocks instead of making another API call
-        const batchBlocks = this.currentBlocks.filter(block => block.batch_id === batchId);
+        const batchBlocks = this.currentBlocks.filter((block) => block.batch_id === batchId);
 
         if (batchBlocks.length === 0) {
             showToast('Keine Sperrungen mit dieser Batch-ID gefunden', 'error');
@@ -226,7 +243,7 @@ export class BlocksManager {
      */
     showBatchDeleteConfirmation(batchId, batchBlocks) {
         const isMultiCourt = batchBlocks.length > 1;
-        const courtNumbers = batchBlocks.map(b => b.court_number).sort((a, b) => a - b);
+        const courtNumbers = batchBlocks.map((b) => b.court_number).sort((a, b) => a - b);
         const firstBlock = batchBlocks[0];
 
         const date = dateUtils.formatDate(firstBlock.date);
@@ -244,7 +261,8 @@ export class BlocksManager {
 
         const modal = document.createElement('div');
         modal.id = 'batch-delete-modal';
-        modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
+        modal.className =
+            'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
 
         modal.innerHTML = `
             <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -305,7 +323,7 @@ export class BlocksManager {
         try {
             const response = await fetch(`/api/admin/blocks/${batchId}`, {
                 method: 'DELETE',
-                headers: { 'X-CSRFToken': getCsrfToken() }
+                headers: { 'X-CSRFToken': getCsrfToken() },
             });
 
             const data = await response.json();
@@ -345,7 +363,9 @@ export class BlocksManager {
             document.getElementById('multi-details').value = block.details || '';
 
             // Select the court
-            const courtCheckbox = document.querySelector(`input[name="multi-courts"][value="${block.court_id}"]`);
+            const courtCheckbox = document.querySelector(
+                `input[name="multi-courts"][value="${block.court_id}"]`
+            );
             if (courtCheckbox) {
                 courtCheckbox.checked = true;
             }

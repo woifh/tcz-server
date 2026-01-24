@@ -22,7 +22,7 @@ export async function apiRequest(url, options = {}) {
     try {
         const headers = {
             'Content-Type': 'application/json',
-            ...options.headers
+            ...options.headers,
         };
 
         // Add CSRF token for state-changing requests
@@ -35,15 +35,15 @@ export async function apiRequest(url, options = {}) {
 
         const response = await fetch(url, {
             headers,
-            ...options
+            ...options,
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new ApiError(data.error || 'Request failed', response.status, data);
         }
-        
+
         return data;
     } catch (error) {
         if (error instanceof ApiError) {
@@ -66,7 +66,7 @@ export async function get(url) {
 export async function post(url, data) {
     return apiRequest(url, {
         method: 'POST',
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
     });
 }
 
@@ -98,23 +98,23 @@ export class ApiError extends Error {
  */
 export async function retry(fn, maxRetries = 3, delay = 1000) {
     let lastError;
-    
+
     for (let i = 0; i < maxRetries; i++) {
         try {
             return await fn();
         } catch (error) {
             lastError = error;
-            
+
             // Don't retry on client errors (4xx)
             if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
                 throw error;
             }
-            
+
             if (i < maxRetries - 1) {
-                await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+                await new Promise((resolve) => setTimeout(resolve, delay * Math.pow(2, i)));
             }
         }
     }
-    
+
     throw lastError;
 }

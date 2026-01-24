@@ -3,7 +3,6 @@
  * Handles multi-court block creation and editing forms
  */
 
-import { stateManager } from '../core/admin-state.js';
 import { blocksAPI } from '../core/admin-api.js';
 import { showToast, formUtils, dateUtils } from '../core/admin-utils.js';
 
@@ -13,23 +12,23 @@ export class BlockForm {
         this.isEditMode = false;
         this.editBlockId = null;
         this.editBatchId = null;
-        
+
         console.log('🏗️ BlockForm constructor called');
-        
+
         this.setupEventListeners();
-        
+
         // Delay initialization to ensure DOM is fully loaded
         setTimeout(() => {
             this.initializeFromDataAttributes();
         }, 100);
-        
+
         // Make this instance globally accessible for debugging
         window.debugBlockForm = this;
-        
+
         console.log('✅ BlockForm initialization complete:', {
             isEditMode: this.isEditMode,
             editBatchId: this.editBatchId,
-            editBlockId: this.editBlockId
+            editBlockId: this.editBlockId,
         });
     }
 
@@ -61,11 +60,11 @@ export class BlockForm {
         // Court selection buttons
         const selectAllBtn = document.getElementById('select-all-courts');
         const clearAllBtn = document.getElementById('clear-all-courts');
-        
+
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => this.selectAllCourts());
         }
-        
+
         if (clearAllBtn) {
             clearAllBtn.addEventListener('click', () => this.clearAllCourts());
         }
@@ -94,23 +93,30 @@ export class BlockForm {
             hasBatchId: !!batchId,
             batchIdLength: batchId ? batchId.length : 0,
             batchIdType: typeof batchId,
-            batchIdValue: `"${batchId}"`
+            batchIdValue: `"${batchId}"`,
         });
 
         // Initialize edit mode if we have valid data
         if (editMode) {
             this.isEditMode = true;
             this.editBlockId = blockId;
-            
+
             // Try multiple sources for batch_id in order of reliability
             let validBatchId = null;
-            
+
             // 1. Data attribute (most reliable after template fix)
-            if (batchId && batchId !== '' && batchId !== 'null' && batchId !== 'None' && batchId !== 'undefined' && batchId.length > 0) {
+            if (
+                batchId &&
+                batchId !== '' &&
+                batchId !== 'null' &&
+                batchId !== 'None' &&
+                batchId !== 'undefined' &&
+                batchId.length > 0
+            ) {
                 validBatchId = batchId;
                 console.log('✅ Using batch_id from data attributes:', validBatchId);
             }
-            
+
             // 2. Extract from URL as fallback
             if (!validBatchId) {
                 const urlPath = window.location.pathname;
@@ -120,33 +126,44 @@ export class BlockForm {
                     console.log('✅ Extracted batch_id from URL:', validBatchId);
                 }
             }
-            
+
             // 3. Check window.editBlockData as last resort
             if (!validBatchId && window.editBlockData && window.editBlockData.batch_id) {
                 validBatchId = window.editBlockData.batch_id;
                 console.log('✅ Using batch_id from window.editBlockData:', validBatchId);
             }
-            
+
             if (validBatchId) {
                 this.editBatchId = validBatchId;
-                console.log('✅ Initializing form in edit mode:', { editMode, batchId: validBatchId, blockId });
+                console.log('✅ Initializing form in edit mode:', {
+                    editMode,
+                    batchId: validBatchId,
+                    blockId,
+                });
                 this.updateFormForEditMode();
             } else {
-                console.log('❌ Edit mode detected but no valid batch_id found. Falling back to create mode.');
+                console.log(
+                    '❌ Edit mode detected but no valid batch_id found. Falling back to create mode.'
+                );
                 this.isEditMode = false;
                 this.editBatchId = null;
             }
         } else {
-            console.log('ℹ️ Form initialized in create mode:', { editMode, batchId, hasBatchId: !!batchId, batchIdType: typeof batchId });
+            console.log('ℹ️ Form initialized in create mode:', {
+                editMode,
+                batchId,
+                hasBatchId: !!batchId,
+                batchIdType: typeof batchId,
+            });
         }
-        
+
         // CRITICAL: Log the final state after data attribute initialization
         console.log('📊 State after data attribute initialization:', {
             isEditMode: this.isEditMode,
             editBatchId: this.editBatchId,
-            editBlockId: this.editBlockId
+            editBlockId: this.editBlockId,
         });
-        
+
         // Also try to get data from window.editBlockData if available
         if (window.editBlockData) {
             console.log('🔄 Found window.editBlockData, using it to populate form data');
@@ -155,12 +172,12 @@ export class BlockForm {
             // Ensure button visibility is correct for create mode
             this.updateButtonVisibility();
         }
-        
+
         // Final state logging
         console.log('📊 Final initialization state:', {
             isEditMode: this.isEditMode,
             editBatchId: this.editBatchId,
-            editBlockId: this.editBlockId
+            editBlockId: this.editBlockId,
         });
     }
 
@@ -172,17 +189,17 @@ export class BlockForm {
             form.setAttribute('data-batch-id', this.editBatchId || '');
             form.setAttribute('data-block-id', this.editBlockId || '');
         }
-        
+
         // Show/hide appropriate buttons based on mode
         this.updateButtonVisibility();
-        
+
         // Ensure validation runs to enable buttons
         this.validateForm();
-        
+
         console.log('✅ Form updated for edit mode:', {
             isEditMode: this.isEditMode,
             editBatchId: this.editBatchId,
-            editBlockId: this.editBlockId
+            editBlockId: this.editBlockId,
         });
     }
 
@@ -191,7 +208,7 @@ export class BlockForm {
         const updateBtn = document.getElementById('update-block-btn');
         const cloneBtn = document.getElementById('clone-block-btn');
         const cancelBtn = document.getElementById('cancel-btn');
-        
+
         if (this.isEditMode) {
             // Edit mode: show update, clone, and cancel buttons; hide create button
             if (createBtn) createBtn.style.display = 'none';
@@ -213,34 +230,34 @@ export class BlockForm {
         const endTimeInput = document.getElementById('multi-end');
         const reasonSelect = document.getElementById('multi-reason');
         const dateInput = document.getElementById('multi-date');
-        
+
         // Court selection validation
-        courtCheckboxes.forEach(cb => {
+        courtCheckboxes.forEach((cb) => {
             cb.addEventListener('change', () => this.validateForm());
         });
-        
+
         // Time validation
         if (startTimeInput && endTimeInput) {
             startTimeInput.addEventListener('change', () => {
                 this.validateTimeRange();
                 this.validateForm();
             });
-            
+
             endTimeInput.addEventListener('change', () => {
                 this.validateTimeRange();
                 this.validateForm();
             });
         }
-        
+
         // Other field validation
         if (reasonSelect) {
             reasonSelect.addEventListener('change', () => this.validateForm());
         }
-        
+
         if (dateInput) {
             dateInput.addEventListener('change', () => this.validateForm());
         }
-        
+
         // Initial validation
         this.validateForm();
     }
@@ -249,12 +266,12 @@ export class BlockForm {
         const startTimeInput = document.getElementById('multi-start');
         const endTimeInput = document.getElementById('multi-end');
         const timeError = document.getElementById('time-error');
-        
+
         if (!startTimeInput || !endTimeInput || !timeError) return;
-        
+
         const startTime = startTimeInput.value;
         const endTime = endTimeInput.value;
-        
+
         if (startTime && endTime) {
             if (!dateUtils.isValidTimeRange(startTime, endTime)) {
                 timeError.textContent = 'Endzeit muss nach Startzeit liegen';
@@ -269,7 +286,7 @@ export class BlockForm {
                 return true;
             }
         }
-        
+
         return true;
     }
 
@@ -279,7 +296,7 @@ export class BlockForm {
         const endTime = document.getElementById('multi-end')?.value;
         const reason = document.getElementById('multi-reason')?.value;
         const date = document.getElementById('multi-date')?.value;
-        
+
         // Debug logging
         console.log('🔍 Form validation:', {
             courts: courtCheckboxes.length,
@@ -287,62 +304,69 @@ export class BlockForm {
             endTime,
             reason,
             date,
-            timeRangeValid: this.validateTimeRange()
+            timeRangeValid: this.validateTimeRange(),
         });
-        
-        const isValid = courtCheckboxes.length > 0 && 
-                       startTime && 
-                       endTime && 
-                       reason && 
-                       date && 
-                       this.validateTimeRange();
-        
+
+        const isValid =
+            courtCheckboxes.length > 0 &&
+            startTime &&
+            endTime &&
+            reason &&
+            date &&
+            this.validateTimeRange();
+
         // Enable/disable all form buttons based on validation
         const createBtn = document.getElementById('create-block-btn');
         const updateBtn = document.getElementById('update-block-btn');
         const cloneBtn = document.getElementById('clone-block-btn');
-        
+
         console.log('🔍 Button states:', {
             isValid,
             createBtn: !!createBtn,
             updateBtn: !!updateBtn,
-            cloneBtn: !!cloneBtn
+            cloneBtn: !!cloneBtn,
         });
-        
+
         if (createBtn) createBtn.disabled = !isValid;
         if (updateBtn) updateBtn.disabled = !isValid;
         if (cloneBtn) cloneBtn.disabled = !isValid;
-        
+
         return isValid;
     }
 
     selectAllCourts() {
-        document.querySelectorAll('input[name="multi-courts"]').forEach(cb => cb.checked = true);
+        document
+            .querySelectorAll('input[name="multi-courts"]')
+            .forEach((cb) => (cb.checked = true));
         this.validateForm();
     }
 
     clearAllCourts() {
-        document.querySelectorAll('input[name="multi-courts"]').forEach(cb => cb.checked = false);
+        document
+            .querySelectorAll('input[name="multi-courts"]')
+            .forEach((cb) => (cb.checked = false));
         this.validateForm();
     }
 
     async handleSubmit(event) {
         console.log('🚀 Form submit handler called'); // Debug log
         event.preventDefault();
-        
+
         console.log('📊 Form state at submission:', {
             isEditMode: this.isEditMode,
             editBatchId: this.editBatchId,
-            editBlockId: this.editBlockId
+            editBlockId: this.editBlockId,
         });
-        
+
         if (!this.validateForm()) {
             showToast('Bitte füllen Sie alle erforderlichen Felder aus', 'error');
             return;
         }
 
         // Manual form data collection
-        const selectedCourts = Array.from(document.querySelectorAll('input[name="multi-courts"]:checked')).map(cb => cb.value);
+        const selectedCourts = Array.from(
+            document.querySelectorAll('input[name="multi-courts"]:checked')
+        ).map((cb) => cb.value);
 
         const blockData = {
             court_ids: selectedCourts,
@@ -350,7 +374,7 @@ export class BlockForm {
             start_time: document.getElementById('multi-start')?.value,
             end_time: document.getElementById('multi-end')?.value,
             reason_id: document.getElementById('multi-reason')?.value,
-            details: document.getElementById('multi-details')?.value || ''
+            details: document.getElementById('multi-details')?.value || '',
         };
 
         console.log('📤 Submitting block data:', blockData);
@@ -363,25 +387,44 @@ export class BlockForm {
 
         try {
             let result;
-            
+
             // Final validation: ensure we have a valid batch_id for edit mode
-            if (this.isEditMode && (!this.editBatchId || this.editBatchId === 'null' || this.editBatchId === 'undefined' || this.editBatchId === '')) {
-                console.log('❌ Edit mode detected but no valid batch_id found. Attempting to re-read data attributes...');
-                
+            if (
+                this.isEditMode &&
+                (!this.editBatchId ||
+                    this.editBatchId === 'null' ||
+                    this.editBatchId === 'undefined' ||
+                    this.editBatchId === '')
+            ) {
+                console.log(
+                    '❌ Edit mode detected but no valid batch_id found. Attempting to re-read data attributes...'
+                );
+
                 // Try one more time to get batch_id from data attributes
                 const form = document.getElementById('multi-court-form');
                 if (form) {
                     const dataAttributeBatchId = form.getAttribute('data-batch-id');
-                    if (dataAttributeBatchId && dataAttributeBatchId !== '' && dataAttributeBatchId !== 'null' && dataAttributeBatchId !== 'None' && dataAttributeBatchId !== 'undefined') {
+                    if (
+                        dataAttributeBatchId &&
+                        dataAttributeBatchId !== '' &&
+                        dataAttributeBatchId !== 'null' &&
+                        dataAttributeBatchId !== 'None' &&
+                        dataAttributeBatchId !== 'undefined'
+                    ) {
                         this.editBatchId = dataAttributeBatchId;
-                        console.log('✅ Recovered batch_id from data attributes:', dataAttributeBatchId);
+                        console.log(
+                            '✅ Recovered batch_id from data attributes:',
+                            dataAttributeBatchId
+                        );
                     } else {
-                        console.log('❌ No valid batch_id in data attributes either. Falling back to create mode.');
+                        console.log(
+                            '❌ No valid batch_id in data attributes either. Falling back to create mode.'
+                        );
                         this.isEditMode = false;
                     }
                 }
             }
-            
+
             if (this.isEditMode && this.editBatchId) {
                 console.log('🔄 Using batch update (PUT) for batch:', this.editBatchId);
                 // Use batch update for editing existing blocks
@@ -390,7 +433,7 @@ export class BlockForm {
                 console.log('➕ Using create (POST)');
                 // Create new block(s)
                 result = await blocksAPI.create(blockData);
-                
+
                 // Debug: log the full response structure
                 console.log('🔍 Full API response:', result);
                 console.log('🔍 Response data:', result.data);
@@ -398,17 +441,17 @@ export class BlockForm {
             }
 
             if (result.success) {
-                const message = this.isEditMode 
-                    ? 'Sperrung erfolgreich aktualisiert' 
+                const message = this.isEditMode
+                    ? 'Sperrung erfolgreich aktualisiert'
                     : 'Sperrung erfolgreich erstellt';
                 showToast(message, 'success');
-                
+
                 // For updates: keep the form data and stay in edit mode
                 // For new creations: redirect to the edit page
                 if (this.isEditMode) {
                     // Stay in edit mode with current data - no changes needed
                     console.log('✅ Update successful - staying in edit mode');
-                    
+
                     // Reload blocks list
                     if (window.loadUpcomingBlocks) {
                         window.loadUpcomingBlocks();
@@ -427,7 +470,7 @@ export class BlockForm {
                         }
                     }
                 }
-                
+
                 // Don't close modal - keep form open for further editing (only for updates)
             } else {
                 showToast(result.error || 'Fehler beim Speichern der Sperrung', 'error');
@@ -441,14 +484,16 @@ export class BlockForm {
     async handleSaveAsNew(event) {
         console.log('🚀 Save as New Event handler called');
         event.preventDefault();
-        
+
         if (!this.validateForm()) {
             showToast('Bitte füllen Sie alle erforderlichen Felder aus', 'error');
             return;
         }
 
         // Collect form data (same as regular submit)
-        const selectedCourts = Array.from(document.querySelectorAll('input[name="multi-courts"]:checked')).map(cb => cb.value);
+        const selectedCourts = Array.from(
+            document.querySelectorAll('input[name="multi-courts"]:checked')
+        ).map((cb) => cb.value);
 
         const blockData = {
             court_ids: selectedCourts,
@@ -456,7 +501,7 @@ export class BlockForm {
             start_time: document.getElementById('multi-start')?.value,
             end_time: document.getElementById('multi-end')?.value,
             reason_id: document.getElementById('multi-reason')?.value,
-            details: document.getElementById('multi-details')?.value || ''
+            details: document.getElementById('multi-details')?.value || '',
         };
 
         console.log('📤 Submitting new event data:', blockData);
@@ -471,7 +516,7 @@ export class BlockForm {
             // Always use POST for "Save as New Event" (create new event)
             console.log('➕ Using create (POST) for new event');
             const result = await blocksAPI.create(blockData);
-            
+
             // Debug: log the full response structure
             console.log('🔍 Full API response (Save as New):', result);
             console.log('🔍 Response data (Save as New):', result.data);
@@ -479,7 +524,7 @@ export class BlockForm {
 
             if (result.success) {
                 showToast('Neue Sperrung erfolgreich erstellt', 'success');
-                
+
                 // Redirect to edit page for the newly created event
                 if (result.data && result.data.batch_id) {
                     console.log('✅ New event created from existing - redirecting to edit page');
@@ -488,7 +533,7 @@ export class BlockForm {
                     console.log('⚠️ New event created but no batch_id returned');
                     console.log('🔍 Full response:', result);
                 }
-                
+
                 // Don't reload blocks list or close modal - we're redirecting
             } else {
                 showToast(result.error || 'Fehler beim Erstellen der neuen Sperrung', 'error');
@@ -502,29 +547,41 @@ export class BlockForm {
     handleCancel(event) {
         console.log('🚀 Cancel handler called');
         event.preventDefault();
-        
+
         // Clear the form completely and reset to create mode
         this.resetForm();
-        
+
         // Navigate back to the main court blocking page
         window.location.href = '/admin/court-blocking';
     }
 
     populateEditForm(blockData) {
         console.log('🔄 populateEditForm called with data:', blockData);
-        
+
         this.isEditMode = true;
         this.editBlockId = blockData.id;
-        
+
         // CRITICAL FIX: Use the batch_id that was already set during initialization
         // Only override if we don't have a valid batch_id yet
-        if (!this.editBatchId && blockData.batch_id && blockData.batch_id !== 'undefined' && blockData.batch_id !== '' && blockData.batch_id !== 'null' && blockData.batch_id !== 'None') {
+        if (
+            !this.editBatchId &&
+            blockData.batch_id &&
+            blockData.batch_id !== 'undefined' &&
+            blockData.batch_id !== '' &&
+            blockData.batch_id !== 'null' &&
+            blockData.batch_id !== 'None'
+        ) {
             this.editBatchId = blockData.batch_id;
             console.log('📝 Set batch_id from blockData:', blockData.batch_id);
         }
-        
-        console.log('📝 Edit mode set via populateEditForm - Block ID:', this.editBlockId, 'Batch ID:', this.editBatchId);
-        
+
+        console.log(
+            '📝 Edit mode set via populateEditForm - Block ID:',
+            this.editBlockId,
+            'Batch ID:',
+            this.editBatchId
+        );
+
         // Set form values
         const dateInput = document.getElementById('multi-date');
         const startTimeInput = document.getElementById('multi-start');
@@ -532,7 +589,7 @@ export class BlockForm {
         const reasonSelect = document.getElementById('multi-reason');
         const detailsInput = document.getElementById('multi-details');
         const descriptionInput = document.getElementById('multi-description');
-        
+
         if (dateInput) dateInput.value = blockData.date;
         if (startTimeInput) startTimeInput.value = blockData.start_time;
         if (endTimeInput) endTimeInput.value = blockData.end_time;
@@ -547,28 +604,28 @@ export class BlockForm {
             const isTemporary = selectedOption?.dataset?.isTemporary === 'true';
             temporaryHint.classList.toggle('hidden', !isTemporary);
         }
-        
+
         // Set selected courts - use court_ids from batch data
         if (blockData.court_ids) {
-            document.querySelectorAll('input[name="multi-courts"]').forEach(cb => {
+            document.querySelectorAll('input[name="multi-courts"]').forEach((cb) => {
                 cb.checked = blockData.court_ids.includes(parseInt(cb.value));
             });
         } else if (blockData.courts) {
             // Fallback for old format
-            document.querySelectorAll('input[name="multi-courts"]').forEach(cb => {
+            document.querySelectorAll('input[name="multi-courts"]').forEach((cb) => {
                 cb.checked = blockData.courts.includes(parseInt(cb.value));
             });
         }
-        
+
         // Update form UI for edit mode
         this.updateFormForEditMode();
-        
+
         this.validateForm();
-        
+
         console.log('✅ populateEditForm completed. Final state:', {
             isEditMode: this.isEditMode,
             editBatchId: this.editBatchId,
-            editBlockId: this.editBlockId
+            editBlockId: this.editBlockId,
         });
     }
 
@@ -576,7 +633,7 @@ export class BlockForm {
         this.isEditMode = false;
         this.editBlockId = null;
         this.editBatchId = null;
-        
+
         const form = document.getElementById('multi-court-form');
         if (form) {
             formUtils.clearForm(form);
@@ -585,24 +642,24 @@ export class BlockForm {
             form.setAttribute('data-batch-id', '');
             form.setAttribute('data-block-id', '');
         }
-        
+
         // Update button visibility for create mode
         this.updateButtonVisibility();
-        
+
         // Set default date
         const dateInput = document.getElementById('multi-date');
         if (dateInput) {
             dateInput.value = dateUtils.getTodayString();
         }
-        
+
         // Ensure end time field is enabled
         const endTimeInput = document.getElementById('multi-end');
         if (endTimeInput) {
             endTimeInput.disabled = false;
         }
-        
+
         this.validateForm();
-        
+
         console.log('✅ Form reset to create mode');
     }
 
@@ -613,32 +670,32 @@ export class BlockForm {
             console.log('❌ Form not found');
             return;
         }
-        
+
         const attrs = {
             'data-edit-mode': form.getAttribute('data-edit-mode'),
             'data-batch-id': form.getAttribute('data-batch-id'),
             'data-block-id': form.getAttribute('data-block-id'),
-            'data-related-block-ids': form.getAttribute('data-related-block-ids')
+            'data-related-block-ids': form.getAttribute('data-related-block-ids'),
         };
-        
+
         console.log('🔍 Current form data attributes:', attrs);
         console.log('🔍 Current form state:', {
             isEditMode: this.isEditMode,
             editBatchId: this.editBatchId,
-            editBlockId: this.editBlockId
+            editBlockId: this.editBlockId,
         });
-        
+
         // Also check window.editBlockData
         if (window.editBlockData) {
             console.log('🔍 window.editBlockData:', window.editBlockData);
         } else {
             console.log('❌ window.editBlockData not found');
         }
-        
+
         // Check the form HTML
         console.log('🔍 Form element HTML (first 500 chars):');
         console.log(form.outerHTML.substring(0, 500));
-        
+
         return attrs;
     }
 
@@ -649,23 +706,29 @@ export class BlockForm {
             console.log('❌ Form not found');
             return false;
         }
-        
+
         let batchId = null;
-        
+
         // Try multiple sources for batch_id
         // 1. Data attributes
         const dataAttributeBatchId = form.getAttribute('data-batch-id');
-        if (dataAttributeBatchId && dataAttributeBatchId !== '' && dataAttributeBatchId !== 'null' && dataAttributeBatchId !== 'None' && dataAttributeBatchId !== 'undefined') {
+        if (
+            dataAttributeBatchId &&
+            dataAttributeBatchId !== '' &&
+            dataAttributeBatchId !== 'null' &&
+            dataAttributeBatchId !== 'None' &&
+            dataAttributeBatchId !== 'undefined'
+        ) {
             batchId = dataAttributeBatchId;
             console.log('✅ Found batch_id in data attributes:', batchId);
         }
-        
+
         // 2. window.editBlockData
         if (!batchId && window.editBlockData && window.editBlockData.batch_id) {
             batchId = window.editBlockData.batch_id;
             console.log('✅ Found batch_id in window.editBlockData:', batchId);
         }
-        
+
         // 3. Extract from URL as last resort
         if (!batchId) {
             const urlPath = window.location.pathname;
@@ -675,7 +738,7 @@ export class BlockForm {
                 console.log('✅ Extracted batch_id from URL:', batchId);
             }
         }
-        
+
         if (batchId) {
             this.editBatchId = batchId;
             this.isEditMode = true;
@@ -689,26 +752,26 @@ export class BlockForm {
     }
     initializeForm() {
         const today = dateUtils.getTodayString();
-        
+
         // Set default date for multi-court form
         const multiDateInput = document.getElementById('multi-date');
         if (multiDateInput) {
             multiDateInput.value = today;
         }
-        
+
         // Set default start time to 08:00
         const startTimeInput = document.getElementById('multi-start');
         if (startTimeInput) {
             startTimeInput.value = '08:00';
         }
-        
+
         // Set default end time to 22:00
         const endTimeInput = document.getElementById('multi-end');
         if (endTimeInput) {
             endTimeInput.disabled = false;
             endTimeInput.value = '22:00';
         }
-        
+
         this.validateForm();
     }
 }

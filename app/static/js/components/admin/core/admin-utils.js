@@ -9,8 +9,8 @@ import { getToday, toBerlinDateString } from '../../../utils/date-utils.js';
 export function showToast(message, type = 'info', duration = 5000) {
     // Remove existing toasts
     const existingToasts = document.querySelectorAll('.toast');
-    existingToasts.forEach(toast => toast.remove());
-    
+    existingToasts.forEach((toast) => toast.remove());
+
     // Create toast element
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
@@ -20,10 +20,10 @@ export function showToast(message, type = 'info', duration = 5000) {
             <button class="toast-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
         </div>
     `;
-    
+
     // Add to page
     document.body.appendChild(toast);
-    
+
     // Auto-remove after duration
     setTimeout(() => {
         if (toast.parentElement) {
@@ -40,21 +40,21 @@ export const dateUtils = {
         }
         return date.toLocaleDateString('de-DE');
     },
-    
+
     formatTime(time) {
         if (typeof time === 'string' && time.includes(':')) {
             return time.substring(0, 5); // Remove seconds if present
         }
         return time;
     },
-    
+
     formatDateTime(dateTime) {
         if (typeof dateTime === 'string') {
             dateTime = new Date(dateTime);
         }
         return `${this.formatDate(dateTime)} ${this.formatTime(dateTime.toTimeString())}`;
     },
-    
+
     getTodayString() {
         return getToday();
     },
@@ -64,15 +64,15 @@ export const dateUtils = {
         date.setDate(date.getDate() + days);
         return toBerlinDateString(date);
     },
-    
+
     isValidTimeRange(startTime, endTime) {
         if (!startTime || !endTime) return false;
-        
+
         const start = new Date(`2000-01-01T${startTime}`);
         const end = new Date(`2000-01-01T${endTime}`);
-        
+
         return start < end;
-    }
+    },
 };
 
 // Form validation utilities
@@ -80,21 +80,21 @@ export const formUtils = {
     validateRequired(value) {
         return value && value.toString().trim() !== '';
     },
-    
+
     validateEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     },
-    
+
     validateTimeRange(startTime, endTime) {
         return dateUtils.isValidTimeRange(startTime, endTime);
     },
-    
+
     getFormData(formElement) {
         const formData = new FormData(formElement);
         const data = {};
-        
-        for (let [key, value] of formData.entries()) {
+
+        for (const [key, value] of formData.entries()) {
             if (data[key]) {
                 // Handle multiple values (like checkboxes)
                 if (Array.isArray(data[key])) {
@@ -106,25 +106,26 @@ export const formUtils = {
                 data[key] = value;
             }
         }
-        
+
         return data;
     },
-    
+
     clearForm(formElement) {
         formElement.reset();
-        
+
         // Clear any custom validation states
         const inputs = formElement.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
+        inputs.forEach((input) => {
             input.classList.remove('is-invalid', 'is-valid');
         });
     },
-    
+
     setFieldError(fieldName, message) {
-        const field = document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
+        const field =
+            document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
         if (field) {
             field.classList.add('is-invalid');
-            
+
             // Add or update error message
             let errorDiv = field.parentElement.querySelector('.invalid-feedback');
             if (!errorDiv) {
@@ -135,18 +136,19 @@ export const formUtils = {
             errorDiv.textContent = message;
         }
     },
-    
+
     clearFieldError(fieldName) {
-        const field = document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
+        const field =
+            document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
         if (field) {
             field.classList.remove('is-invalid');
-            
+
             const errorDiv = field.parentElement.querySelector('.invalid-feedback');
             if (errorDiv) {
                 errorDiv.remove();
             }
         }
-    }
+    },
 };
 
 // DOM utilities
@@ -157,7 +159,7 @@ export const domUtils = {
         if (innerHTML) element.innerHTML = innerHTML;
         return element;
     },
-    
+
     show(element) {
         if (typeof element === 'string') {
             element = document.getElementById(element);
@@ -167,7 +169,7 @@ export const domUtils = {
             element.classList.remove('d-none');
         }
     },
-    
+
     hide(element) {
         if (typeof element === 'string') {
             element = document.getElementById(element);
@@ -177,7 +179,7 @@ export const domUtils = {
             element.classList.add('d-none');
         }
     },
-    
+
     toggle(element) {
         if (typeof element === 'string') {
             element = document.getElementById(element);
@@ -190,7 +192,7 @@ export const domUtils = {
             }
         }
     },
-    
+
     addClass(element, className) {
         if (typeof element === 'string') {
             element = document.getElementById(element);
@@ -199,7 +201,7 @@ export const domUtils = {
             element.classList.add(className);
         }
     },
-    
+
     removeClass(element, className) {
         if (typeof element === 'string') {
             element = document.getElementById(element);
@@ -208,13 +210,13 @@ export const domUtils = {
             element.classList.remove(className);
         }
     },
-    
+
     hasClass(element, className) {
         if (typeof element === 'string') {
             element = document.getElementById(element);
         }
         return element ? element.classList.contains(className) : false;
-    }
+    },
 };
 
 // Array and object utilities
@@ -229,12 +231,12 @@ export const dataUtils = {
             return groups;
         }, {});
     },
-    
+
     sortBy(array, key, direction = 'asc') {
         return array.sort((a, b) => {
             const aVal = a[key];
             const bVal = b[key];
-            
+
             if (direction === 'desc') {
                 return bVal > aVal ? 1 : bVal < aVal ? -1 : 0;
             } else {
@@ -242,30 +244,30 @@ export const dataUtils = {
             }
         });
     },
-    
+
     filterBy(array, filters) {
-        return array.filter(item => {
-            return Object.keys(filters).every(key => {
+        return array.filter((item) => {
+            return Object.keys(filters).every((key) => {
                 const filterValue = filters[key];
                 const itemValue = item[key];
-                
+
                 if (filterValue === null || filterValue === undefined || filterValue === '') {
                     return true; // No filter applied
                 }
-                
+
                 if (Array.isArray(filterValue)) {
                     return filterValue.includes(itemValue);
                 }
-                
+
                 if (typeof filterValue === 'string') {
                     return itemValue.toString().toLowerCase().includes(filterValue.toLowerCase());
                 }
-                
+
                 return itemValue === filterValue;
             });
         });
     },
-    
+
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -277,10 +279,10 @@ export const dataUtils = {
             timeout = setTimeout(later, wait);
         };
     },
-    
+
     deepClone(obj) {
         return JSON.parse(JSON.stringify(obj));
-    }
+    },
 };
 
 // Local storage utilities
@@ -294,7 +296,7 @@ export const storageUtils = {
             return false;
         }
     },
-    
+
     get(key, defaultValue = null) {
         try {
             const item = localStorage.getItem(key);
@@ -304,7 +306,7 @@ export const storageUtils = {
             return defaultValue;
         }
     },
-    
+
     remove(key) {
         try {
             localStorage.removeItem(key);
@@ -314,7 +316,7 @@ export const storageUtils = {
             return false;
         }
     },
-    
+
     clear() {
         try {
             localStorage.clear();
@@ -323,7 +325,7 @@ export const storageUtils = {
             console.error('Error clearing localStorage:', error);
             return false;
         }
-    }
+    },
 };
 
 // Event handling utilities
@@ -336,7 +338,7 @@ export const eventUtils = {
             element.addEventListener(event, handler, options);
         }
     },
-    
+
     off(element, event, handler) {
         if (typeof element === 'string') {
             element = document.getElementById(element);
@@ -345,11 +347,11 @@ export const eventUtils = {
             element.removeEventListener(event, handler);
         }
     },
-    
+
     once(element, event, handler) {
         this.on(element, event, handler, { once: true });
     },
-    
+
     delegate(parent, selector, event, handler) {
         if (typeof parent === 'string') {
             parent = document.getElementById(parent);
@@ -361,5 +363,5 @@ export const eventUtils = {
                 }
             });
         }
-    }
+    },
 };

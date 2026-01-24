@@ -23,7 +23,7 @@ class AvailabilityCache {
         const age = Date.now() - entry.fetchedAt;
         return {
             data: entry.data,
-            isStale: age > CACHE_TTL_MS
+            isStale: age > CACHE_TTL_MS,
         };
     }
 
@@ -35,7 +35,7 @@ class AvailabilityCache {
     set(dateStr, data) {
         this.cache.set(dateStr, {
             data,
-            fetchedAt: Date.now()
+            fetchedAt: Date.now(),
         });
     }
 

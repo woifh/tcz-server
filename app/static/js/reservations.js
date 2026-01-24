@@ -19,11 +19,11 @@ function getCsrfToken() {
 export async function loadUserReservations() {
     const container = document.getElementById('user-reservations');
     if (!container) return;
-    
+
     try {
         const response = await fetch('/api/reservations/');
         const data = await response.json();
-        
+
         if (response.ok && data.reservations && data.reservations.length > 0) {
             // Sort by date and time
             const sortedReservations = data.reservations.sort((a, b) => {
@@ -31,11 +31,13 @@ export async function loadUserReservations() {
                 if (dateCompare !== 0) return dateCompare;
                 return a.start_time.localeCompare(b.start_time);
             });
-            
+
             // Show only next 5 reservations
             const upcomingReservations = sortedReservations.slice(0, 5);
-            
-            container.innerHTML = upcomingReservations.map(res => `
+
+            container.innerHTML = upcomingReservations
+                .map(
+                    (res) => `
                 <div class="bg-white rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
@@ -60,32 +62,36 @@ export async function loadUserReservations() {
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `
+                )
+                .join('');
         } else {
-            container.innerHTML = '<p class="text-gray-500 text-center py-4">Keine kommenden Buchungen vorhanden.</p>';
+            container.innerHTML =
+                '<p class="text-gray-500 text-center py-4">Keine kommenden Buchungen vorhanden.</p>';
         }
     } catch (error) {
         console.error('Error loading user reservations:', error);
-        container.innerHTML = '<p class="text-red-500 text-center py-4">Fehler beim Laden der Buchungen</p>';
+        container.innerHTML =
+            '<p class="text-red-500 text-center py-4">Fehler beim Laden der Buchungen</p>';
     }
 }
 
 /**
  * Cancel reservation from dashboard
  */
-export async function cancelReservationFromDashboard(reservationId, bookedFor, date, time) {
+export async function cancelReservationFromDashboard(reservationId, _bookedFor, _date, _time) {
     try {
         const response = await fetch(`/api/reservations/${reservationId}`, {
             method: 'DELETE',
-            headers: { 'X-CSRFToken': getCsrfToken() }
+            headers: { 'X-CSRFToken': getCsrfToken() },
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok) {
             showSuccess('Buchung erfolgreich storniert');
             loadUserReservations();
-            
+
             // Reload grid if available
             const dateSelector = document.getElementById('date-selector');
             if (dateSelector) {
@@ -107,11 +113,11 @@ export async function cancelReservation(reservationId) {
     try {
         const response = await fetch(`/api/reservations/${reservationId}`, {
             method: 'DELETE',
-            headers: { 'X-CSRFToken': getCsrfToken() }
+            headers: { 'X-CSRFToken': getCsrfToken() },
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok) {
             showSuccess('Buchung erfolgreich storniert');
             window.location.reload();

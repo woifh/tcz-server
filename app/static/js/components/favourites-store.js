@@ -13,31 +13,31 @@ function getCsrfToken() {
 
 export function initFavouritesStore() {
     if (typeof window === 'undefined' || !window.Alpine) return;
-    
+
     document.addEventListener('alpine:init', () => {
         window.Alpine.store('favourites', {
             // State
             items: [],
             loading: false,
             error: null,
-            
+
             // Methods
             async load() {
                 this.loading = true;
                 this.error = null;
-                
+
                 try {
                     // Get current user ID
                     const bookingForSelect = document.getElementById('booking-for');
                     if (!bookingForSelect) return;
-                    
+
                     const firstOption = bookingForSelect.querySelector('option');
                     const currentUserId = firstOption ? firstOption.value : null;
-                    
+
                     if (!currentUserId) return;
-                    
+
                     const response = await fetch(`/api/members/${currentUserId}/favourites`);
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         this.items = data.favourites || [];
@@ -51,21 +51,21 @@ export function initFavouritesStore() {
                     this.loading = false;
                 }
             },
-            
+
             async add(memberId) {
                 this.loading = true;
                 this.error = null;
-                
+
                 try {
                     const response = await fetch('/api/members/favourites', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRFToken': getCsrfToken()
+                            'X-CSRFToken': getCsrfToken(),
                         },
-                        body: JSON.stringify({ member_id: memberId })
+                        body: JSON.stringify({ member_id: memberId }),
                     });
-                    
+
                     if (response.ok) {
                         await this.load(); // Reload the list
                         return true;
@@ -82,17 +82,17 @@ export function initFavouritesStore() {
                     this.loading = false;
                 }
             },
-            
+
             async remove(favouriteId) {
                 this.loading = true;
                 this.error = null;
-                
+
                 try {
                     const response = await fetch(`/api/members/favourites/${favouriteId}`, {
                         method: 'DELETE',
-                        headers: { 'X-CSRFToken': getCsrfToken() }
+                        headers: { 'X-CSRFToken': getCsrfToken() },
                     });
-                    
+
                     if (response.ok) {
                         await this.load(); // Reload the list
                         return true;
@@ -109,14 +109,14 @@ export function initFavouritesStore() {
                     this.loading = false;
                 }
             },
-            
+
             getById(id) {
-                return this.items.find(item => item.id === id);
+                return this.items.find((item) => item.id === id);
             },
-            
+
             getAll() {
                 return this.items;
-            }
+            },
         });
     });
 }

@@ -19,15 +19,15 @@ export class CalendarView {
         const prevBtn = document.getElementById('calendar-prev-btn');
         const nextBtn = document.getElementById('calendar-next-btn');
         const todayBtn = document.getElementById('calendar-today-btn');
-        
+
         if (prevBtn) {
             prevBtn.addEventListener('click', () => this.navigateMonth(-1));
         }
-        
+
         if (nextBtn) {
             nextBtn.addEventListener('click', () => this.navigateMonth(1));
         }
-        
+
         if (todayBtn) {
             todayBtn.addEventListener('click', () => this.goToToday());
         }
@@ -35,11 +35,11 @@ export class CalendarView {
         // View toggle buttons
         const monthViewBtn = document.getElementById('calendar-month-view');
         const weekViewBtn = document.getElementById('calendar-week-view');
-        
+
         if (monthViewBtn) {
             monthViewBtn.addEventListener('click', () => this.setView('month'));
         }
-        
+
         if (weekViewBtn) {
             weekViewBtn.addEventListener('click', () => this.setView('week'));
         }
@@ -55,12 +55,12 @@ export class CalendarView {
         try {
             const startDate = this.getCalendarStartDate();
             const endDate = this.getCalendarEndDate();
-            
+
             const result = await blocksAPI.load({
                 date_range_start: startDate,
-                date_range_end: endDate
+                date_range_end: endDate,
             });
-            
+
             if (result.success) {
                 stateManager.setCalendarBlocks(result.blocks);
             } else {
@@ -102,14 +102,14 @@ export class CalendarView {
 
         const blocks = stateManager.getCalendarBlocks();
         const blocksByDate = this.groupBlocksByDate(blocks);
-        
+
         // Update calendar header
         this.updateCalendarHeader();
-        
+
         // Render calendar grid
         const calendarHtml = this.generateCalendarHtml(blocksByDate);
         container.innerHTML = calendarHtml;
-        
+
         // Add event listeners to calendar cells
         this.setupCalendarCellListeners();
     }
@@ -118,13 +118,23 @@ export class CalendarView {
         const headerElement = document.getElementById('calendar-header');
         if (headerElement) {
             const monthNames = [
-                'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-                'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+                'Januar',
+                'Februar',
+                'März',
+                'April',
+                'Mai',
+                'Juni',
+                'Juli',
+                'August',
+                'September',
+                'Oktober',
+                'November',
+                'Dezember',
             ];
-            
+
             const month = monthNames[this.currentDate.getMonth()];
             const year = this.currentDate.getFullYear();
-            
+
             headerElement.textContent = `${month} ${year}`;
         }
     }
@@ -134,7 +144,7 @@ export class CalendarView {
         const endDate = new Date(this.getCalendarEndDate());
         const today = getToday();
         const currentMonth = this.currentDate.getMonth();
-        
+
         let html = `
             <div class="calendar-grid">
                 <div class="calendar-header-row">
@@ -147,7 +157,7 @@ export class CalendarView {
                     <div class="calendar-day-header">So</div>
                 </div>
         `;
-        
+
         const current = new Date(startDate);
 
         while (current <= endDate) {
@@ -156,13 +166,13 @@ export class CalendarView {
             const isToday = dateStr === today;
             const isCurrentMonth = current.getMonth() === currentMonth;
             const isWeekend = current.getDay() === 0 || current.getDay() === 6;
-            
+
             let cellClass = 'calendar-day';
             if (isToday) cellClass += ' today';
             if (!isCurrentMonth) cellClass += ' other-month';
             if (isWeekend) cellClass += ' weekend';
             if (dayBlocks.length > 0) cellClass += ' has-blocks';
-            
+
             html += `
                 <div class="${cellClass}" data-date="${dateStr}">
                     <div class="calendar-day-number">${current.getDate()}</div>
@@ -171,41 +181,42 @@ export class CalendarView {
                     </div>
                 </div>
             `;
-            
+
             current.setDate(current.getDate() + 1);
         }
-        
+
         html += '</div>';
         return html;
     }
 
     renderDayBlocks(blocks) {
         if (blocks.length === 0) return '';
-        
+
         // Group blocks by batch_id
         const batches = {};
-        blocks.forEach(block => {
+        blocks.forEach((block) => {
             if (!batches[block.batch_id]) {
                 batches[block.batch_id] = [];
             }
             batches[block.batch_id].push(block);
         });
-        
+
         let html = '';
         let displayCount = 0;
         const maxDisplay = 3;
-        
-        Object.keys(batches).forEach(batchId => {
+
+        Object.keys(batches).forEach((batchId) => {
             if (displayCount >= maxDisplay) return;
-            
+
             const batchBlocks = batches[batchId];
             const firstBlock = batchBlocks[0];
             const courtCount = batchBlocks.length;
-            
+
             const blockClass = this.getBlockClass(firstBlock);
             const timeText = `${dateUtils.formatTime(firstBlock.start_time)}-${dateUtils.formatTime(firstBlock.end_time)}`;
-            const courtText = courtCount === 1 ? `Platz ${firstBlock.court_name}` : `${courtCount} Plätze`;
-            
+            const courtText =
+                courtCount === 1 ? `Platz ${firstBlock.court_name}` : `${courtCount} Plätze`;
+
             html += `
                 <div class="calendar-block ${blockClass}" 
                      data-batch-id="${batchId}"
@@ -215,10 +226,10 @@ export class CalendarView {
                     <div class="calendar-block-reason">${firstBlock.reason_name}</div>
                 </div>
             `;
-            
+
             displayCount++;
         });
-        
+
         // Show "more" indicator if there are additional blocks
         const remainingBatches = Object.keys(batches).length - displayCount;
         if (remainingBatches > 0) {
@@ -228,7 +239,7 @@ export class CalendarView {
                 </div>
             `;
         }
-        
+
         return html;
     }
 
@@ -236,7 +247,7 @@ export class CalendarView {
         // You can customize this based on block properties
         const now = new Date();
         const blockDate = new Date(block.date);
-        
+
         if (blockDate < now) {
             return 'past-block';
         } else if (blockDate.toDateString() === now.toDateString()) {
@@ -249,7 +260,7 @@ export class CalendarView {
     setupCalendarCellListeners() {
         // Day cell clicks
         const dayCells = document.querySelectorAll('.calendar-day');
-        dayCells.forEach(cell => {
+        dayCells.forEach((cell) => {
             cell.addEventListener('click', (e) => {
                 if (!e.target.closest('.calendar-block')) {
                     const date = cell.dataset.date;
@@ -257,10 +268,10 @@ export class CalendarView {
                 }
             });
         });
-        
+
         // Block clicks
         const blockElements = document.querySelectorAll('.calendar-block');
-        blockElements.forEach(block => {
+        blockElements.forEach((block) => {
             block.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const batchId = block.dataset.batchId;
@@ -276,7 +287,7 @@ export class CalendarView {
             if (dateInput) {
                 dateInput.value = date;
             }
-            
+
             // Show the create block modal
             const modal = document.getElementById('multi-court-modal');
             if (modal && window.bootstrap) {
@@ -299,13 +310,13 @@ export class CalendarView {
     async showBlockDetailsModal(batchId) {
         try {
             const blocks = stateManager.getCalendarBlocks();
-            const batchBlocks = blocks.filter(block => block.batch_id === batchId);
-            
+            const batchBlocks = blocks.filter((block) => block.batch_id === batchId);
+
             if (batchBlocks.length === 0) {
                 showToast('Sperrungsdetails nicht gefunden', 'error');
                 return;
             }
-            
+
             // Create and show details modal
             this.createBlockDetailsModal(batchBlocks);
         } catch (error) {
@@ -319,10 +330,10 @@ export class CalendarView {
         if (existingModal) {
             existingModal.remove();
         }
-        
+
         const firstBlock = blocks[0];
-        const courtNames = blocks.map(b => b.court_name).join(', ');
-        
+        const courtNames = blocks.map((b) => b.court_name).join(', ');
+
         const modalHtml = `
             <div class="modal fade" id="block-details-modal" tabindex="-1">
                 <div class="modal-dialog">
@@ -348,18 +359,26 @@ export class CalendarView {
                                 <div class="col-sm-4"><strong>Grund:</strong></div>
                                 <div class="col-sm-8">${firstBlock.reason_name}</div>
                             </div>
-                            ${firstBlock.details ? `
+                            ${
+                                firstBlock.details
+                                    ? `
                             <div class="row">
                                 <div class="col-sm-4"><strong>Details:</strong></div>
                                 <div class="col-sm-8">${firstBlock.details}</div>
                             </div>
-                            ` : ''}
-                            ${firstBlock.description ? `
+                            `
+                                    : ''
+                            }
+                            ${
+                                firstBlock.description
+                                    ? `
                             <div class="row">
                                 <div class="col-sm-4"><strong>Beschreibung:</strong></div>
                                 <div class="col-sm-8">${firstBlock.description}</div>
                             </div>
-                            ` : ''}
+                            `
+                                    : ''
+                            }
                             <div class="row">
                                 <div class="col-sm-4"><strong>Batch ID:</strong></div>
                                 <div class="col-sm-8">${firstBlock.batch_id}</div>
@@ -375,14 +394,14 @@ export class CalendarView {
                 </div>
             </div>
         `;
-        
+
         document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
+
         const modal = document.getElementById('block-details-modal');
         if (modal && window.bootstrap) {
             const bsModal = new window.bootstrap.Modal(modal);
             bsModal.show();
-            
+
             // Remove modal from DOM when hidden
             modal.addEventListener('hidden.bs.modal', () => {
                 modal.remove();
@@ -392,22 +411,22 @@ export class CalendarView {
 
     groupBlocksByDate(blocks) {
         const grouped = {};
-        
-        blocks.forEach(block => {
+
+        blocks.forEach((block) => {
             const date = block.date;
             if (!grouped[date]) {
                 grouped[date] = [];
             }
             grouped[date].push(block);
         });
-        
+
         return grouped;
     }
 
     async navigateMonth(direction) {
         this.currentDate.setMonth(this.currentDate.getMonth() + direction);
         stateManager.setCalendarDate(this.currentDate);
-        
+
         await this.loadCalendarData();
         this.renderCalendar();
     }
@@ -415,7 +434,7 @@ export class CalendarView {
     async goToToday() {
         this.currentDate = new Date();
         stateManager.setCalendarDate(this.currentDate);
-        
+
         await this.loadCalendarData();
         this.renderCalendar();
     }
@@ -424,12 +443,12 @@ export class CalendarView {
         // Update active view button
         const monthBtn = document.getElementById('calendar-month-view');
         const weekBtn = document.getElementById('calendar-week-view');
-        
+
         if (monthBtn && weekBtn) {
             monthBtn.classList.toggle('active', viewType === 'month');
             weekBtn.classList.toggle('active', viewType === 'week');
         }
-        
+
         // TODO: Implement week view if needed
         if (viewType === 'week') {
             showToast('Wochenansicht noch nicht implementiert', 'info');

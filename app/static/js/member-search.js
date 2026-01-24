@@ -23,7 +23,7 @@ function debounceSearch(query) {
     if (searchTimeout) {
         clearTimeout(searchTimeout);
     }
-    
+
     // Set new timeout
     searchTimeout = setTimeout(() => {
         searchMembers(query);
@@ -37,24 +37,24 @@ function debounceSearch(query) {
 async function searchMembers(query) {
     const resultsContainer = document.getElementById('search-results');
     const loadingSpinner = document.getElementById('search-loading');
-    
+
     console.log('Searching for:', query);
-    
+
     // Show loading indicator
     loadingSpinner.classList.remove('hidden');
-    
+
     try {
         const url = `/api/members/search?q=${encodeURIComponent(query)}`;
         console.log('Fetching:', url);
         const response = await fetch(url);
         const data = await response.json();
-        
+
         console.log('Response status:', response.status);
         console.log('Response data:', data);
-        
+
         // Hide loading indicator
         loadingSpinner.classList.add('hidden');
-        
+
         if (response.ok) {
             renderSearchResults(data.results);
         } else {
@@ -69,7 +69,7 @@ async function searchMembers(query) {
         console.error('Search error:', error);
         // Hide loading indicator
         loadingSpinner.classList.add('hidden');
-        
+
         // Display network error
         resultsContainer.innerHTML = `
             <div class="text-red-600 p-4 text-center">
@@ -86,10 +86,10 @@ async function searchMembers(query) {
 function renderSearchResults(results) {
     const resultsContainer = document.getElementById('search-results');
     const resultsCount = document.getElementById('search-results-count');
-    
+
     // Reset highlight index
     currentHighlightIndex = -1;
-    
+
     if (results.length === 0) {
         // Empty state
         resultsContainer.innerHTML = `
@@ -97,21 +97,23 @@ function renderSearchResults(results) {
                 Keine Mitglieder gefunden
             </div>
         `;
-        
+
         // Announce to screen readers
         if (resultsCount) {
             resultsCount.textContent = 'Keine Mitglieder gefunden';
         }
         return;
     }
-    
+
     // Announce result count to screen readers
     if (resultsCount) {
         resultsCount.textContent = `${results.length} ${results.length === 1 ? 'Mitglied gefunden' : 'Mitglieder gefunden'}`;
     }
-    
+
     // Render results
-    resultsContainer.innerHTML = results.map(member => `
+    resultsContainer.innerHTML = results
+        .map(
+            (member) => `
         <div class="flex justify-between items-center p-3 border border-gray-200 rounded hover:bg-gray-100" role="option" aria-label="${escapeHtml(member.name)}, ${escapeHtml(member.email)}">
             <div>
                 <div class="font-semibold">${escapeHtml(member.name)}</div>
@@ -126,7 +128,9 @@ function renderSearchResults(results) {
                 Hinzufügen
             </button>
         </div>
-    `).join('');
+    `
+        )
+        .join('');
 }
 
 /**
@@ -143,35 +147,35 @@ function clearSearchResults() {
  */
 async function addToFavourites(memberId) {
     const currentUserId = window.currentUserId;
-    
+
     try {
         const response = await fetch(`/api/members/${currentUserId}/favourites`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRFToken': getCsrfToken(),
             },
-            body: JSON.stringify({ favourite_id: memberId })
+            body: JSON.stringify({ favourite_id: memberId }),
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok) {
             // Show success message
             showSuccessMessage('Favorit erfolgreich hinzugefügt!');
-            
+
             // Remove member from search results
             const searchInput = document.getElementById('member-search-input');
             const currentQuery = searchInput.value;
             if (currentQuery) {
                 searchMembers(currentQuery);
             }
-            
+
             // Update favourites list
             if (typeof loadFavourites === 'function') {
                 loadFavourites();
             }
-            
+
             // Return focus to search input
             setTimeout(() => {
                 searchInput.focus();
@@ -195,7 +199,7 @@ function showSuccessMessage(message) {
     successDiv.className = 'bg-green-100 text-green-800 p-3 rounded mb-2';
     successDiv.textContent = message;
     resultsContainer.insertBefore(successDiv, resultsContainer.firstChild);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
         successDiv.remove();
@@ -212,7 +216,7 @@ function showErrorMessage(message) {
     errorDiv.className = 'bg-red-100 text-red-800 p-3 rounded mb-2';
     errorDiv.textContent = message;
     resultsContainer.insertBefore(errorDiv, resultsContainer.firstChild);
-    
+
     // Remove after 5 seconds
     setTimeout(() => {
         errorDiv.remove();
@@ -236,13 +240,13 @@ function escapeHtml(text) {
 function initMemberSearch() {
     const searchInput = document.getElementById('member-search-input');
     const clearBtn = document.getElementById('search-clear-btn');
-    
+
     if (!searchInput) return;
-    
+
     // Input event listener with debouncing
-    searchInput.addEventListener('input', function(e) {
+    searchInput.addEventListener('input', function (e) {
         const query = e.target.value.trim();
-        
+
         // Show/hide clear button
         if (query) {
             clearBtn.classList.remove('hidden');
@@ -252,18 +256,18 @@ function initMemberSearch() {
             clearSearchResults();
         }
     });
-    
+
     // Clear button event listener
-    clearBtn.addEventListener('click', function() {
+    clearBtn.addEventListener('click', function () {
         searchInput.value = '';
         clearBtn.classList.add('hidden');
         clearSearchResults();
         searchInput.focus();
     });
-    
+
     // Keyboard navigation
     searchInput.addEventListener('keydown', handleKeyboardNavigation);
-    
+
     // Focus on input when search form is shown
     searchInput.focus();
 }
@@ -277,26 +281,27 @@ let currentHighlightIndex = -1;
 function handleKeyboardNavigation(e) {
     const resultsContainer = document.getElementById('search-results');
     const results = resultsContainer.querySelectorAll('[role="option"]');
-    
+
     if (results.length === 0) return;
-    
-    switch(e.key) {
+
+    switch (e.key) {
         case 'ArrowDown':
             e.preventDefault();
             currentHighlightIndex = Math.min(currentHighlightIndex + 1, results.length - 1);
             highlightResult(results, currentHighlightIndex);
             break;
-            
+
         case 'ArrowUp':
             e.preventDefault();
             currentHighlightIndex = Math.max(currentHighlightIndex - 1, 0);
             highlightResult(results, currentHighlightIndex);
             break;
-            
+
         case 'Enter':
             e.preventDefault();
             if (currentHighlightIndex >= 0 && currentHighlightIndex < results.length) {
-                const addButton = results[currentHighlightIndex].querySelector('button[data-member-id]');
+                const addButton =
+                    results[currentHighlightIndex].querySelector('button[data-member-id]');
                 if (addButton) {
                     const memberId = addButton.getAttribute('data-member-id');
                     addToFavourites(memberId);

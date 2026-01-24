@@ -11,18 +11,18 @@ export const GERMAN_TEXT = {
     EDIT_SINGLE_INSTANCE: 'Einzelne Instanz bearbeiten',
     ALL_FUTURE_INSTANCES: 'Alle zukünftigen Instanzen',
     DELETE_ENTIRE_SERIES: 'Gesamte Serie löschen',
-    
+
     // Reason management
     MANAGE_BLOCK_REASON: 'Sperrungsgrund verwalten',
     DETAILS: 'Details',
     REASON_IN_USE: 'Grund wird verwendet',
     HISTORICAL_DATA_PRESERVED: 'Historische Daten bleiben erhalten',
-    
+
     // Calendar and filtering
     CALENDAR_VIEW: 'Kalenderansicht',
     MONTHLY_VIEW: 'Monatliche Ansicht',
     CONFLICT_PREVIEW: 'Konflikt-Vorschau',
-    AFFECTED_RESERVATIONS: 'Betroffene Buchungen'
+    AFFECTED_RESERVATIONS: 'Betroffene Buchungen',
 };
 
 // Configuration constants
@@ -31,6 +31,6 @@ export const CONFIG = {
     DEFAULT_DATE_RANGE_DAYS: 7,
     STORAGE_KEYS: {
         FILTERS: 'adminBlockFilters',
-        PREFERENCES: 'adminPreferences'
-    }
+        PREFERENCES: 'adminPreferences',
+    },
 };

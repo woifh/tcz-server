@@ -31,29 +31,29 @@ export class AdminPanel {
         try {
             // Load initial data
             await this.loadInitialData();
-            
+
             // Initialize components
             this.initializeComponents();
-            
+
             // Setup global event listeners
             this.setupGlobalEventListeners();
-            
+
             // Initialize forms with default values
             this.initializeForms();
-            
+
             // Load blocks
             await this.loadUpcomingBlocks();
-            
+
             // Handle edit mode if edit block data is available
             if (window.editBlockData) {
                 blockForm.populateEditForm(window.editBlockData);
             }
-            
+
             // Initialize filters from URL
             blockFilters.initializeFromUrl();
-            
+
             this.isInitialized = true;
-            
+
             console.log('Admin panel initialized successfully');
         } catch (error) {
             console.error('Error initializing admin panel:', error);
@@ -78,7 +78,7 @@ export class AdminPanel {
         // Forms are already initialized via imports
         // Bulk operations are already initialized via imports
         // Filters are already initialized via imports
-        
+
         // Initialize calendar if container exists
         const calendarContainer = document.getElementById('calendar-container');
         if (calendarContainer) {

@@ -29,53 +29,60 @@ admin/
 ### Core Modules
 
 #### `admin-main.js`
+
 - Main entry point that initializes all components
 - Coordinates communication between modules
 - Sets up global functions for HTML onclick handlers
 - Handles initial data loading
 
 #### `core/admin-api.js`
+
 - Centralized API client for all backend requests
 - Provides typed API methods for:
-  - Block reasons (load, create, update, delete)
-  - Blocks (load, create, update, delete, get)
-  - Conflict preview
-  - Audit log
+    - Block reasons (load, create, update, delete)
+    - Blocks (load, create, update, delete, get)
+    - Conflict preview
+    - Audit log
 
 #### `core/admin-state.js`
+
 - Global state management using singleton pattern
 - Manages:
-  - Block reasons list
-  - Current filters
-  - Calendar date
-  - Selected blocks
+    - Block reasons list
+    - Current filters
+    - Calendar date
+    - Selected blocks
 
 #### `core/admin-utils.js`
+
 - Utility functions used across modules:
-  - `showToast()` - Toast notification system
-  - `dateUtils` - Date/time formatting and validation
-  - `formUtils` - Form validation helpers
-  - `domUtils` - DOM manipulation helpers
+    - `showToast()` - Toast notification system
+    - `dateUtils` - Date/time formatting and validation
+    - `formUtils` - Form validation helpers
+    - `domUtils` - DOM manipulation helpers
 
 #### `core/blocks-manager.js`
+
 - Block management operations:
-  - Load and display upcoming blocks
-  - Group blocks by batch
-  - Delete batch with confirmation modal
-  - Duplicate blocks
-  - Batch operations
+    - Load and display upcoming blocks
+    - Group blocks by batch
+    - Delete batch with confirmation modal
+    - Duplicate blocks
+    - Batch operations
 
 #### `core/ui-helpers.js`
+
 - UI utilities:
-  - `showTab()` - Tab management
-  - `modalUtils` - Modal creation and management
-  - `getReasonColor()` - Color coding for block reasons
-  - `loadingUtils` - Loading states and messages
-  - `KeyboardShortcuts` - Keyboard shortcut registration
+    - `showTab()` - Tab management
+    - `modalUtils` - Modal creation and management
+    - `getReasonColor()` - Color coding for block reasons
+    - `loadingUtils` - Loading states and messages
+    - `KeyboardShortcuts` - Keyboard shortcut registration
 
 ### Form Modules
 
 #### `forms/block-form.js`
+
 - Multi-court block form management
 - Form validation (courts, dates, times, reasons)
 - Submit handlers for create and update
@@ -83,6 +90,7 @@ admin/
 - "Save as New" functionality
 
 #### `forms/reason-form.js`
+
 - Block reason CRUD operations
 - Reason list display
 - Reason editing modal
@@ -91,6 +99,7 @@ admin/
 ### Filtering Module
 
 #### `filtering/block-filters.js`
+
 - Block list filtering functionality
 - Advanced filter modal
 - Filter state persistence (localStorage)
@@ -99,6 +108,7 @@ admin/
 ### Calendar Module
 
 #### `calendar/calendar-view.js`
+
 - Monthly calendar view
 - Block visualization by day
 - Month navigation
@@ -113,7 +123,10 @@ The admin panel is automatically initialized when the page loads:
 
 ```javascript
 // In HTML template
-<script type="module" src="{{ url_for('static', filename='js/components/admin/admin-main.js') }}"></script>
+<script
+    type="module"
+    src="{{ url_for('static', filename='js/components/admin/admin-main.js') }}"
+></script>
 ```
 
 ### Accessing Components
@@ -122,13 +135,13 @@ Components are made globally available for use in HTML templates:
 
 ```javascript
 // Global window objects:
-window.blocksManager   // Block operations
-window.blockForm       // Form management
-window.reasonForm      // Reason management
-window.blockFilters    // Filtering
-window.calendarView    // Calendar display
-window.showTab         // Tab navigation
-window.modalUtils      // Modal utilities
+window.blocksManager; // Block operations
+window.blockForm; // Form management
+window.reasonForm; // Reason management
+window.blockFilters; // Filtering
+window.calendarView; // Calendar display
+window.showTab; // Tab navigation
+window.modalUtils; // Modal utilities
 ```
 
 ### Example: Using in HTML
@@ -141,8 +154,10 @@ window.modalUtils      // Modal utilities
 <button onclick="window.showTab('calendar')">Calendar</button>
 
 <!-- Show modal -->
-<button onclick="window.modalUtils.showConfirmation('Title', 'Message', () => console.log('Confirmed'))">
-  Confirm Action
+<button
+    onclick="window.modalUtils.showConfirmation('Title', 'Message', () => console.log('Confirmed'))"
+>
+    Confirm Action
 </button>
 ```
 
@@ -183,17 +198,17 @@ Modules communicate through:
 
 The original `admin-enhanced.js` (1933 lines) has been refactored into smaller, focused modules:
 
-| Original Function | New Location |
-|------------------|--------------|
-| `initializeAdminPanel()` | `admin-main.js` → `AdminPanel.initialize()` |
-| `loadBlockReasons()` | `forms/reason-form.js` → `ReasonForm.loadReasons()` |
-| `handleMultiCourtSubmit()` | `forms/block-form.js` → `BlockForm.handleSubmit()` |
-| `applyFilters()` | `filtering/block-filters.js` → `BlockFilters.applyFilters()` |
-| `renderCalendarView()` | `calendar/calendar-view.js` → `CalendarView.renderCalendar()` |
-| `deleteBatch()` | `core/blocks-manager.js` → `BlocksManager.deleteBatch()` |
-| `showToast()` | `core/admin-utils.js` → `showToast()` |
-| `getReasonColor()` | `core/ui-helpers.js` → `getReasonColor()` |
-| `showTab()` | `core/ui-helpers.js` → `showTab()` |
+| Original Function          | New Location                                                  |
+| -------------------------- | ------------------------------------------------------------- |
+| `initializeAdminPanel()`   | `admin-main.js` → `AdminPanel.initialize()`                   |
+| `loadBlockReasons()`       | `forms/reason-form.js` → `ReasonForm.loadReasons()`           |
+| `handleMultiCourtSubmit()` | `forms/block-form.js` → `BlockForm.handleSubmit()`            |
+| `applyFilters()`           | `filtering/block-filters.js` → `BlockFilters.applyFilters()`  |
+| `renderCalendarView()`     | `calendar/calendar-view.js` → `CalendarView.renderCalendar()` |
+| `deleteBatch()`            | `core/blocks-manager.js` → `BlocksManager.deleteBatch()`      |
+| `showToast()`              | `core/admin-utils.js` → `showToast()`                         |
+| `getReasonColor()`         | `core/ui-helpers.js` → `getReasonColor()`                     |
+| `showTab()`                | `core/ui-helpers.js` → `showTab()`                            |
 
 ## Testing
 

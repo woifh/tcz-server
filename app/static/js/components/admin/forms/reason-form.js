@@ -27,7 +27,7 @@ export class ReasonForm {
         if (!form) return;
 
         const inputs = form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
+        inputs.forEach((input) => {
             input.addEventListener('change', () => this.validateForm());
             input.addEventListener('input', () => this.validateForm());
         });
@@ -53,19 +53,19 @@ export class ReasonForm {
 
     async handleSubmit(event) {
         event.preventDefault();
-        
+
         if (!this.validateForm()) {
             showToast('Bitte geben Sie einen Grund-Namen ein', 'error');
             return;
         }
 
         const formData = formUtils.getFormData(event.target);
-        
+
         const reasonData = {
             name: formData['reason-name'],
             description: formData['reason-description'] || '',
             color: formData['reason-color'] || '#007bff',
-            is_active: formData['reason-active'] !== undefined
+            is_active: formData['reason-active'] !== undefined,
         };
 
         try {
@@ -73,11 +73,11 @@ export class ReasonForm {
 
             if (result.success) {
                 showToast('Grund erfolgreich erstellt', 'success');
-                
+
                 // Reset form and reload reasons
                 this.resetForm();
                 await this.loadReasons();
-                
+
                 // Close modal if it exists
                 const modal = document.getElementById('reason-modal');
                 if (modal && window.bootstrap) {
@@ -97,19 +97,19 @@ export class ReasonForm {
         const form = document.getElementById('reason-form');
         if (form) {
             formUtils.clearForm(form);
-            
+
             // Set default color
             const colorInput = form.querySelector('#reason-color');
             if (colorInput) {
                 colorInput.value = '#007bff';
             }
-            
+
             // Set default active state
             const activeCheckbox = form.querySelector('#reason-active');
             if (activeCheckbox) {
                 activeCheckbox.checked = true;
             }
-            
+
             this.validateForm();
         }
     }
@@ -117,7 +117,7 @@ export class ReasonForm {
     async loadReasons() {
         try {
             const result = await blockReasonsAPI.load();
-            
+
             if (result.success) {
                 stateManager.setBlockReasons(result.reasons);
                 this.renderReasonList();
@@ -142,7 +142,9 @@ export class ReasonForm {
             return;
         }
 
-        const html = reasons.map(reason => `
+        const html = reasons
+            .map(
+                (reason) => `
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
@@ -169,19 +171,27 @@ export class ReasonForm {
                     </div>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join('');
 
         container.innerHTML = html;
     }
 
     updateReasonSelects() {
-        const reasons = stateManager.getBlockReasons().filter(r => r.is_active);
+        const reasons = stateManager.getBlockReasons().filter((r) => r.is_active);
         const selects = document.querySelectorAll('select[name*="reason"], select[id*="reason"]');
 
-        console.log('Updating reason selects:', reasons.length, 'reasons found,', selects.length, 'selects found'); // Debug log
+        console.log(
+            'Updating reason selects:',
+            reasons.length,
+            'reasons found,',
+            selects.length,
+            'selects found'
+        ); // Debug log
 
         // Filter reasons based on user role
-        const availableReasons = reasons.filter(reason => {
+        const availableReasons = reasons.filter((reason) => {
             // Admins see all active reasons
             if (window.currentUserIsAdmin) {
                 return true;
@@ -195,7 +205,7 @@ export class ReasonForm {
 
         console.log('Filtered reasons for user role:', availableReasons.length, 'available'); // Debug log
 
-        selects.forEach(select => {
+        selects.forEach((select) => {
             const currentValue = select.value;
 
             // Clear existing options except the first one (usually "Grund auswählen")
@@ -206,7 +216,7 @@ export class ReasonForm {
             }
 
             // Add filtered reason options
-            availableReasons.forEach(reason => {
+            availableReasons.forEach((reason) => {
                 const option = document.createElement('option');
                 option.value = reason.id;
                 option.textContent = reason.name;
@@ -215,7 +225,7 @@ export class ReasonForm {
             });
 
             // Restore previous value if it still exists in filtered list
-            if (currentValue && availableReasons.some(r => r.id == currentValue)) {
+            if (currentValue && availableReasons.some((r) => r.id == currentValue)) {
                 select.value = currentValue;
             }
 
@@ -237,7 +247,7 @@ export class ReasonForm {
     async editReason(reasonId, reasonData) {
         try {
             const result = await blockReasonsAPI.update(reasonId, reasonData);
-            
+
             if (result.success) {
                 showToast('Grund erfolgreich aktualisiert', 'success');
                 await this.loadReasons();
@@ -257,7 +267,7 @@ export class ReasonForm {
 
         try {
             const result = await blockReasonsAPI.delete(reasonId);
-            
+
             if (result.success) {
                 showToast('Grund erfolgreich gelöscht', 'success');
                 await this.loadReasons();
@@ -279,13 +289,13 @@ export class ReasonEditModal {
 
     show(reason) {
         this.currentReason = reason;
-        
+
         // Create modal HTML if it doesn't exist
         this.createModal();
-        
+
         // Populate form with reason data
         this.populateForm();
-        
+
         // Show modal
         const modal = document.getElementById('edit-reason-modal');
         if (modal && window.bootstrap) {
@@ -347,7 +357,7 @@ export class ReasonEditModal {
         const descriptionInput = document.getElementById('edit-reason-description');
         const colorInput = document.getElementById('edit-reason-color');
         const activeCheckbox = document.getElementById('edit-reason-active');
-        
+
         if (nameInput) nameInput.value = this.currentReason.name;
         if (descriptionInput) descriptionInput.value = this.currentReason.description || '';
         if (colorInput) colorInput.value = this.currentReason.color || '#007bff';
@@ -359,27 +369,27 @@ export class ReasonEditModal {
         if (!form || !this.currentReason) return;
 
         const formData = formUtils.getFormData(form);
-        
+
         const reasonData = {
             name: formData.name,
             description: formData.description || '',
             color: formData.color || '#007bff',
-            is_active: formData.is_active !== undefined
+            is_active: formData.is_active !== undefined,
         };
 
         try {
             const result = await blockReasonsAPI.update(this.currentReason.id, reasonData);
-            
+
             if (result.success) {
                 showToast('Grund erfolgreich aktualisiert', 'success');
-                
+
                 // Close modal
                 const modal = document.getElementById('edit-reason-modal');
                 if (modal && window.bootstrap) {
                     const bsModal = window.bootstrap.Modal.getInstance(modal);
                     if (bsModal) bsModal.hide();
                 }
-                
+
                 // Reload reasons
                 if (window.reasonForm) {
                     await window.reasonForm.loadReasons();
