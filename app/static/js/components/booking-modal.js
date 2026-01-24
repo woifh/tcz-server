@@ -35,6 +35,15 @@ export function bookingModal() {
         searchError: null,
         searchHighlightIndex: -1,
 
+        // Conflict resolution state
+        showConflict: false,
+        conflictType: null, // 'regular' or 'short_notice'
+        conflictSessions: [],
+        cancellingSessionId: null,
+        pendingBookingData: null,
+        showCancelConfirm: false,
+        sessionToCancel: null,
+
         // Lifecycle
         init() {
             // Register this component with Alpine store for external access
@@ -215,28 +224,12 @@ export function bookingModal() {
                     // Trigger dashboard reload
                     this.reloadDashboard();
                 } else {
-                    // Build error message, including active sessions if available
-                    let errorMsg = data.error || 'Fehler beim Erstellen der Buchung';
-
+                    // Check if this is a reservation limit error with active sessions
                     if (data.active_sessions && data.active_sessions.length > 0) {
-                        const sessionLines = data.active_sessions.map((s) => {
-                            const dateObj = new Date(s.date);
-                            const formattedDate = dateObj.toLocaleDateString('de-DE', {
-                                weekday: 'short',
-                                day: '2-digit',
-                                month: '2-digit',
-                            });
-                            // Calculate end time (1 hour after start)
-                            const [startHour] = s.start_time.split(':');
-                            const endHour = (parseInt(startHour) + 1).toString().padStart(2, '0');
-                            const endTime = `${endHour}:00`;
-                            return `• ${formattedDate}, ${s.start_time}-${endTime}, Platz ${s.court_number}`;
-                        });
-
-                        errorMsg += '\n' + sessionLines.join('\n');
+                        this.showConflictModal(data.active_sessions, data.error);
+                    } else {
+                        this.error = data.error || 'Fehler beim Erstellen der Buchung';
                     }
-
-                    this.error = errorMsg;
 
                     // Refresh grid to show current state (e.g., slot was booked by someone else)
                     this.reloadDashboard();
@@ -328,6 +321,138 @@ export function bookingModal() {
             const [hour] = this.time.split(':');
             const endHour = parseInt(hour) + 1;
             return `${this.time} - ${endHour.toString().padStart(2, '0')}:00`;
+        },
+
+        // Conflict resolution methods
+        showConflictModal(activeSessions, errorMessage) {
+            // Determine conflict type - short notice if any session is short notice
+            const isShortNotice = activeSessions.some((s) => s.is_short_notice === true);
+
+            this.conflictType = isShortNotice ? 'short_notice' : 'regular';
+            this.conflictSessions = activeSessions;
+            this.showConflict = true;
+            this.error = null;
+        },
+
+        closeConflictModal() {
+            this.showConflict = false;
+            this.conflictType = null;
+            this.conflictSessions = [];
+            this.cancellingSessionId = null;
+            this.pendingBookingData = null;
+            this.showCancelConfirm = false;
+            this.sessionToCancel = null;
+            this.error = null;
+        },
+
+        requestCancelSession(session) {
+            this.sessionToCancel = session;
+            this.showCancelConfirm = true;
+        },
+
+        cancelCancelRequest() {
+            this.showCancelConfirm = false;
+            this.sessionToCancel = null;
+        },
+
+        async confirmCancelSession() {
+            if (!this.sessionToCancel) return;
+
+            const sessionId = this.sessionToCancel.reservation_id;
+            this.cancellingSessionId = sessionId;
+            this.showCancelConfirm = false;
+            this.error = null;
+
+            // Store booking data for retry
+            this.pendingBookingData = {
+                court_id: this.court,
+                date: this.date,
+                start_time: this.time,
+                booked_for_id: this.bookedFor,
+            };
+
+            try {
+                const response = await fetch(`/api/reservations/${sessionId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': getCsrfToken() },
+                });
+
+                if (response.ok) {
+                    // Remove cancelled session from list
+                    this.conflictSessions = this.conflictSessions.filter(
+                        (s) => s.reservation_id !== sessionId
+                    );
+
+                    // Auto-retry the booking
+                    await this.retryBooking();
+                } else {
+                    const data = await response.json();
+                    this.error = data.error || 'Fehler beim Stornieren der Buchung';
+                }
+            } catch (err) {
+                console.error('Error cancelling session:', err);
+                this.error = 'Netzwerkfehler beim Stornieren';
+            } finally {
+                this.cancellingSessionId = null;
+                this.sessionToCancel = null;
+            }
+        },
+
+        async retryBooking() {
+            if (!this.pendingBookingData) return;
+
+            this.submitting = true;
+
+            try {
+                const response = await fetch('/api/reservations/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                    },
+                    body: JSON.stringify(this.pendingBookingData),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    this.closeConflictModal();
+                    this.close();
+                    this.showSuccess('Buchung erfolgreich erstellt!');
+                    this.loadFavourites();
+                    this.reloadDashboard();
+                } else if (data.active_sessions && data.active_sessions.length > 0) {
+                    // Still have conflicts - update the list
+                    this.conflictSessions = data.active_sessions;
+                    this.error = null;
+                } else {
+                    this.error = data.error || 'Fehler beim Erstellen der Buchung';
+                }
+            } catch (err) {
+                console.error('Error retrying booking:', err);
+                this.error = 'Netzwerkfehler beim Buchen';
+            } finally {
+                this.submitting = false;
+                this.pendingBookingData = null;
+            }
+        },
+
+        formatSessionDate(dateStr) {
+            const MONTHS = ['JAN', 'FEB', 'MÄR', 'APR', 'MAI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEZ'];
+            const WEEKDAYS = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'];
+
+            const date = new Date(dateStr + 'T12:00:00');
+            return {
+                month: MONTHS[date.getMonth()],
+                day: date.getDate(),
+                weekday: WEEKDAYS[date.getDay()],
+            };
+        },
+
+        getSessionEndTime(startTime) {
+            const [hour] = startTime.split(':');
+            const endHour = (parseInt(hour) + 1).toString().padStart(2, '0');
+            return `${endHour}:00`;
         },
     };
 }

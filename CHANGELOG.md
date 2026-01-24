@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Booking conflict resolution modal: when booking limit is exceeded, users can now cancel existing bookings directly from a modal and auto-retry the new booking
+
 ### Fixed
 - Favorites list now sorted alphabetically by name
 - Active booking session warning now shows who booked on your behalf
