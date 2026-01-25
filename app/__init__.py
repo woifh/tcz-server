@@ -104,7 +104,7 @@ def create_app(config_name=None):
             "origins": [
                 "http://localhost:5173",  # Vite dev server
                 "http://127.0.0.1:5173",
-                "https://tcz-web.wolfgang-hacker.workers.dev",  # Cloudflare Pages
+                "https://tcz-web.pages.dev",  # Cloudflare Pages
             ],
             "supports_credentials": True,
             "allow_headers": ["Content-Type", "Authorization"],
@@ -114,7 +114,7 @@ def create_app(config_name=None):
             "origins": [
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
-                "https://tcz-web.wolfgang-hacker.workers.dev",
+                "https://tcz-web.pages.dev",
             ],
             "supports_credentials": True,
             "allow_headers": ["Content-Type", "Authorization"],
