@@ -1,6 +1,6 @@
 """Authentication routes."""
 from datetime import datetime, timezone
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, make_response
 from flask_login import login_user, logout_user, current_user
 import jwt
 from app import csrf
@@ -8,6 +8,9 @@ from app.models import Member
 from app.decorators.auth import jwt_or_session_required
 from app.utils.validators import validate_email_address, validate_string_length, ValidationError
 from app.constants.messages import ErrorMessages
+
+# Cookie name for JWT token (used by React web app)
+JWT_COOKIE_NAME = 'jwt_token'
 
 
 def generate_access_token(member):
@@ -69,7 +72,11 @@ def login():
 @bp.route('/login/api', methods=['POST'])
 @csrf.exempt
 def login_api():
-    """JSON API login endpoint for mobile apps (CSRF exempt for pre-auth)."""
+    """JSON API login endpoint for mobile apps and web (CSRF exempt for pre-auth).
+
+    Returns JWT in response body (for mobile apps) AND sets httpOnly cookie (for web).
+    Mobile apps use Authorization header, web uses httpOnly cookie.
+    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'JSON body required'}), 400
@@ -89,12 +96,42 @@ def login_api():
             return jsonify({'error': ErrorMessages.SUSTAINING_MEMBER_NO_ACCESS}), 403
 
         login_user(member)
-        return jsonify({
+        access_token = generate_access_token(member)
+
+        response = make_response(jsonify({
             'user': member.to_dict(include_own_profile_fields=True),
-            'access_token': generate_access_token(member)
-        })
+            'access_token': access_token  # Mobile apps use this
+        }))
+
+        # Set httpOnly cookie for web clients (React app)
+        # SameSite=Lax prevents CSRF while allowing same-site requests
+        max_age = int(current_app.config['JWT_ACCESS_TOKEN_EXPIRES'].total_seconds())
+        response.set_cookie(
+            JWT_COOKIE_NAME,
+            access_token,
+            httponly=True,
+            secure=not current_app.debug,  # Secure in production only
+            samesite='Lax',
+            max_age=max_age,
+            path='/'
+        )
+
+        return response
 
     return jsonify({'error': 'E-Mail oder Passwort ist falsch'}), 401
+
+
+@bp.route('/logout/api', methods=['POST'])
+@csrf.exempt
+def logout_api():
+    """JSON API logout endpoint for web app. Clears the JWT cookie."""
+    logout_user()
+    response = make_response(jsonify({'message': 'Erfolgreich abgemeldet'}))
+
+    # Clear the JWT cookie
+    response.delete_cookie(JWT_COOKIE_NAME, path='/')
+
+    return response
 
 
 @bp.route('/logout')

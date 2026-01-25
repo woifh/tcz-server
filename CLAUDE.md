@@ -7,26 +7,28 @@ Shared rules (git, production, vibe coding) are in `/Users/woifh/tcz/CLAUDE.md`.
 
 ## 🔗 Cross-Project Context
 
-This project **defines the API** that iOS and Android apps consume.
+This project **defines the API** that tcz-web, iOS, and Android apps consume.
 
 ### Related Codebases
 
 | Project | Path | Relationship |
 |---------|------|--------------|
+| React Web | `/Users/woifh/tcz/tcz-web` | Consumes our API (modern replacement for Alpine.js UI) |
 | iOS App | `/Users/woifh/tcz/tcz-ios` | Consumes our API |
 | Android App | `/Users/woifh/tcz/tcz-android` | Consumes our API |
 
 ### Before Modifying API Endpoints
 
-Always check how mobile apps use the endpoint. See "Cross-Project Search" in the parent CLAUDE.md for grep commands.
+Always check how tcz-web and mobile apps use the endpoint. See "Cross-Project Search" in the parent CLAUDE.md for grep commands.
 
 ### API Change Checklist
 
 When modifying an API endpoint:
-1. ☐ Search iOS and Android for usage
+1. ☐ Search tcz-web, iOS, and Android for usage
 2. ☐ Maintain backward compatibility if possible
-3. ☐ If breaking change: note which mobile app versions are affected
+3. ☐ If breaking change: note which client versions are affected
 4. ☐ Update API documentation if it exists
+5. ☐ Test with tcz-web (uses httpOnly cookie auth, not Bearer header)
 
 ---
 
@@ -113,6 +115,8 @@ source .venv/bin/activate && pytest --cov=app --cov-report=html
 ## 🏗️ Project Architecture
 
 Flask web application for tennis court reservation management (TCZ - Tennis Club Zellerndorf).
+
+**Note:** The Alpine.js frontend in tcz-server is being replaced by tcz-web (React). tcz-server is transitioning to API-only.
 
 ### Backend Structure
 

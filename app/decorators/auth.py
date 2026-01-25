@@ -6,20 +6,35 @@ import jwt
 
 from app import csrf
 
+# Cookie name for JWT token (must match auth.py)
+JWT_COOKIE_NAME = 'jwt_token'
+
 
 def _decode_jwt_token():
     """
-    Decode JWT token from Authorization header and return the member.
+    Decode JWT token from Authorization header OR httpOnly cookie.
+
+    Priority:
+    1. Authorization: Bearer <token> header (mobile apps)
+    2. jwt_token cookie (web app)
 
     Returns:
         tuple: (member, error_response) - member is None if error occurred,
                error_response is None if successful
     """
+    token = None
+
+    # First, check Authorization header (mobile apps)
     auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
+    if auth_header.startswith('Bearer '):
+        token = auth_header[7:]
+    else:
+        # Fall back to httpOnly cookie (web app)
+        token = request.cookies.get(JWT_COOKIE_NAME)
+
+    if not token:
         return None, None  # No JWT token present
 
-    token = auth_header[7:]
     try:
         payload = jwt.decode(
             token,

@@ -2,8 +2,7 @@
 API Admin Module
 
 Admin routes for blocks, settings, and block reasons.
-Session-only authentication with admin/teamster role requirements.
-These endpoints are NOT accessible via JWT/mobile app.
+Supports both session-based and JWT authentication with admin/teamster role requirements.
 
 Note: Member management routes are in app/routes/api/members.py under /api/members/
 """
@@ -16,7 +15,7 @@ from app import db
 from app.models import Block, Court, BlockReason, ReasonAuditLog
 from app.services.block_service import BlockService
 from app.services.settings_service import SettingsService
-from app.decorators.auth import admin_required, teamster_or_admin_required
+from app.decorators.auth import session_or_jwt_admin_required, session_or_jwt_teamster_or_admin_required
 from app.constants.messages import ErrorMessages, SuccessMessages
 from . import bp
 
@@ -24,7 +23,7 @@ from . import bp
 # ----- Block Management Routes (Teamster or Admin) -----
 
 @bp.route('/admin/blocks/', methods=['GET'])
-@teamster_or_admin_required
+@session_or_jwt_teamster_or_admin_required
 def get_blocks():
     """Get blocks with optional filtering."""
     try:
@@ -59,7 +58,7 @@ def get_blocks():
 
 
 @bp.route('/admin/blocks/', methods=['POST'])
-@teamster_or_admin_required
+@session_or_jwt_teamster_or_admin_required
 def create_blocks():
     """Create block(s) for one or multiple courts."""
     data = request.get_json()
@@ -125,7 +124,7 @@ def create_blocks():
 
 
 @bp.route('/admin/blocks/<batch_id>', methods=['GET'])
-@teamster_or_admin_required
+@session_or_jwt_teamster_or_admin_required
 def get_batch(batch_id):
     """Get all blocks in a batch."""
     try:
@@ -153,7 +152,7 @@ def get_batch(batch_id):
 
 
 @bp.route('/admin/blocks/<batch_id>', methods=['PUT'])
-@teamster_or_admin_required
+@session_or_jwt_teamster_or_admin_required
 def update_batch(batch_id):
     """Update all blocks in a batch."""
     data = request.get_json()
@@ -274,7 +273,7 @@ def update_batch(batch_id):
 
 
 @bp.route('/admin/blocks/<batch_id>', methods=['DELETE'])
-@teamster_or_admin_required
+@session_or_jwt_teamster_or_admin_required
 def delete_batch(batch_id):
     """Delete all blocks in a batch."""
     try:
@@ -300,7 +299,7 @@ def delete_batch(batch_id):
 # ----- Settings Routes (Admin Only) -----
 
 @bp.route('/admin/settings/payment-deadline', methods=['GET'])
-@admin_required
+@session_or_jwt_admin_required
 def get_payment_deadline():
     """Get current payment deadline settings."""
     deadline = SettingsService.get_payment_deadline()
@@ -316,7 +315,7 @@ def get_payment_deadline():
 
 
 @bp.route('/admin/settings/payment-deadline', methods=['POST'])
-@admin_required
+@session_or_jwt_admin_required
 def set_payment_deadline():
     """Set payment deadline."""
     data = request.get_json()
@@ -347,7 +346,7 @@ def set_payment_deadline():
 
 
 @bp.route('/admin/settings/payment-deadline', methods=['DELETE'])
-@admin_required
+@session_or_jwt_admin_required
 def clear_payment_deadline():
     """Clear payment deadline."""
     success, error = SettingsService.clear_payment_deadline(current_user.id)
@@ -376,7 +375,7 @@ def log_reason_operation(operation, reason_id, operation_data, performed_by_id):
 
 
 @bp.route('/admin/block-reasons', methods=['GET'])
-@teamster_or_admin_required
+@session_or_jwt_teamster_or_admin_required
 def list_block_reasons():
     """List block reasons based on user role."""
     from app.services.block_reason_service import BlockReasonService
@@ -405,7 +404,7 @@ def list_block_reasons():
 
 
 @bp.route('/admin/block-reasons', methods=['POST'])
-@admin_required
+@session_or_jwt_admin_required
 def create_block_reason():
     """Create block reason (admin only)."""
     from app.services.block_reason_service import BlockReasonService
@@ -464,7 +463,7 @@ def create_block_reason():
 
 
 @bp.route('/admin/block-reasons/<int:reason_id>', methods=['PUT'])
-@admin_required
+@session_or_jwt_admin_required
 def update_block_reason(reason_id):
     """Update block reason (admin only)."""
     from app.services.block_reason_service import BlockReasonService
@@ -518,7 +517,7 @@ def update_block_reason(reason_id):
 
 
 @bp.route('/admin/block-reasons/<int:reason_id>', methods=['DELETE'])
-@admin_required
+@session_or_jwt_admin_required
 def delete_block_reason(reason_id):
     """Delete block reason (admin only)."""
     from app.services.block_reason_service import BlockReasonService
@@ -552,7 +551,7 @@ def delete_block_reason(reason_id):
 
 
 @bp.route('/admin/block-reasons/<int:reason_id>/reactivate', methods=['POST'])
-@admin_required
+@session_or_jwt_admin_required
 def reactivate_block_reason(reason_id):
     """Reactivate an inactive block reason (admin only)."""
     from app.services.block_reason_service import BlockReasonService
@@ -585,7 +584,7 @@ def reactivate_block_reason(reason_id):
 
 
 @bp.route('/admin/block-reasons/<int:reason_id>/permanent', methods=['DELETE'])
-@admin_required
+@session_or_jwt_admin_required
 def permanently_delete_block_reason(reason_id):
     """Permanently delete a block reason (admin only)."""
     from app.services.block_reason_service import BlockReasonService
@@ -616,7 +615,7 @@ def permanently_delete_block_reason(reason_id):
 # ----- Conflict Preview Route -----
 
 @bp.route('/admin/blocks/conflict-preview', methods=['POST'])
-@teamster_or_admin_required
+@session_or_jwt_teamster_or_admin_required
 def get_conflict_preview():
     """Preview conflicts before creating/updating blocks."""
     from app.models import Reservation
@@ -671,7 +670,7 @@ def get_conflict_preview():
 # ----- Audit Log & Changelog Routes -----
 
 @bp.route('/admin/blocks/audit-log', methods=['GET'])
-@admin_required
+@session_or_jwt_admin_required
 def get_audit_log():
     """Get unified audit log."""
     from app.models import BlockAuditLog, MemberAuditLog, ReasonAuditLog, ReservationAuditLog, Court
@@ -752,7 +751,7 @@ def get_audit_log():
 
 
 @bp.route('/admin/changelog', methods=['GET'])
-@admin_required
+@session_or_jwt_admin_required
 def get_changelog():
     """Get changelog entries."""
     from app.services.changelog_service import ChangelogService
@@ -768,7 +767,7 @@ def get_changelog():
 # ----- Payment Confirmation Routes (Admin Only) -----
 
 @bp.route('/admin/members/pending-confirmations', methods=['GET'])
-@admin_required
+@session_or_jwt_admin_required
 def get_pending_payment_confirmations():
     """Get all members with pending payment confirmations."""
     from app.services.member_service import MemberService
@@ -790,7 +789,7 @@ def get_pending_payment_confirmations():
 
 
 @bp.route('/admin/members/<id>/reject-payment-confirmation', methods=['POST'])
-@admin_required
+@session_or_jwt_admin_required
 def reject_payment_confirmation(id):
     """Reject a payment confirmation request."""
     from app.services.member_service import MemberService
@@ -809,7 +808,7 @@ def reject_payment_confirmation(id):
 # ----- Feature Flags Routes -----
 
 @bp.route('/admin/feature-flags', methods=['GET'])
-@admin_required
+@session_or_jwt_admin_required
 def list_feature_flags():
     """Get all feature flags."""
     from app.services.feature_flag_service import FeatureFlagService
@@ -829,7 +828,7 @@ def list_feature_flags():
 
 
 @bp.route('/admin/feature-flags/<int:flag_id>', methods=['PUT'])
-@admin_required
+@session_or_jwt_admin_required
 def update_feature_flag(flag_id):
     """Update a feature flag."""
     from app.services.feature_flag_service import FeatureFlagService

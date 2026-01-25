@@ -87,6 +87,99 @@ def search_members():
         return jsonify({'error': 'Suchfehler. Bitte versuch es nochmal.'}), 500
 
 
+# /members/me/favourites routes (convenience alias for current user)
+@bp.route('/members/me/favourites', methods=['GET'])
+@jwt_or_session_required
+def get_my_favourites():
+    """Get current user's favourites."""
+    try:
+        favourites = current_user.favourites.order_by(Member.firstname, Member.lastname).all()
+
+        return jsonify({
+            'favourites': [
+                fav.to_dict()
+                for fav in favourites
+                if fav.membership_type == 'full' and fav.is_active
+            ]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/members/me/favourites', methods=['POST'])
+@jwt_or_session_required
+def add_my_favourite():
+    """Add a favourite member for current user."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'JSON body required'}), 400
+
+        favourite_id = data.get('favourite_id')
+        if not favourite_id:
+            return jsonify({'error': 'favourite_id ist erforderlich'}), 400
+
+        favourite = Member.query.get_or_404(favourite_id)
+
+        if favourite.id == current_user.id:
+            return jsonify({'error': 'Du kannst dich nicht selbst als Favorit hinzufügen'}), 400
+
+        if favourite in current_user.favourites.all():
+            return jsonify({'error': 'Mitglied ist bereits ein Favorit'}), 400
+
+        current_user.favourites.append(favourite)
+        db.session.commit()
+
+        MemberService.log_member_operation(
+            operation='add_favourite',
+            member_id=current_user.id,
+            operation_data={
+                'member_name': current_user.name,
+                'favourite_name': favourite.name,
+                'favourite_id': favourite.id
+            },
+            performed_by_id=current_user.id
+        )
+
+        return jsonify({
+            'message': 'Favorit erfolgreich hinzugefügt',
+            'favourite': favourite.to_dict()
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/members/me/favourites/<fav_id>', methods=['DELETE'])
+@jwt_or_session_required
+def remove_my_favourite(fav_id):
+    """Remove a favourite member for current user."""
+    try:
+        favourite = Member.query.get_or_404(fav_id)
+
+        if favourite not in current_user.favourites.all():
+            return jsonify({'error': 'Mitglied ist kein Favorit'}), 404
+
+        current_user.favourites.remove(favourite)
+        db.session.commit()
+
+        MemberService.log_member_operation(
+            operation='remove_favourite',
+            member_id=current_user.id,
+            operation_data={
+                'member_name': current_user.name,
+                'favourite_name': favourite.name,
+                'favourite_id': favourite.id
+            },
+            performed_by_id=current_user.id
+        )
+
+        return jsonify({'message': 'Favorit erfolgreich entfernt'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @bp.route('/members/<id>/favourites', methods=['GET'])
 @jwt_or_session_required
 def get_favourites(id):
@@ -197,6 +290,15 @@ def remove_favourite(id, fav_id):
 
 
 # ----- Member Profile Routes -----
+
+@bp.route('/members/me', methods=['GET'])
+@jwt_or_session_required
+def get_current_member():
+    """Get current authenticated member's profile."""
+    return jsonify({
+        'member': current_user.to_dict(include_own_profile_fields=True)
+    })
+
 
 @bp.route('/members/<id>', methods=['GET'])
 @jwt_or_session_required

@@ -210,7 +210,7 @@ class Member(db.Model, UserMixin):
             'profile_picture_version': self.profile_picture_version
         }
 
-        # Include fields users can edit on their own profile
+        # Include fields users can see about their own profile
         if include_own_profile_fields or include_admin_fields:
             data.update({
                 'phone': self.phone,
@@ -226,7 +226,10 @@ class Member(db.Model, UserMixin):
                 'push_notify_own_bookings': self.push_notify_own_bookings,
                 'push_notify_other_bookings': self.push_notify_other_bookings,
                 'push_notify_court_blocked': self.push_notify_court_blocked,
-                'push_notify_booking_overridden': self.push_notify_booking_overridden
+                'push_notify_booking_overridden': self.push_notify_booking_overridden,
+                # Users need to know their own role (for admin menu) and payment status
+                'role': self.role,
+                'fee_paid': self.fee_paid,
             })
 
         # Include admin-only fields

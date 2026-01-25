@@ -13,6 +13,7 @@ from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
+from flask_cors import CORS
 
 from config import config
 
@@ -96,7 +97,20 @@ def create_app(config_name=None):
     if app.config.get('RATELIMIT_ENABLED', True):
         limiter.init_app(app)
     # If disabled, don't initialize limiter at all
-    
+
+    # Configure CORS for React frontend
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": [
+                "http://localhost:5173",  # Vite dev server
+                "http://127.0.0.1:5173",
+            ],
+            "supports_credentials": True,
+            "allow_headers": ["Content-Type", "Authorization"],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+        }
+    })
+
     # Import models for Flask-Migrate
     from app import models
     

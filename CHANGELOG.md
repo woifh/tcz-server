@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - Booking conflict resolution modal: when booking limit is exceeded, users can now cancel existing bookings directly from a modal and auto-retry the new booking
+- API: `/members/me` endpoint for current user profile
+- API: `/members/me/favourites` endpoints (GET, POST, DELETE)
+- API: `/logout/api` endpoint for web app logout
 
 ### Fixed
 - Favorites list now sorted alphabetically by name
@@ -16,6 +19,10 @@ All notable changes to this project will be documented in this file.
 - Added Factory Boy for test data generation (`tests/factories.py`)
 - Enhanced CLAUDE.md with API endpoints, models, decorators, and debugging sections
 - Cleaned up README.md (removed duplicate sections, updated tech stack)
+- Added CORS support for React frontend (localhost:5173)
+- JWT authentication now supports httpOnly cookies (for web app)
+- Admin API routes now accessible via JWT authentication (not just session)
+- Member profile response includes `role` and `fee_paid` for own profile
 
 ## [7.4] - 2026-01-24
 
