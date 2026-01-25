@@ -300,6 +300,45 @@ def get_current_member():
     })
 
 
+@bp.route('/members/me', methods=['PATCH'])
+@jwt_or_session_required
+def update_current_member():
+    """Update current user's profile."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'JSON body required'}), 400
+
+        # Fields users can update on their own profile
+        allowed_fields = ['firstname', 'lastname', 'email', 'phone', 'street', 'city', 'zip_code',
+                          'notifications_enabled', 'notify_own_bookings', 'notify_other_bookings',
+                          'notify_court_blocked', 'notify_booking_overridden', 'push_notifications_enabled',
+                          'push_notify_own_bookings', 'push_notify_other_bookings',
+                          'push_notify_court_blocked', 'push_notify_booking_overridden']
+
+        updates = {}
+        for field in allowed_fields:
+            if field in data:
+                updates[field] = data[field]
+
+        member_result, error = MemberService.update_member(
+            member_id=current_user.id,
+            updates=updates,
+            admin_id=None
+        )
+
+        if error:
+            return jsonify({'error': error}), 400
+
+        return jsonify({
+            'message': 'Profil erfolgreich aktualisiert',
+            'member': member_result.to_dict(include_own_profile_fields=True)
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @bp.route('/members/<id>', methods=['GET'])
 @jwt_or_session_required
 def get_member_profile(id):
@@ -543,6 +582,56 @@ def resend_verification_email(id):
 
 # ----- Profile Picture Routes -----
 
+# Current user profile picture (must be before /<id>/ routes)
+@bp.route('/members/me/profile-picture', methods=['POST'])
+@jwt_or_session_required
+def upload_my_profile_picture():
+    """Upload profile picture for current user."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'Keine Datei ausgewählt'}), 400
+
+        file = request.files['file']
+
+        from app.services.profile_picture_service import ProfilePictureService
+
+        success, error = ProfilePictureService.save_profile_picture(current_user.id, file)
+
+        if not success:
+            return jsonify({'error': error}), 400
+
+        db.session.refresh(current_user)
+
+        return jsonify({
+            'message': 'Profilbild erfolgreich hochgeladen',
+            'has_profile_picture': current_user.has_profile_picture,
+            'profile_picture_version': current_user.profile_picture_version
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/members/me/profile-picture', methods=['DELETE'])
+@jwt_or_session_required
+def delete_my_profile_picture():
+    """Delete profile picture for current user."""
+    try:
+        from app.services.profile_picture_service import ProfilePictureService
+
+        success, error = ProfilePictureService.delete_profile_picture(current_user.id)
+
+        if not success:
+            return jsonify({'error': error}), 400
+
+        return jsonify({
+            'message': 'Profilbild erfolgreich gelöscht',
+            'has_profile_picture': False
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Profile picture by ID (admin or own profile)
 @bp.route('/members/<id>/profile-picture', methods=['POST'])
 @jwt_or_session_required
 def upload_profile_picture(id):

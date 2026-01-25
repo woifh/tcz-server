@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 - Booking conflict resolution modal: when booking limit is exceeded, users can now cancel existing bookings directly from a modal and auto-retry the new booking
 - API: `/members/me` endpoint for current user profile
 - API: `/members/me/favourites` endpoints (GET, POST, DELETE)
+- API: `/members/me/profile-picture` endpoints (POST, DELETE) for profile picture management
+- API: `PATCH /members/me` for updating current user profile
 - API: `/logout/api` endpoint for web app logout
 
 ### Fixed
