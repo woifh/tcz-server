@@ -104,14 +104,15 @@ def login_api():
         }))
 
         # Set httpOnly cookie for web clients (React app)
-        # SameSite=Lax prevents CSRF while allowing same-site requests
+        # SameSite=None required for cross-origin requests (Cloudflare Pages → PythonAnywhere)
+        # Secure=True required when SameSite=None
         max_age = int(current_app.config['JWT_ACCESS_TOKEN_EXPIRES'].total_seconds())
         response.set_cookie(
             JWT_COOKIE_NAME,
             access_token,
             httponly=True,
-            secure=not current_app.debug,  # Secure in production only
-            samesite='Lax',
+            secure=True,
+            samesite='None',
             max_age=max_age,
             path='/'
         )
@@ -128,8 +129,8 @@ def logout_api():
     logout_user()
     response = make_response(jsonify({'message': 'Erfolgreich abgemeldet'}))
 
-    # Clear the JWT cookie
-    response.delete_cookie(JWT_COOKIE_NAME, path='/')
+    # Clear the JWT cookie (must match same settings as when set)
+    response.delete_cookie(JWT_COOKIE_NAME, path='/', samesite='None', secure=True)
 
     return response
 
