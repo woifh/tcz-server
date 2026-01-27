@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - Booking conflict resolution modal: when booking limit is exceeded, users can now cancel existing bookings directly from a modal and auto-retry the new booking
+- Court blocking: Temporary blocks can now suspend regular blocks (instead of conflicting)
+- Court blocking: Reservation conflict confirmation for permanent blocks - API returns affected reservations before cancelling
+- Court blocking: Block conflict detection returns detailed conflict info
 - API: `/members/me` endpoint for current user profile
 - API: `/members/me/favourites` endpoints (GET, POST, DELETE)
 - API: `/members/me/profile-picture` endpoints (POST, DELETE) for profile picture management

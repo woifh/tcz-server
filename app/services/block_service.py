@@ -432,10 +432,102 @@ class BlockService:
             logger.error(f"Failed to update single block instance {block_id}: {str(e)}")
             return False, f"Fehler beim Aktualisieren der Blockinstanz: {str(e)}"
     @staticmethod
-    def create_multi_court_blocks(court_ids, date, start_time, end_time, reason_id, details, admin_id):
+    def check_block_conflicts(court_ids, date, start_time, end_time, exclude_batch_id=None, incoming_is_temporary=False):
+        """
+        Check for existing blocks that conflict with the proposed time range.
+
+        Args:
+            court_ids: List of court IDs to check
+            date: Date to check
+            start_time: Start time of proposed block
+            end_time: End time of proposed block
+            exclude_batch_id: Optional batch_id to exclude (for updates)
+            incoming_is_temporary: If True, only conflict with other temp blocks
+                                   (allows temp blocks to suspend regular blocks)
+
+        Returns:
+            tuple: (has_conflict, conflicting_batch_info or None)
+        """
+        # Find existing blocks that overlap with the proposed time range
+        query = Block.query.filter(
+            Block.court_id.in_(court_ids),
+            Block.date == date,
+            # Time overlap: existing.start < proposed.end AND existing.end > proposed.start
+            Block.start_time < end_time,
+            Block.end_time > start_time
+        )
+
+        if exclude_batch_id:
+            query = query.filter(Block.batch_id != exclude_batch_id)
+
+        # If incoming block is temporary, only conflict with other temp blocks
+        # (temp blocks can suspend/overlay regular blocks)
+        if incoming_is_temporary:
+            query = query.join(BlockReason).filter(BlockReason.is_temporary == True)
+
+        conflicting_block = query.first()
+
+        if conflicting_block:
+            # Get all blocks in the conflicting batch for full info
+            batch_blocks = Block.query.filter_by(batch_id=conflicting_block.batch_id).all()
+            court_numbers = sorted([b.court.number for b in batch_blocks])
+
+            return True, {
+                'batch_id': conflicting_block.batch_id,
+                'date': conflicting_block.date.isoformat(),
+                'start_time': conflicting_block.start_time.strftime('%H:%M'),
+                'end_time': conflicting_block.end_time.strftime('%H:%M'),
+                'court_numbers': court_numbers,
+                'reason_name': conflicting_block.reason_obj.name if conflicting_block.reason_obj else None,
+                'conflicting_court': conflicting_block.court.number if conflicting_block.court else None
+            }
+
+        return False, None
+
+    @staticmethod
+    def check_reservation_conflicts(court_ids, date, start_time, end_time):
+        """
+        Check for active reservations that would be cancelled by this block.
+
+        Args:
+            court_ids: List of court IDs to check
+            date: Date to check
+            start_time: Start time of proposed block
+            end_time: End time of proposed block
+
+        Returns:
+            list: List of conflict dicts with reservation details
+        """
+        from app.models import Court
+
+        conflicts = []
+        for court_id in court_ids:
+            reservations = Reservation.query.filter(
+                Reservation.court_id == court_id,
+                Reservation.date == date,
+                Reservation.status == 'active',
+                Reservation.start_time >= start_time,
+                Reservation.start_time < end_time
+            ).all()
+
+            court = Court.query.get(court_id)
+            for res in reservations:
+                conflicts.append({
+                    'reservation_id': res.id,
+                    'court_number': court.number if court else None,
+                    'date': date.isoformat(),
+                    'time': res.start_time.strftime('%H:%M'),
+                    'booked_for': f"{res.booked_for.firstname} {res.booked_for.lastname}",
+                    'booked_for_id': res.booked_for_id
+                })
+
+        return conflicts
+
+    @staticmethod
+    def create_multi_court_blocks(court_ids, date, start_time, end_time, reason_id, details, admin_id, confirm=False):
         """
         Create blocks for multiple courts simultaneously.
-        
+
         Args:
             court_ids: List of court IDs to block
             date: Date to block
@@ -444,14 +536,37 @@ class BlockService:
             reason_id: ID of the BlockReason
             details: Optional additional reason detail
             admin_id: ID of administrator creating the blocks
-            
+
         Returns:
             tuple: (List of Block objects or None, error message or None)
+                   For conflicts, returns (None, dict with conflict info)
         """
         try:
             if not court_ids:
                 return None, ErrorMessages.BLOCK_NO_COURTS_SPECIFIED
-            
+
+            # Look up the reason to determine if this is a temporary block
+            reason = BlockReason.query.get(reason_id)
+            incoming_is_temporary = reason.is_temporary if reason else False
+
+            # Check for conflicting blocks
+            # Temp blocks only conflict with other temp blocks (they can suspend regular blocks)
+            has_conflict, conflict_info = BlockService.check_block_conflicts(
+                court_ids, date, start_time, end_time,
+                incoming_is_temporary=incoming_is_temporary
+            )
+            if has_conflict:
+                return None, {'conflict': conflict_info}
+
+            # For permanent blocks, check for reservation conflicts and require confirmation
+            # Temp blocks suspend reservations (reversible), so no confirmation needed
+            if not incoming_is_temporary and not confirm:
+                reservation_conflicts = BlockService.check_reservation_conflicts(
+                    court_ids, date, start_time, end_time
+                )
+                if reservation_conflicts:
+                    return None, {'reservation_conflicts': reservation_conflicts}
+
             # Generate a unique batch ID for ALL blocks (single or multi-court)
             batch_id = str(uuid.uuid4())
             
@@ -476,10 +591,8 @@ class BlockService:
             # Flush to get block IDs and load reason relationships
             db.session.flush()
 
-            # Get reason for audit log (use first block's property for is_temporary check)
-            reason = BlockReason.query.get(reason_id)
-
             # Handle conflicting reservations based on block type
+            # (reason already looked up above for conflict check)
             all_affected_reservations = []
             for block in blocks:
                 if block.is_temporary_block:

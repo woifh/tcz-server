@@ -63,34 +63,66 @@ def _build_day_availability(courts, reservation_map, block_map, suspended_map, c
             key = (court.id, hour)
 
             if key in block_map:
-                block = block_map[key]
-                block_details = {
-                    'reason': block.reason_obj.name if block.reason_obj else 'Unbekannt',
-                    'details': block.details if block.details else '',
-                    'block_id': block.id,
-                    'is_temporary': block.is_temporary_block
-                }
+                blocks_at_slot = block_map[key]
+                # Separate temp and regular blocks
+                temp_blocks = [b for b in blocks_at_slot if b.is_temporary_block]
+                regular_blocks = [b for b in blocks_at_slot if not b.is_temporary_block]
 
-                if block.is_temporary_block and key in suspended_map and current_user.is_authenticated:
-                    suspended_res = suspended_map[key]
-                    block_details['suspended_reservation'] = {
-                        'booked_for': f"{suspended_res.booked_for.firstname} {suspended_res.booked_for.lastname}",
-                        'booked_for_id': suspended_res.booked_for_id,
-                        'booked_for_has_profile_picture': suspended_res.booked_for.has_profile_picture,
-                        'booked_for_profile_picture_version': suspended_res.booked_for.profile_picture_version,
-                        'booked_by_id': suspended_res.booked_by_id,
-                        'reservation_id': suspended_res.id,
-                        'is_short_notice': suspended_res.is_short_notice,
-                        'can_cancel': ValidationService.get_cancellation_eligibility(
-                            suspended_res, current_user.id, current_time
-                        )
+                # Prioritize temp blocks (they suspend/overlay regular blocks)
+                if temp_blocks:
+                    block = temp_blocks[0]
+                    block_details = {
+                        'reason': block.reason_obj.name if block.reason_obj else 'Unbekannt',
+                        'details': block.details if block.details else '',
+                        'block_id': block.id,
+                        'is_temporary': True
                     }
 
-                court_data['occupied'].append({
-                    'time': slot_time.strftime('%H:%M'),
-                    'status': 'blocked_temporary' if block.is_temporary_block else 'blocked',
-                    'details': block_details
-                })
+                    # Include underlying regular block info if exists
+                    if regular_blocks:
+                        underlying = regular_blocks[0]
+                        block_details['underlying_block'] = {
+                            'reason': underlying.reason_obj.name if underlying.reason_obj else 'Unbekannt',
+                            'details': underlying.details if underlying.details else '',
+                            'block_id': underlying.id
+                        }
+
+                    # Include suspended reservation info
+                    if key in suspended_map and current_user.is_authenticated:
+                        suspended_res = suspended_map[key]
+                        block_details['suspended_reservation'] = {
+                            'booked_for': f"{suspended_res.booked_for.firstname} {suspended_res.booked_for.lastname}",
+                            'booked_for_id': suspended_res.booked_for_id,
+                            'booked_for_has_profile_picture': suspended_res.booked_for.has_profile_picture,
+                            'booked_for_profile_picture_version': suspended_res.booked_for.profile_picture_version,
+                            'booked_by_id': suspended_res.booked_by_id,
+                            'reservation_id': suspended_res.id,
+                            'is_short_notice': suspended_res.is_short_notice,
+                            'can_cancel': ValidationService.get_cancellation_eligibility(
+                                suspended_res, current_user.id, current_time
+                            )
+                        }
+
+                    court_data['occupied'].append({
+                        'time': slot_time.strftime('%H:%M'),
+                        'status': 'blocked_temporary',
+                        'details': block_details
+                    })
+                else:
+                    # No temp block, show regular block
+                    block = regular_blocks[0] if regular_blocks else blocks_at_slot[0]
+                    block_details = {
+                        'reason': block.reason_obj.name if block.reason_obj else 'Unbekannt',
+                        'details': block.details if block.details else '',
+                        'block_id': block.id,
+                        'is_temporary': False
+                    }
+
+                    court_data['occupied'].append({
+                        'time': slot_time.strftime('%H:%M'),
+                        'status': 'blocked',
+                        'details': block_details
+                    })
             elif key in reservation_map:
                 reservation = reservation_map[key]
                 slot_data = {
@@ -154,11 +186,14 @@ def _build_lookup_maps(query_date, reservations, blocks, suspended_reservations,
                     key = (reservation.court_id, reservation.start_time.hour)
                     reservation_map[key] = reservation
 
-    block_map = {}
+    # Store lists of blocks per slot to handle overlapping temp/regular blocks
+    block_map = {}  # (court_id, hour) -> list of Block objects
     for block in blocks:
         for hour in range(block.start_time.hour, block.end_time.hour):
             key = (block.court_id, hour)
-            block_map[key] = block
+            if key not in block_map:
+                block_map[key] = []
+            block_map[key].append(block)
 
     suspended_map = {}
     for reservation in suspended_reservations:

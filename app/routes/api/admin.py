@@ -94,6 +94,7 @@ def create_blocks():
         block_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         start_time = datetime.strptime(start_time_str, '%H:%M').time()
         end_time = datetime.strptime(end_time_str, '%H:%M').time()
+        confirm = data.get('confirm', False)
 
         from app.utils.timezone_utils import get_berlin_date_today
         today = get_berlin_date_today()
@@ -107,16 +108,31 @@ def create_blocks():
             end_time=end_time,
             reason_id=reason_id,
             details=details,
-            admin_id=current_user.id
+            admin_id=current_user.id,
+            confirm=confirm
         )
 
         if error:
+            # Check if this is a reservation conflict (requires confirmation)
+            if isinstance(error, dict) and 'reservation_conflicts' in error:
+                return jsonify({
+                    'error': 'Reservierungen werden storniert',
+                    'reservation_conflicts': error['reservation_conflicts'],
+                    'requires_confirmation': True
+                }), 409
+            # Check if this is a block conflict error
+            if isinstance(error, dict) and 'conflict' in error:
+                return jsonify({
+                    'error': 'Es existiert bereits eine Sperrung für diesen Zeitraum',
+                    'conflict': error['conflict']
+                }), 409
             return jsonify({'error': error}), 400
 
         return jsonify({
             'message': f'{len(blocks)} Sperrung{"en" if len(blocks) > 1 else ""} erfolgreich erstellt',
             'block_count': len(blocks),
-            'batch_id': blocks[0].batch_id if blocks else None
+            'batch_id': blocks[0].batch_id if blocks else None,
+            'blocks': [b.to_dict() for b in blocks]
         }), 201
     except Exception as e:
         db.session.rollback()
@@ -180,6 +196,38 @@ def update_batch(batch_id):
         if new_start_time >= new_end_time:
             return jsonify({'error': 'Endzeit muss nach Startzeit liegen'}), 400
 
+        # Check if the NEW reason is temporary (for conflict checking and handling)
+        reason = BlockReason.query.get(new_reason_id)
+        is_temporary = reason.is_temporary if reason else False
+
+        confirm = data.get('confirm', False)
+
+        # Check for conflicting blocks (exclude current batch)
+        # Temp blocks only conflict with other temp blocks (they can suspend regular blocks)
+        has_conflict, conflict_info = BlockService.check_block_conflicts(
+            new_court_ids, new_date, new_start_time, new_end_time,
+            exclude_batch_id=batch_id,
+            incoming_is_temporary=is_temporary
+        )
+        if has_conflict:
+            return jsonify({
+                'error': 'Es existiert bereits eine Sperrung für diesen Zeitraum',
+                'conflict': conflict_info
+            }), 409
+
+        # For permanent blocks, check for reservation conflicts and require confirmation
+        # Temp blocks suspend reservations (reversible), so no confirmation needed
+        if not is_temporary and not confirm:
+            reservation_conflicts = BlockService.check_reservation_conflicts(
+                new_court_ids, new_date, new_start_time, new_end_time
+            )
+            if reservation_conflicts:
+                return jsonify({
+                    'error': 'Reservierungen werden storniert',
+                    'reservation_conflicts': reservation_conflicts,
+                    'requires_confirmation': True
+                }), 409
+
         existing_blocks = Block.query.filter_by(batch_id=batch_id).all()
         if not existing_blocks:
             return jsonify({'error': 'Batch nicht gefunden'}), 404
@@ -193,10 +241,6 @@ def update_batch(batch_id):
         courts_to_keep = set(existing_court_ids) & set(new_court_ids)
         courts_to_delete = set(existing_court_ids) - set(new_court_ids)
         courts_to_add = set(new_court_ids) - set(existing_court_ids)
-
-        # Check if the NEW reason is temporary (for handling new blocks)
-        reason = BlockReason.query.get(new_reason_id)
-        is_temporary = reason.is_temporary if reason else False
 
         # Delete blocks for removed courts
         # For temporary blocks, restore suspended reservations first
