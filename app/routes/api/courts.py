@@ -20,21 +20,36 @@ from . import bp
 
 
 def _handle_jwt_auth():
-    """Check for JWT Bearer token and log in user if valid."""
+    """Check for JWT Bearer token or httpOnly cookie and log in user if valid.
+
+    Priority:
+    1. Authorization: Bearer <token> header (mobile apps)
+    2. jwt_token cookie (web app)
+    """
+    token = None
+
+    # First, check Authorization header (mobile apps)
     auth_header = request.headers.get('Authorization', '')
     if auth_header.startswith('Bearer '):
         token = auth_header[7:]
-        try:
-            payload = jwt.decode(
-                token,
-                current_app.config['JWT_SECRET_KEY'],
-                algorithms=[current_app.config['JWT_ALGORITHM']]
-            )
-            member = Member.query.get(payload['user_id'])
-            if member and member.is_active:
-                login_user(member, remember=False)
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            pass
+    else:
+        # Fall back to httpOnly cookie (web app)
+        token = request.cookies.get('jwt_token')
+
+    if not token:
+        return
+
+    try:
+        payload = jwt.decode(
+            token,
+            current_app.config['JWT_SECRET_KEY'],
+            algorithms=[current_app.config['JWT_ALGORITHM']]
+        )
+        member = Member.query.get(payload['user_id'])
+        if member and member.is_active:
+            login_user(member, remember=False)
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        pass
 
 
 def _build_day_availability(courts, reservation_map, block_map, suspended_map, current_time):

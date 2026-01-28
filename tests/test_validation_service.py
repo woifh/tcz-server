@@ -74,6 +74,7 @@ from datetime import date, timedelta
 from app.models import Member, Court, Reservation
 from app import db
 import random
+import uuid
 
 
 @given(st.integers(min_value=0, max_value=1))
@@ -556,8 +557,8 @@ def test_property_42a_short_notice_booking_limit_enforcement(app, existing_short
         court = Court.query.filter_by(number=1).first()
         assert court is not None, "Court 1 should exist"
         
-        # Create test member
-        unique_id = random.randint(100000, 999999)
+        # Create test member with truly unique email using uuid
+        unique_id = uuid.uuid4().hex
         member = Member(firstname="Test", lastname="Member", email=f"test_short_limit_{unique_id}@example.com", role="member")
         member.set_password("password123")
         db.session.add(member)
@@ -594,12 +595,15 @@ def test_property_42a_short_notice_booking_limit_enforcement(app, existing_short
         db.session.commit()
         
         # Test short notice booking limit
-        result = ValidationService.validate_member_short_notice_limit(member.id)
-        
+        # validate_member_short_notice_limit returns (bool, list|None)
+        can_book, active_sessions = ValidationService.validate_member_short_notice_limit(member.id)
+
         if existing_short_notice == 0:
-            assert result is True, "Member with 0 short notice bookings should be allowed to make one"
+            assert can_book is True, "Member with 0 short notice bookings should be allowed to make one"
+            assert active_sessions is None, "No active sessions should be returned when under limit"
         else:  # existing_short_notice == 1
-            assert result is False, "Member with 1 short notice booking should not be allowed to make another"
+            assert can_book is False, "Member with 1 short notice booking should not be allowed to make another"
+            assert active_sessions is not None, "Active sessions should be returned when at limit"
         
         # Test that the limit is enforced in validate_all_booking_constraints
         booking_date = date.today() + timedelta(days=20)

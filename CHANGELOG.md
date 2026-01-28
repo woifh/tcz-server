@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - API: `/logout/api` endpoint for web app logout
 
 ### Fixed
+- Court availability API not recognizing web app cookie authentication
 - Favorites list now sorted alphabetically by name
 - Active booking session warning now shows who booked on your behalf
 - Short notice booking limit error now shows existing short notice booking details

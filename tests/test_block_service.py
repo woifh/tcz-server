@@ -106,6 +106,7 @@ def test_property_14_blocks_cascade_cancel_existing_reservations(app, court_num,
             db.session.commit()
 
         # Create a block that covers the reservation time
+        # First call without confirm - should return reservation conflicts
         blocks, block_error = BlockService.create_multi_court_blocks(
             court_ids=[court.id],
             date=booking_date,
@@ -113,7 +114,25 @@ def test_property_14_blocks_cascade_cancel_existing_reservations(app, court_num,
             end_time=end_time,
             reason_id=block_reason.id,
             details=None,
-            admin_id=admin.id
+            admin_id=admin.id,
+            confirm=False
+        )
+
+        # Should return reservation conflicts
+        assert blocks is None, "Block creation should require confirmation"
+        assert block_error is not None
+        assert 'reservation_conflicts' in block_error, "Should return reservation conflicts"
+
+        # Now confirm the block creation (simulating user confirmation)
+        blocks, block_error = BlockService.create_multi_court_blocks(
+            court_ids=[court.id],
+            date=booking_date,
+            start_time=start,
+            end_time=end_time,
+            reason_id=block_reason.id,
+            details=None,
+            admin_id=admin.id,
+            confirm=True
         )
 
         # Verify block was created successfully
@@ -251,6 +270,7 @@ def test_property_15_block_cancellations_include_reason_in_notification(app, cou
             db.session.commit()
 
         # Create a block that covers the reservation time
+        # First call without confirm - should return reservation conflicts
         blocks, block_error = BlockService.create_multi_court_blocks(
             court_ids=[court.id],
             date=booking_date,
@@ -258,7 +278,25 @@ def test_property_15_block_cancellations_include_reason_in_notification(app, cou
             end_time=end_time,
             reason_id=block_reason.id,
             details=None,
-            admin_id=admin.id
+            admin_id=admin.id,
+            confirm=False
+        )
+
+        # Should return reservation conflicts
+        assert blocks is None, "Block creation should require confirmation"
+        assert block_error is not None
+        assert 'reservation_conflicts' in block_error, "Should return reservation conflicts"
+
+        # Now confirm the block creation (simulating user confirmation)
+        blocks, block_error = BlockService.create_multi_court_blocks(
+            court_ids=[court.id],
+            date=booking_date,
+            start_time=start,
+            end_time=end_time,
+            reason_id=block_reason.id,
+            details=None,
+            admin_id=admin.id,
+            confirm=True
         )
 
         # Verify block was created successfully
