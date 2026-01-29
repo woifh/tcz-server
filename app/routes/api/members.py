@@ -668,9 +668,8 @@ def upload_profile_picture(id):
 
 
 @bp.route('/members/<id>/profile-picture', methods=['GET'])
-@jwt_or_session_required
 def get_profile_picture(id):
-    """Get profile picture for a member."""
+    """Get profile picture for a member. Public endpoint (no auth required)."""
     from flask import Response
     from app.services.profile_picture_service import ProfilePictureService
 
@@ -684,7 +683,7 @@ def get_profile_picture(id):
             data,
             mimetype='image/jpeg',
             headers={
-                'Cache-Control': 'private, max-age=31536000, immutable'
+                'Cache-Control': 'public, max-age=31536000, immutable'
             }
         )
     except Exception as e:

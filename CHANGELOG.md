@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Profile picture GET endpoint now public (no auth required) for cross-origin compatibility
+
 ### Added
 - Booking conflict resolution modal: when booking limit is exceeded, users can now cancel existing bookings directly from a modal and auto-retry the new booking
 - Court blocking: Temporary blocks can now suspend regular blocks (instead of conflicting)
